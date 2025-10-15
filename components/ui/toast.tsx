@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { X, CheckCircle, AlertCircle, Info, AlertTriangle } from "lucide-react";
@@ -33,7 +33,7 @@ const toastStyles = {
 export function Toast({
   message,
   type = "info",
-  duration = 5000,
+  duration = 3000,
   onClose,
   showCloseButton = true,
   position = "top",
@@ -41,6 +41,14 @@ export function Toast({
 }: ToastProps) {
   const [isVisible, setIsVisible] = useState(true);
   const [isAnimating, setIsAnimating] = useState(false);
+
+  const handleClose = useCallback(() => {
+    setIsAnimating(false);
+    setTimeout(() => {
+      setIsVisible(false);
+      onClose?.();
+    }, 300); // Wait for exit animation
+  }, [onClose]);
 
   useEffect(() => {
     // Start entrance animation
@@ -51,15 +59,7 @@ export function Toast({
     }, duration);
 
     return () => clearTimeout(timer);
-  }, [duration]);
-
-  const handleClose = () => {
-    setIsAnimating(false);
-    setTimeout(() => {
-      setIsVisible(false);
-      onClose?.();
-    }, 300); // Wait for exit animation
-  };
+  }, [duration, handleClose]);
 
   if (!isVisible) return null;
 
@@ -108,7 +108,7 @@ export function useToast() {
   const showToast = (
     message: string,
     type: "success" | "error" | "warning" | "info" = "info",
-    duration = 5000
+    duration = 3000
   ) => {
     setToast({ message, type, duration });
   };
