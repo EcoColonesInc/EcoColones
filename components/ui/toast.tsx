@@ -1,0 +1,125 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { X, CheckCircle, AlertCircle, Info, AlertTriangle } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+interface ToastProps {
+  message: string;
+  type?: "success" | "error" | "warning" | "info";
+  duration?: number; // Duration in milliseconds
+  onClose?: () => void;
+  showCloseButton?: boolean;
+  position?: "top" | "bottom";
+  className?: string;
+}
+
+const toastIcons = {
+  success: CheckCircle,
+  error: AlertCircle,
+  warning: AlertTriangle,
+  info: Info,
+};
+
+const toastStyles = {
+  success: "border-green-200 bg-green-50 text-green-800 dark:border-green-800 dark:bg-green-900/20 dark:text-green-400",
+  error: "border-red-200 bg-red-50 text-red-800 dark:border-red-800 dark:bg-red-900/20 dark:text-red-400",
+  warning: "border-yellow-200 bg-yellow-50 text-yellow-800 dark:border-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400",
+  info: "border-blue-200 bg-blue-50 text-blue-800 dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-400",
+};
+
+export function Toast({
+  message,
+  type = "info",
+  duration = 5000,
+  onClose,
+  showCloseButton = true,
+  position = "top",
+  className,
+}: ToastProps) {
+  const [isVisible, setIsVisible] = useState(true);
+  const [isAnimating, setIsAnimating] = useState(false);
+
+  useEffect(() => {
+    // Start entrance animation
+    setIsAnimating(true);
+    
+    const timer = setTimeout(() => {
+      handleClose();
+    }, duration);
+
+    return () => clearTimeout(timer);
+  }, [duration]);
+
+  const handleClose = () => {
+    setIsAnimating(false);
+    setTimeout(() => {
+      setIsVisible(false);
+      onClose?.();
+    }, 300); // Wait for exit animation
+  };
+
+  if (!isVisible) return null;
+
+  const Icon = toastIcons[type];
+
+  return (
+    <div
+      className={cn(
+        "fixed left-0 right-0 z-50 mx-auto max-w-md px-4 transition-all duration-300 ease-in-out",
+        position === "top" ? "top-4" : "bottom-4",
+        isAnimating 
+          ? "translate-y-0 opacity-100" 
+          : position === "top" 
+            ? "-translate-y-full opacity-0" 
+            : "translate-y-full opacity-0"
+      )}
+    >
+      <Alert className={cn(toastStyles[type], "shadow-lg", className)}>
+        <Icon className="h-4 w-4" />
+        <AlertDescription className="flex items-center justify-between">
+          <span>{message}</span>
+          {showCloseButton && (
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={handleClose}
+              className="ml-2 h-6 w-6 opacity-70 hover:opacity-100"
+            >
+              <X className="h-3 w-3" />
+            </Button>
+          )}
+        </AlertDescription>
+      </Alert>
+    </div>
+  );
+}
+
+// Hook to manage toast state
+export function useToast() {
+  const [toast, setToast] = useState<{
+    message: string;
+    type: "success" | "error" | "warning" | "info";
+    duration?: number;
+  } | null>(null);
+
+  const showToast = (
+    message: string,
+    type: "success" | "error" | "warning" | "info" = "info",
+    duration = 5000
+  ) => {
+    setToast({ message, type, duration });
+  };
+
+  const hideToast = () => {
+    setToast(null);
+  };
+
+  return {
+    toast,
+    showToast,
+    hideToast,
+  };
+}
