@@ -3,11 +3,12 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Toast, useToast } from "@/components/ui/toast";
 import {useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client"
+import Image from "next/image";
+import Link from "next/link";
 
 export default function LoginPage() {
   const { toast, showToast, hideToast } = useToast();
@@ -32,35 +33,48 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Login into Qrder</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input 
-              id="email" 
+    <>
+      <div className="h-screen flex items-center justify-center gap-30">
+        <div className="">
+          <h1 className="mb-20 text-5xl text-bold">Iniciar Sesión</h1>
+          <div className="w-80">
+            <Label className="mb-1">Correo</Label>
+            <Input
               type="email"
-              placeholder="Enter your email" 
+              placeholder="Ingrese su correo"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              className="mb-4"
             />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
-            <Input 
-              id="password" 
-              type="password" 
-              placeholder="Enter your password" 
+            <Label className="mb-1">Contraseña</Label>
+            <Input
+              type="password"
+              placeholder="Ingrese su contraseña"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              className="mb-4"
             />
+            <Button variant="default" size="sm" onClick={handleLogin}>
+              Iniciar Sesión
+            </Button>
+            <div className="mt-4 text-center">
+              <p className="text-sm text-muted-foreground">
+                ¿No estás registrado?{" "}
+                <Link href="/signup">
+                  <Button variant="link" size="sm" className="p-0 h-auto">
+                    Regístrate aquí
+                  </Button>
+                </Link>
+              </p>
+            </div>
           </div>
-          <Button className="w-full" onClick={handleLogin}>Sign In</Button>
-        </CardContent>
-      </Card>
+        </div>
+
+        <Image src="/logo.png" alt="EcoColones Logo" width={400} height={400} />
+
+      </div>
+
+
       {toast && (
         <Toast
           message={toast.message}
@@ -70,6 +84,6 @@ export default function LoginPage() {
           position="top"
         />
       )}
-    </div>
+    </>
   );
 }

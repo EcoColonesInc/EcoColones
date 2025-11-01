@@ -1,9 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthProvider";
 import { useRouter } from "next/navigation";
+
+import { LANDING_PAGE_ROUTES } from "@/config/routes";
 
 export function Navbar() {
   const { user, signOut } = useAuth();
@@ -15,46 +18,47 @@ export function Navbar() {
   }
 
   return (
-    <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <nav style={{ backgroundColor: '#F7FCFA' }} className="border-b backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         {/* Logo */}
         <Link href="/" className="flex items-center space-x-2">
-          <div className="font-bold text-xl text-primary">Company</div>
+          <Image src="/logo.png" alt="EcoColones Logo" width={40} height={40} />
+          <div className="font-bold text-xl text-primary">EcoColones</div>
         </Link>
 
         {/* Navigation Links */}
         <div className="flex items-center space-x-6">
           <Link
-            href="/"
+            href={LANDING_PAGE_ROUTES.HOME}
             className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
           >
-            Home
+            Inicio
           </Link>
           <Link
-            href="/menu"
+            href={LANDING_PAGE_ROUTES.AFFILIATES}
             className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
           >
-            Item2
+            Comercios Afiliados
           </Link>
           <Link
-            href="/orders"
+            href={LANDING_PAGE_ROUTES.CENTERS}
             className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
           >
-            Item3
+            Centros de Acopio
           </Link>
           <Link
-            href="/about"
+            href={LANDING_PAGE_ROUTES.ABOUT}
             className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
           >
-            Item4
+            ¿Cómo Funciona?
           </Link>
           
           {/* Auth Buttons */}
           {user ? (
-            <Button variant="outline" size="sm" onClick={handleSignOut}>Sign Out</Button>
+            <Button variant="default" size="sm" onClick={handleSignOut}>Cerrar Sesión</Button>
           ) : (
             <Link href="/login">
-              <Button variant="outline" size="sm">Sign In</Button>
+              <Button variant="default" size="sm">Ingresar</Button>
             </Link>
           )}
             
