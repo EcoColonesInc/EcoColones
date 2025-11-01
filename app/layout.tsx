@@ -19,6 +19,10 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "EcoColones",
   description: "El cuidado del planeta empieza en ti",
+  manifest: "/manifest.json",
+  icons: {
+    icon: "/icons/icon-512x512.png",
+  },
 };
 
 export default function RootLayout({
