@@ -4,6 +4,7 @@ import "./globals.css";
 
 import { Navbar } from "@/components/navbar"
 import { AuthProvider } from "@/contexts/AuthProvider";
+import { Footer } from "@/components/footer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -16,8 +17,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "NextJS App",
-  description: "NextJS + Supabase Starter Template",
+  title: "EcoColones",
+  description: "El cuidado del planeta empieza en ti",
+  manifest: "/manifest.json",
+  icons: {
+    icon: "/icons/icon-512x512.png",
+  },
 };
 
 export default function RootLayout({
@@ -33,6 +38,7 @@ export default function RootLayout({
         <AuthProvider>
           <Navbar/>
           {children}
+          <Footer/>
         </AuthProvider>
       </body>
     </html>
