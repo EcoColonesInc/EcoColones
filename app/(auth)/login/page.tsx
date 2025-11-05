@@ -28,6 +28,46 @@ export default function LoginPage() {
     if (error) {
       showToast("Por favor, verifica tus credenciales e intenta nuevamente.", "error");
     } else {
+      
+      const { data: { user } } = await supabase.auth.getUser(); // get user data
+      if (user) {
+        try {
+          // Check if this user already has a record in 'person'
+          const { data: existingPerson, error: selectError } = await supabase
+            .from("person").select("id").eq("user_id", user.id)
+
+          if (!existingPerson) {
+            // Create person from metadata (provided during signup)
+            const meta = user.user_metadata || {};
+
+            const personRow = {
+              user_id: user.id,
+              first_name: meta.first_name ?? null,
+              last_name: meta.last_name_1 ?? null,
+              second_last_name: meta.last_name_2 ?? null,
+              telephone_number: meta.phone ?? null,
+              birth_date: meta.dob ?? null,
+              user_name: meta.username ?? null,
+              identification: meta.id_number ? Number(meta.id_number) : null,
+              gender: meta.gender ?? null,
+              document_type: meta.id_type ?? null,
+              role: meta.role ?? null,
+            };
+
+            const { error: insertError } = await supabase.from("person").insert([personRow]);
+            if (insertError) {
+              console.error("Error creating person record:", insertError);
+              showToast("Inicio de sesión exitoso, pero no se pudo crear el perfil.", "warning");
+            } else {
+              console.log("Person record created for user:", user.id);
+            }
+          }
+        } catch (err) {
+          console.error("Unexpected error creating person:", err);
+        }
+      }
+
+
       showToast("¡Inicio de sesión exitoso!", "success");
       router.push(AUTH_ROUTES.AUTHORIZED);
     }
