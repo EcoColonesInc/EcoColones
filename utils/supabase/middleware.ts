@@ -1,5 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { USER_ROUTES, ADMIN_ROUTES, CENTER_ROUTES, AFFILIATE_ROUTES, LANDING_PAGE_ROUTES, AUTH_ROUTES} from '@/config/routes'
+import { Role } from '@/types/role'
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
@@ -37,31 +39,92 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  if (user && request.nextUrl.pathname.startsWith('/login')) {
-    // unable to access login page, unless signout
+  /** ------------------------- ROLE FETCH ---------------------------- **/
+  let role: Role | null = null
+
+  if (user) { 
+    const { data } = await supabase
+      .rpc('get_user_role', {
+        p_user_id: user.id
+      })
+
+    role = data ?? null
+  }
+
+  /** -------------------------  LOGIN REDIRECT ---------------------------- **/
+  // unable to access login page, unless signout
+  if (user && request.nextUrl.pathname.startsWith(AUTH_ROUTES.LOGIN)) {
     const url = request.nextUrl.clone()
-    url.pathname = '/dashboard'
+    url.pathname = AUTH_ROUTES.AUTHORIZED
     return NextResponse.redirect(url)
   }
 
-  if (!user && request.nextUrl.pathname === '/dashboard') {
+  // no user, potentially respond by redirecting the user to the login page
+  if (
+    !user &&
+    (
+      request.nextUrl.pathname.startsWith(USER_ROUTES.OVERVIEW) ||
+      request.nextUrl.pathname.startsWith(ADMIN_ROUTES.OVERVIEW) ||
+      request.nextUrl.pathname.startsWith(AFFILIATE_ROUTES.OVERVIEW) ||
+      request.nextUrl.pathname.startsWith(CENTER_ROUTES.OVERVIEW)
+    )
+  ) {
     const url = request.nextUrl.clone()
-    url.pathname = '/login'
+    url.pathname = AUTH_ROUTES.LOGIN
     return NextResponse.redirect(url)
   }
 
-  // if (
-  //   !user &&
-  //   !request.nextUrl.pathname.startsWith('/login') &&
-  //   !request.nextUrl.pathname.startsWith('/signup') &&
-  //   !request.nextUrl.pathname.startsWith('/error') &&
-  //   request.nextUrl.pathname !== '/'
-  // ) {
-  //   // no user, potentially respond by redirecting the user to the login page
-  //   const url = request.nextUrl.clone()
-  //   url.pathname = '/login'
-  //   return NextResponse.redirect(url)
-  // }
+   /** ------------------------- ROLE CHECK ---------------------------- **/
+
+  // if user is authorized and tries to access /authorized, redirect based on role
+  if (request.nextUrl.pathname.startsWith(AUTH_ROUTES.AUTHORIZED)) {
+    const url = request.nextUrl.clone()
+
+    switch (role) {
+      case Role.ADMIN:
+        url.pathname = ADMIN_ROUTES.OVERVIEW
+        break
+      case Role.AFFILIATE:
+        url.pathname = AFFILIATE_ROUTES.OVERVIEW
+        break
+      case Role.CENTER:
+        url.pathname = CENTER_ROUTES.OVERVIEW
+        break
+      case Role.USER:
+        url.pathname = USER_ROUTES.OVERVIEW
+        break
+      default:
+        url.pathname = AUTH_ROUTES.LOGIN
+    }
+
+    return NextResponse.redirect(url)
+  }
+
+  /* Role based access control for dashboard routes */
+  if (request.nextUrl.pathname.startsWith(ADMIN_ROUTES.OVERVIEW) && role !== Role.ADMIN) {
+    const url = request.nextUrl.clone()
+    url.pathname = AUTH_ROUTES.AUTHORIZED
+    return NextResponse.redirect(url)
+  }
+
+  if (request.nextUrl.pathname.startsWith(AFFILIATE_ROUTES.OVERVIEW) && role !== Role.AFFILIATE) {
+    const url = request.nextUrl.clone()
+    url.pathname = AUTH_ROUTES.AUTHORIZED
+    return NextResponse.redirect(url)
+  }
+
+  if (request.nextUrl.pathname.startsWith(CENTER_ROUTES.OVERVIEW) && role !== Role.CENTER) {
+    const url = request.nextUrl.clone()
+    url.pathname = AUTH_ROUTES.AUTHORIZED
+    return NextResponse.redirect(url)
+  }
+
+  if (request.nextUrl.pathname.startsWith(USER_ROUTES.OVERVIEW) && role !== Role.USER) {
+    const url = request.nextUrl.clone()
+    url.pathname = AUTH_ROUTES.AUTHORIZED
+    return NextResponse.redirect(url)
+  }
+
 
   // IMPORTANT: You *must* return the supabaseResponse object as it is.
   // If you're creating a new response object with NextResponse.next() make sure to:

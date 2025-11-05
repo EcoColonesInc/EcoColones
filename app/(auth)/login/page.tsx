@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client"
 import Image from "next/image";
 import Link from "next/link";
+import { AUTH_ROUTES } from "@/config/routes";
 
 export default function LoginPage() {
   const { toast, showToast, hideToast } = useToast();
@@ -20,15 +21,15 @@ export default function LoginPage() {
   async function handleLogin() {
     // check if email and password are not empty
     if (!email || !password) {
-      showToast("Please enter both email and password.", "error");
+      showToast("Por favor, ingresa tu correo y contraseña.", "error");
       return;
     }
-      const { error } = await supabase.auth.signInWithPassword({email, password});
+    const { error } = await supabase.auth.signInWithPassword({email, password});
     if (error) {
-      showToast(`Error: ${error.message}`, "error");
+      showToast("Por favor, verifica tus credenciales e intenta nuevamente.", "error");
     } else {
-      showToast("Login successful!", "success");
-      router.push("/dashboard");
+      showToast("¡Inicio de sesión exitoso!", "success");
+      router.push(AUTH_ROUTES.AUTHORIZED);
     }
   }
 
@@ -67,7 +68,7 @@ export default function LoginPage() {
               <div className="mt-4 text-center sm:text-left">
                 <p className="text-sm text-muted-foreground">
                   ¿No estás registrado?{" "}
-                  <Link href="/signup">
+                  <Link href={AUTH_ROUTES.REGISTER}>
                     <Button variant="link" size="sm" className="p-0 h-auto">
                       Regístrate aquí
                     </Button>
