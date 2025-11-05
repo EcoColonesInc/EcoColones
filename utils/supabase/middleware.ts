@@ -1,6 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
-import { USER_ROUTES, ADMIN_ROUTES, CENTER_ROUTES, AFFILIATE_ROUTES, LANDING_PAGE_ROUTES, AUTH_ROUTES} from '@/config/routes'
+import { USER_ROUTES, ADMIN_ROUTES, CENTER_ROUTES, AFFILIATE_ROUTES, AUTH_ROUTES} from '@/config/routes'
 import { Role } from '@/types/role'
 
 export async function updateSession(request: NextRequest) {
