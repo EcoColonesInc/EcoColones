@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import { useState } from "react";
 
-import { LANDING_PAGE_ROUTES } from "@/config/routes";
+import { LANDING_PAGE_ROUTES, AUTH_ROUTES } from "@/config/routes";
 
 export function Navbar() {
   const { user, signOut } = useAuth();
@@ -17,7 +17,7 @@ export function Navbar() {
 
   const handleSignOut = async () => {
     await signOut();
-    router.push("/login");
+    router.push(AUTH_ROUTES.LOGIN);
   }
 
   const toggleMenu = () => {
@@ -32,7 +32,7 @@ export function Navbar() {
     <nav style={{ backgroundColor: '#F7FCFA' }} className="border-b backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         {/* Logo */}
-        <Link href="/" className="flex items-center space-x-2">
+        <Link href={LANDING_PAGE_ROUTES.HOME} className="flex items-center space-x-2">
           <Image src="/logo.png" alt="EcoColones Logo" width={40} height={40} />
           <div className="font-bold text-xl text-primary">EcoColones</div>
         </Link>
@@ -68,7 +68,7 @@ export function Navbar() {
           {user ? (
             <Button variant="default" size="sm" onClick={handleSignOut}>Cerrar Sesión</Button>
           ) : (
-            <Link href="/login">
+            <Link href={AUTH_ROUTES.LOGIN}>
               <Button variant="default" size="sm">Ingresar</Button>
             </Link>
           )}
@@ -123,7 +123,7 @@ export function Navbar() {
                 Cerrar Sesión
               </Button>
             ) : (
-              <Link href="/login" onClick={closeMenu}>
+              <Link href={AUTH_ROUTES.LOGIN} onClick={closeMenu}>
                 <Button variant="default" size="sm" className="w-full">Ingresar</Button>
               </Link>
             )}
