@@ -39,16 +39,17 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  /** ------------------------- ROLE FETCH ---------------------------- **/
+  /** ------------------------- FETCH ROLE ---------------------------- **/
   let role: Role | null = null
 
-  if (user) { 
-    const { data } = await supabase
-      .rpc('get_user_role', {
-        p_user_id: user.id
-      })
+  if (user?.id) {
+    const { data } = await supabase.rpc("get_user_role", {
+      p_user_id: user.id,
+    });
 
-    role = data ?? null
+    role = data as Role ?? null;
+  } else {
+    role = null;
   }
 
   /** -------------------------  LOGIN REDIRECT ---------------------------- **/
