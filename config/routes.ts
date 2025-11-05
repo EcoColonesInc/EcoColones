@@ -15,7 +15,7 @@ export const LANDING_PAGE_ROUTES = {
 /* Authentication related routes */
 export const AUTH_ROUTES = {
     LOGIN: "/login",
-    REGISTER: "/register",
+    REGISTER: "/signup",
     FORGOT_PASSWORD: "/forgot-password",
     AUTHORIZED: "/authorized"
 };
