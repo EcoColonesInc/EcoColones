@@ -7,8 +7,8 @@ import { Toast, useToast } from "@/components/ui/toast";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
-import Image from "next/image";
-import Link from "next/link";
+//import Image from "next/image";
+//import Link from "next/link";
 
 export default function SignUpPage() {
     const { toast, showToast, hideToast } = useToast();
@@ -25,7 +25,7 @@ export default function SignUpPage() {
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
     const [termsAccepted, setTermsAccepted] = useState(false);
-    const [photo, setPhoto] = useState<File | null>(null);
+    const [, setPhoto] = useState<File | null>(null);
     const [photoPreview, setPhotoPreview] = useState<string | null>(null);
     const [avatarPath, setAvatarPath] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
@@ -62,7 +62,7 @@ export default function SignUpPage() {
                     ? supabase.storage.from("profile_pictures").getPublicUrl(avatarPath).data?.publicUrl ?? null
                     : null;
 
-                const metadata: any = {
+                const metadata = {
                     first_name: firstName,
                     last_name_1: lastName1 || undefined,
                     last_name_2: lastName2 || undefined,
@@ -74,7 +74,7 @@ export default function SignUpPage() {
                     gender: gender || undefined,
                     phone: phone || undefined,
                     avatar_url: avatarPublicUrl || undefined,
-                    role: "user",
+                    role: "user" as const,
                 };
                 // Create the user using client-side signUp (email confirmation flow)
                 const { data: signUpData, error } = await supabase.auth.signUp({
@@ -109,10 +109,12 @@ export default function SignUpPage() {
                 // Redirect to login after successful signup
                 await sleep(5000); // wait for 5 seconds to let user read the toast
                 router.push("/login");
-            } catch (err: any) {
-                showToast(err?.message ?? "Error al registrarse", "error");
-            } finally {
-                setIsLoading(false);
+            } catch (err: unknown) {
+                if (err instanceof Error) {
+                    showToast(err.message, "error");
+                } else {
+                    showToast("Error al registrarse", "error");
+                }
             }
     }
 
@@ -137,7 +139,7 @@ export default function SignUpPage() {
                     const fileName = `avatar_${Date.now()}.${fileExt}`;
                     const filePath = `${fileName}`;
 
-                    const { data: uploadData, error: uploadError } = await supabase.storage
+                    const {error: uploadError } = await supabase.storage
                         .from(bucket)
                         .upload(filePath, file, { upsert: true });
 
@@ -153,8 +155,12 @@ export default function SignUpPage() {
                         setPhotoPreview(publicUrl);
                         setAvatarPath(filePath);
                     }
-                } catch (err: any) {
-                    showToast(err?.message ?? "Error subiendo la imagen", "error");
+                } catch (err: unknown) {
+                    if (err instanceof Error) {
+                        showToast(err.message, "error");
+                    } else {
+                        showToast("Error subiendo la imagen", "error");
+                    }
                 }
             })();
         }

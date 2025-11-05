@@ -33,7 +33,7 @@ export default function LoginPage() {
       if (user) {
         try {
           // Check if this user already has a record in 'person'
-          const { data: existingPerson, error: selectError } = await supabase
+          const { data: existingPerson} = await supabase
             .from("person").select("id").eq("user_id", user.id)
 
           if (!existingPerson) {
