@@ -1,7 +1,8 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Recycle, Coins, Store, User } from "lucide-react";
-
+import Link from "next/link";
+import { AUTH_ROUTES } from "@/config/routes";
 
 export default function Home() {
   return (
@@ -15,7 +16,10 @@ export default function Home() {
         <div className="relative z-10 text-center text-white px-4 sm:px-6 max-w-4xl mx-auto">
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 sm:mb-6">Reciclá, Ganá y Canjeá</h1>
           <p className="text-base sm:text-lg md:text-xl">Únete a EcoColones y convertí tus materiales reciclables en recompensas. Ganá puntos por cada artículo que recicles y canjealos en tus comercios locales favoritos.</p>
-          <Button variant="default" size="lg" className="mt-6 sm:mt-8 rounded-4xl">¡Unete Ahora!</Button>
+          <Link
+                href={AUTH_ROUTES.REGISTER}
+              ><Button variant="default" size="lg" className="mt-6 sm:mt-8 rounded-4xl">¡Unete Ahora!</Button>
+        </Link>
         </div>
       </div>
 
@@ -76,7 +80,10 @@ export default function Home() {
       <div className="py-12 px-6 text-center">
         <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4">¿Listo para hacer la diferencia?</h2>
         <p>Registrate en EcoColones hoy y comenzá a ganar recompensas por tus esfuerzos en el cuidado al planeta.</p>
-        <Button variant="default" size="lg" className="mt-6 sm:mt-8 rounded-4xl">¡Unete Ahora!</Button>
+        <Link
+                href={AUTH_ROUTES.REGISTER}
+              ><Button variant="default" size="lg" className="mt-6 sm:mt-8 rounded-4xl">¡Unete Ahora!</Button>
+        </Link>
       </div>
     </div>
   </div>
