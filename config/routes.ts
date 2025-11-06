@@ -27,6 +27,8 @@ export const USER_ROUTES = {
     PROFILE: "/user/profile",
     SETTINGS: "/user/settings",
     MIECOQR: "/user/miEcoQr",
+    RECYCLE: "/user/recycle",
+    REDEEM: "/user/redeem",
 };
 
 /* Admin side dashboard routes */
