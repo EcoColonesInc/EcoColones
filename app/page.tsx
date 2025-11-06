@@ -17,7 +17,7 @@ export default function Home() {
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 sm:mb-6">Reciclá, Ganá y Canjeá</h1>
           <p className="text-base sm:text-lg md:text-xl">Únete a EcoColones y convertí tus materiales reciclables en recompensas. Ganá puntos por cada artículo que recicles y canjealos en tus comercios locales favoritos.</p>
           <Link
-                href={AUTH_ROUTES.REGISTER}
+                href={AUTH_ROUTES.SIGNUP}
               ><Button variant="default" size="lg" className="mt-6 sm:mt-8 rounded-4xl">¡Unete Ahora!</Button>
         </Link>
         </div>
@@ -81,7 +81,7 @@ export default function Home() {
         <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4">¿Listo para hacer la diferencia?</h2>
         <p>Registrate en EcoColones hoy y comenzá a ganar recompensas por tus esfuerzos en el cuidado al planeta.</p>
         <Link
-                href={AUTH_ROUTES.REGISTER}
+                href={AUTH_ROUTES.SIGNUP}
               ><Button variant="default" size="lg" className="mt-6 sm:mt-8 rounded-4xl">¡Unete Ahora!</Button>
         </Link>
       </div>

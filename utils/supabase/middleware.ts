@@ -54,11 +54,30 @@ export async function updateSession(request: NextRequest) {
 
   /** -------------------------  LOGIN REDIRECT ---------------------------- **/
   // unable to access login page, unless signout
-  if (user && request.nextUrl.pathname.startsWith(AUTH_ROUTES.LOGIN)) {
+  if (user && request.nextUrl.pathname === AUTH_ROUTES.LOGIN) {
     const url = request.nextUrl.clone()
     url.pathname = AUTH_ROUTES.AUTHORIZED
     return NextResponse.redirect(url)
   }
+
+  if (user && request.nextUrl.pathname === AUTH_ROUTES.SIGNUP) {
+    const url = request.nextUrl.clone()
+    url.pathname = AUTH_ROUTES.AUTHORIZED
+    return NextResponse.redirect(url)
+  }
+
+  if (!user && request.nextUrl.pathname === AUTH_ROUTES.REGISTER) {
+    const url = request.nextUrl.clone()
+    url.pathname = AUTH_ROUTES.SIGNUP
+    return NextResponse.redirect(url)
+  }
+
+  if (user && request.nextUrl.pathname === AUTH_ROUTES.REGISTER && role !== null) {
+    const url = request.nextUrl.clone()
+    url.pathname = AUTH_ROUTES.AUTHORIZED
+    return NextResponse.redirect(url)
+  }
+
 
   // no user, potentially respond by redirecting the user to the login page
   if (
@@ -94,6 +113,9 @@ export async function updateSession(request: NextRequest) {
       case Role.USER:
         url.pathname = USER_ROUTES.OVERVIEW
         break
+      case null:
+        url.pathname = AUTH_ROUTES.REGISTER
+        break;
       default:
         url.pathname = AUTH_ROUTES.LOGIN
     }
