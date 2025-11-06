@@ -25,6 +25,7 @@ export const USER_ROUTES = {
     OVERVIEW: "/user",
     PROFILE: "/user/profile",
     SETTINGS: "/user/settings",
+    MIECOQR: "/user/miEcoQr",
 };
 
 /* Admin side dashboard routes */
