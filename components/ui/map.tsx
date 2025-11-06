@@ -1,13 +1,9 @@
 "use client";
-declare global {
-  interface Window {
-    google: typeof google;
-  }
-  const google: any;
-}
-import { useEffect } from "react";
+
+//import { useEffect } from "react";
 
 export default function CustomMap() {
+    /*
   useEffect(() => {
     const script = document.createElement("script");
     script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY}`;
@@ -52,5 +48,5 @@ export default function CustomMap() {
       id="map"
       className="w-full h-[400px] rounded-xl border border-gray-200 shadow-sm"
     ></div>
-  );
+  );*/
 }
