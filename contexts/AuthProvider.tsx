@@ -4,11 +4,14 @@ import { createClient } from "@/utils/supabase/client";
 import { useState, useEffect, useContext, createContext, ReactNode } from "react";
 import { User, Session } from "@supabase/supabase-js";
 
+import { Role } from "@/types/role";
+
 interface AuthContextType {
     user: User | null;
     session: Session | null;
     loading: boolean;
     signOut: () => Promise<void>;
+    role?: Role | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -18,6 +21,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [session, setSession] = useState<Session | null>(null);
     const [loading, setLoading] = useState(true);
+    const [role, setRole] = useState<Role | null>(null);
 
     const supabase = createClient();
 
@@ -34,6 +38,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setSession(session);
             setUser(session?.user ?? null);
             setLoading(false);
+
+            // Fetch user role
+            if (session?.user.id) {
+            supabase.rpc("get_user_role", {
+                p_user_id: session.user.id,
+            }).then(({ data }) => {
+                setRole(data as Role ?? null);
+            });
+        } else {
+            setRole(null);
+        }
         });
 
         return () => {
@@ -45,7 +60,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await supabase.auth.signOut();
     }
 
-    const value = { user, session, loading, signOut };
+    const value = { user, session, loading, signOut, role };
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 };

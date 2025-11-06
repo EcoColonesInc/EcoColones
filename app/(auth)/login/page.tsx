@@ -68,7 +68,7 @@ export default function LoginPage() {
               <div className="mt-4 text-center sm:text-left">
                 <p className="text-sm text-muted-foreground">
                   ¿No estás registrado?{" "}
-                  <Link href={AUTH_ROUTES.REGISTER}>
+                  <Link href={AUTH_ROUTES.SIGNUP}>
                     <Button variant="link" size="sm" className="p-0 h-auto">
                       Regístrate aquí
                     </Button>

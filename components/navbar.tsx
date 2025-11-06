@@ -8,10 +8,12 @@ import { useRouter } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import { useState } from "react";
 
-import { LANDING_PAGE_ROUTES, AUTH_ROUTES } from "@/config/routes";
+import { Role } from "@/types/role";
+
+import { LANDING_PAGE_ROUTES, AUTH_ROUTES, USER_ROUTES } from "@/config/routes";
 
 export function Navbar() {
-  const { user, signOut } = useAuth();
+  const { user, signOut, role } = useAuth();
   const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
@@ -37,33 +39,80 @@ export function Navbar() {
           <div className="font-bold text-xl text-primary">EcoColones</div>
         </Link>
 
+        
         {/* Desktop Navigation Links */}
         <div className="hidden lg:flex items-center space-x-6">
-          <Link
-            href={LANDING_PAGE_ROUTES.HOME}
-            className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
-          >
-            Inicio
-          </Link>
-          <Link
-            href={LANDING_PAGE_ROUTES.AFFILIATES}
-            className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
-          >
-            Comercios Afiliados
-          </Link>
-          <Link
-            href={LANDING_PAGE_ROUTES.CENTERS}
-            className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
-          >
-            Centros de Acopio
-          </Link>
-          <Link
-            href={LANDING_PAGE_ROUTES.ABOUT}
-            className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
-          >
-            ¿Cómo Funciona?
-          </Link>
-          
+          {!user && (
+            <>
+              <Link
+                href={LANDING_PAGE_ROUTES.HOME}
+                className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
+              >
+                Inicio
+              </Link>
+              <Link
+                href={LANDING_PAGE_ROUTES.AFFILIATES}
+                className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
+              >
+                Comercios Afiliados
+              </Link>
+              <Link
+                href={LANDING_PAGE_ROUTES.CENTERS}
+                className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
+              >
+                Centros de Acopio
+              </Link>
+              <Link
+                href={LANDING_PAGE_ROUTES.ABOUT}
+                className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
+              >
+                ¿Cómo Funciona?
+              </Link>
+            </>
+          )}
+
+          {role === Role.ADMIN && (
+            <Link
+              href="/admin/dashboard"
+              className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
+            >
+              Panel de Control
+            </Link>
+          )}
+
+          {role === Role.USER && (
+            <>
+            <Link
+              href={USER_ROUTES.MIECOQR}
+              className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
+            >
+              Mi EcoQR
+            </Link>
+
+            <Link
+              href={USER_ROUTES.RECYCLE}
+              className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
+            >
+              Centros de Acopio
+            </Link>
+
+            <Link
+              href={USER_ROUTES.REDEEM}
+              className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
+            >
+              Canjear
+            </Link>
+
+            <Link
+              href={USER_ROUTES.PROFILE}
+              className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
+            >
+              Perfil
+            </Link>
+
+            </>
+          )}
+
           {/* Auth Buttons */}
           {user ? (
             <Button variant="default" size="sm" onClick={handleSignOut}>Cerrar Sesión</Button>
@@ -88,35 +137,39 @@ export function Navbar() {
       {isMenuOpen && (
         <div className="lg:hidden border-t" style={{ backgroundColor: '#F7FCFA' }}>
           <div className="container mx-auto px-4 py-4 flex flex-col space-y-4">
-            <Link
-              href={LANDING_PAGE_ROUTES.HOME}
-              className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
-              onClick={closeMenu}
-            >
-              Inicio
-            </Link>
-            <Link
-              href={LANDING_PAGE_ROUTES.AFFILIATES}
-              className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
-              onClick={closeMenu}
-            >
-              Comercios Afiliados
-            </Link>
-            <Link
-              href={LANDING_PAGE_ROUTES.CENTERS}
-              className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
-              onClick={closeMenu}
-            >
-              Centros de Acopio
-            </Link>
-            <Link
-              href={LANDING_PAGE_ROUTES.ABOUT}
-              className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
-              onClick={closeMenu}
-            >
-              ¿Cómo Funciona?
-            </Link>
-            
+            {!user && (
+              <>
+                <Link
+                  href={LANDING_PAGE_ROUTES.HOME}
+                  className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
+                  onClick={closeMenu}
+                >
+                  Inicio
+                </Link>
+                <Link
+                  href={LANDING_PAGE_ROUTES.AFFILIATES}
+                  className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
+                  onClick={closeMenu}
+                >
+                  Comercios Afiliados
+                </Link>
+                <Link
+                  href={LANDING_PAGE_ROUTES.CENTERS}
+                  className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
+                  onClick={closeMenu}
+                >
+                  Centros de Acopio
+                </Link>
+                <Link
+                  href={LANDING_PAGE_ROUTES.ABOUT}
+                  className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
+                  onClick={closeMenu}
+                >
+                  ¿Cómo Funciona?
+                </Link>
+              </>
+            )}
+
             {/* Mobile Auth Buttons */}
             {user ? (
               <Button variant="default" size="sm" onClick={() => { handleSignOut(); closeMenu(); }} className="w-full">

@@ -15,7 +15,8 @@ export const LANDING_PAGE_ROUTES = {
 /* Authentication related routes */
 export const AUTH_ROUTES = {
     LOGIN: "/login",
-    REGISTER: "/register",
+    SIGNUP: "/signup",
+    REGISTER: "/signup/register",
     FORGOT_PASSWORD: "/forgot-password",
     AUTHORIZED: "/authorized"
 };
@@ -25,6 +26,9 @@ export const USER_ROUTES = {
     OVERVIEW: "/user",
     PROFILE: "/user/profile",
     SETTINGS: "/user/settings",
+    MIECOQR: "/user/miEcoQr",
+    RECYCLE: "/user/recycle",
+    REDEEM: "/user/redeem",
 };
 
 /* Admin side dashboard routes */
@@ -44,4 +48,21 @@ export const AFFILIATE_ROUTES = {
 export const CENTER_ROUTES = {
     OVERVIEW: "/center/dashboard",
     SETTINGS: "/center/dashboard/settings",
+};
+
+export const API_ROUTES = {
+    USER: {
+        PROFILE: "/api/user/profile",
+        SETTINGS: "/api/user/settings",
+        MIECOQR: "/api/user/miEcoQr",
+    },
+    AUTH: {
+        LOGIN: "/api/login",
+        SIGNUP: "/api/signup",
+        REGISTER: "/api/signup/register",
+    },
+    RECYCLE: {
+        SUBMIT: "/api/recycle/submit",
+        STATUS: "/api/recycle/status",
+    },
 };
