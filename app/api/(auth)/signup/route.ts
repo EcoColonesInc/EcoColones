@@ -18,7 +18,7 @@ export async function POST(request: Request) {
         // Sign up user with Supabase Auth
         const { data, error } = await supabase.auth.signUp({
             email,
-            password,
+            password
         });
 
         if (error) {
@@ -26,7 +26,15 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: `Error al crear la cuenta: ${error.message}` }, { status: 400 });
         }
 
-        console.log("User signed up:", data.user);
+        // Check if user was actually created or already exists
+        // Supabase returns identities as empty array if email already exists
+        if (!data.user || (data.user.identities && data.user.identities.length === 0)) {
+            return NextResponse.json({ 
+                error: "Este correo electrónico ya está registrado." 
+            }, { status: 400 });
+        }
+
+        console.log("User signed up:", data);
         return NextResponse.json({ 
             message: "Credenciales verificadas. Complete su registro.",
             userId: data.user?.id

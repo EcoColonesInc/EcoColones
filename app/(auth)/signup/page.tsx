@@ -55,12 +55,13 @@ export default function SignUpPage() {
 
             const result = await response.json();
 
-            if (!response.ok) {
-                throw new Error(result.error || "Error al registrarse");
+            if (result.error) {
+                showToast(result.error, "error");
+            } else {
+                showToast("Registro exitoso. Por favor, verifica tu correo electrónico.", "success");
+                await new Promise(r => setTimeout(r, 5000));
             }
 
-            showToast("Registro exitoso. Por favor, verifica tu correo electrónico.", "success");
-            await new Promise(r => setTimeout(r, 2000));
         } catch (error: unknown) {
             showToast((error as Error).message, "error");
         } finally {

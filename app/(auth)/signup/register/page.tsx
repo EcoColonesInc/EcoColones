@@ -112,7 +112,6 @@ export default function RegisterPage() {
                             <div className="flex flex-col items-center gap-4">
                                 <div className="w-36 h-36 rounded-xl bg-[#EDF7F3] flex items-center justify-center overflow-hidden">
                                     {photoPreview ? (
-                                        // eslint-disable-next-line @next/next/no-img-element
                                         <Image src={photoPreview} alt="avatar preview" className="w-full h-full object-cover" width={100} height={100}/>
                                     ) : (
                                         <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground">
