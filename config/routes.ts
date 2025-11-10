@@ -42,6 +42,8 @@ export const ADMIN_ROUTES = {
 export const AFFILIATE_ROUTES = {
     OVERVIEW: "/affiliate/dashboard",
     SETTINGS: "/affiliate/dashboard/settings",
+    PRODUCTS: "/affiliate/products",
+    TRANSACTIONS: "/affiliate/transactions",
 };
 
 /* Centers side dashboard routes */
