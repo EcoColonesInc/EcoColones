@@ -1,9 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server"; 
 
-// GET - Obtener lista de paises
-
-// POST - Crear un nuevo pais
+// POST - Insertar un país
 export async function POST(request: Request) {
     try {
         const supabase = await createClient();

@@ -1,9 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 
-// GET - Listar todos los centros de recolección
-
-// POST - Insertar nuevo centro de recolección
+// POST - Insertar un centro de recolección
 export async function POST(request: Request) {
     try {
         const supabase = await createClient();

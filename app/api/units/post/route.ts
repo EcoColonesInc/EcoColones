@@ -1,9 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 
-// GET - Listar todas las unidades
-
-// POST - Insertar nueva unidad
+// POST - Insertar una unidad
 export async function POST(request: Request) {
     try {
         const supabase = await createClient();

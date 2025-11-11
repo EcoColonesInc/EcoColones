@@ -1,9 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 
-// GET - Listar todos los materiales
-
-// POST - Insertar nuevo material
+// POST - Insertar un material
 export async function POST(request: Request) {
     try {
         const supabase = await createClient();
