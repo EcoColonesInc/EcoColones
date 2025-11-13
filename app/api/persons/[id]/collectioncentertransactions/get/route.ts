@@ -1,14 +1,15 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 
 // GET - Obtained all collection centers transactions by a person ID
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, context: { params: Promise<{ id: string }> }) {
     try {
         const supabase = await createClient();
 
         // Accept person_id either from the route param (params.id) or from a query param
         const url = new URL(request.url);
-        const personId = url.searchParams.get('person_id') ?? (await params).id ?? null;
+        const resolvedParams = await context.params;
+        const personId = url.searchParams.get('person_id') ?? resolvedParams.id ?? null;
 
         // Build query; apply filter only when personId is provided
         let query = supabase

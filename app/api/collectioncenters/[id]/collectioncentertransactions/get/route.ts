@@ -1,14 +1,15 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 
 // GET - Obtained a specific collection center by ID with its transactions info
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, context: { params: Promise<{ id: string }> }) {
     try {
         const supabase = await createClient();
 
         // Allow the collection center id to come from the route param or from a query param
         const url = new URL(request.url);
-        const collectionCenterId = url.searchParams.get('collection_center') ?? (await params).id ?? null;
+        const resolvedParams = await context.params;
+        const collectionCenterId = url.searchParams.get('collection_center') ?? resolvedParams.id ?? null;
 
         if (!collectionCenterId) {
             return NextResponse.json({ error: 'collection_center id is required' }, { status: 400 });

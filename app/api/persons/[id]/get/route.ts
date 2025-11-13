@@ -1,11 +1,12 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 
 // GET - Obtained a specific province by ID with its info
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, context: { params: Promise<{ id: string }> }) {
     try {
         const supabase = await createClient();
-        const personId = (await params).id;
+        const resolvedParams = await context.params;
+        const personId = resolvedParams.id;
 
         // Select the person with related country info
         const { data, error } = await supabase

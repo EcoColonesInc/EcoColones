@@ -1,11 +1,12 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 
 // GET - Obtained a specific materials by ID with its info
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, context: { params: Promise<{ id: string }> }) {
     try {
         const supabase = await createClient();
-        const materialsId = (await params).id;
+        const resolvedParams = await context.params;
+        const materialsId = resolvedParams.id;
 
         // Select the materials with related info
         const { data, error } = await supabase

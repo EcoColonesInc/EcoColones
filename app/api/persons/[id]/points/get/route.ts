@@ -1,11 +1,12 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 
 // GET - Obtains the points for a specific person (by person_id)
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, context: { params: Promise<{ id: string }> }) {
     try {
         const supabase = await createClient();
-        const personId = (await params).id;
+        const resolvedParams = await context.params;
+        const personId = resolvedParams.id;
 
         if (!personId) {
             return NextResponse.json({ error: 'person_id is required' }, { status: 400 });

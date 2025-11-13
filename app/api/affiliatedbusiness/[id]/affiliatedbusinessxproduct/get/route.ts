@@ -1,14 +1,15 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 
 // GET - Obtained all products by affiliated business ID
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, context: { params: Promise<{ id: string }> }) {
     try {
         const supabase = await createClient();
 
         // Accept affiliated_business id from route param (params.id) or query param 'affiliated_business'
         const url = new URL(request.url);
-        const affiliatedBusinessId = url.searchParams.get('affiliated_business') ?? (await params).id ?? null;
+        const resolvedParams = await context.params;
+        const affiliatedBusinessId = url.searchParams.get('affiliated_business') ?? resolvedParams.id ?? null;
 
         // Build query and apply filter when affiliatedBusinessId is provided
         let query = supabase
