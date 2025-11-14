@@ -1,19 +1,34 @@
-"use client";
-
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
+import { redirect } from "next/navigation";
+import { AUTH_ROUTES } from "@/config/routes";
 
-export default function UserDashboard() {
-    
+import { getUserData, calculateAge, getProfilePictureUrl } from "@/lib/api/users";
+
+export default async function UserDashboard() {
+  // Fetch user data using shared API logic
+  const { data, error } = await getUserData();
+
+  if (error || !data || data.length === 0) {
+    redirect(AUTH_ROUTES.LOGIN);
+  }
+
+  const personData = data[0];
+
+  // Construct user object with database data
+  const userName = `${personData.first_name} ${personData.last_name} ${personData.second_last_name || ''}`.trim();
+  const age = personData.birth_date ? calculateAge(personData.birth_date) : 0;
+  const avatarUrl = await getProfilePictureUrl(personData.user_name);
+
   const user = {
-    name: "Miguel Antonio de La Cruz Roja",
-    gender: "Hombre",
-    age: 25,
-    identification: "6712381239123",
-    points: 12300,
-    recycled: "10kg",
+    name: userName,
+    gender: personData.gender || "N/A",
+    age: age,
+    identification: personData.identification || "N/A",
+    points: 12300, // TODO: Get from transactions
+    recycled: "10kg", // TODO: Calculate from transactions
     rate: "1 = 1",
-    avatar: "/logo.png",
+    avatar: avatarUrl,
   };
 
   const transactions = [
