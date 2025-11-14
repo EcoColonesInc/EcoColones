@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 
 // GET - Obtained all collection centers transactions by a person ID
+// Example: http://localhost:3000/api/persons/d7ad1807-12e8-4e3f-ab7c-17d98f9f5ca5/collectioncentertransactions/get?date=2025-11-11
+
 export async function GET(request: NextRequest, context: { params: Promise<{ id: string }> }) {
     try {
         const supabase = await createClient();
@@ -11,20 +13,20 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
         const resolvedParams = await context.params;
         const personId = url.searchParams.get('person_id') ?? resolvedParams.id ?? null;
 
-        // Build query; apply filter only when personId is provided
-        let query = supabase
-            .from('collectioncentertransaction')
-            .select('cc_transaction_id, person_id(user_name, first_name, last_name), collection_center_id(name), material_id(name), total_points, material_amount, created_at')
-            .order('cc_transaction_id', { ascending: true });
-
-        if (personId) {
-            query = query.eq('person_id', personId);
+        // Require personId because the RPC expects an user UUID
+        if (!personId) {
+            return NextResponse.json({ error: 'person_id is required' }, { status: 400 });
         }
 
-        const { data, error } = await query;
+        // Optional date filter in YYYY-MM-DD format
+        const dateParam = url.searchParams.get('date') ?? null;
+        const date = dateParam && /^\d{4}-\d{2}-\d{2}$/.test(dateParam) ? dateParam : null;
+
+        // Call stored function to get user's collection center transactions
+        const { data, error } = await supabase.rpc('get_user_collectioncenter_transactions', { p_user_id: personId, p_date: date });
 
         if (error) {
-            console.error('Get all collection center transactions by user error:', error);
+            console.error('Get collection center transactions by user (rpc) error:', error);
             return NextResponse.json({ error: error.message }, { status: 400 });
         }
 
