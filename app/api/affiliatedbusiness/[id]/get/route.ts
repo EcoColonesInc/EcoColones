@@ -11,7 +11,7 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
         // Select the affiliated business with related info
         const { data, error } = await supabase
             .from('affiliatedbusiness')
-            .select('affiliated_business_id, affiliated_business_name, description, phone, email, manager_name, business_type_id(name), district_id(district_name)')
+            .select('affiliated_business_id, affiliated_business_name, description, phone, email, manager_name, business_type_id(name), district_id(district_name, city_id(city_name, province_id(province_name, country_id(country_name))))')
             .eq('affiliated_business_id', businessId)
             .single();
         if (error) {
