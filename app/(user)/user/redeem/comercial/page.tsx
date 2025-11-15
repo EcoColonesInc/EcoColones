@@ -135,7 +135,7 @@ export default function StorePage() {
             </thead>
             <tbody>
               {Object.entries(cart)
-                .filter(([_, qty]) => qty > 0)
+                .filter(([, qty]) => qty > 0)
                 .map(([name, qty]) => {
                   const product = products.find((p) => p.name === name);
                   return (
