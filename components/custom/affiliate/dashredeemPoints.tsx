@@ -25,8 +25,8 @@ export const PointsExchangeCards: React.FC<PointsExchangeCardsProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleProcessCode = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleProcessCode = async (form: React.FormEvent) => {
+    form.preventDefault();
     
     if (!code.trim()) return;
 
@@ -36,7 +36,6 @@ export const PointsExchangeCards: React.FC<PointsExchangeCardsProps> = ({
     try {
       // TODO: Aquí irá el fetch al API route
       // Simulación por ahora:
-      //await new Promise(resolve => setTimeout(resolve, 1000));
       
       // Simular productos
       const mockProducts: Product[] = [
@@ -66,7 +65,7 @@ export const PointsExchangeCards: React.FC<PointsExchangeCardsProps> = ({
         <form  onSubmit={handleProcessCode} className="space-y-4">
           <Input
             type="text"
-            placeholder="Ingrese el código"
+            placeholder="Ingrese el código de canje"
             value={code}
             onChange={(e) => setCode(e.target.value)}
             className="w-full"
@@ -92,7 +91,6 @@ export const PointsExchangeCards: React.FC<PointsExchangeCardsProps> = ({
         
         {redeemedProducts.length > 0 ? (
           <div className="space-y-4">
-            {/* Tabla con scroll */}
             <div className="max-h-50 overflow-y-auto bg-green-100">
               <Table>
                 <TableBody>

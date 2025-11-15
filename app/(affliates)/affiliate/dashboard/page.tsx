@@ -1,17 +1,35 @@
 import { CustomTable } from "@/components/custom/affiliate/affiliateTable";
-import { PointsExchangeCards } from "@/components/custom/affiliate/redeemPoints";
-import { createClient } from "@/utils/supabase/server";
-import { redirect } from "next/navigation";
+import { PointsExchangeCards } from "@/components/custom/affiliate/dashredeemPoints";
+import { DashProducts } from "@/components/custom/affiliate/dashProducts";
+import { mockProducts, mockTransactions } from "@/app/mockups/mockups";
 
-export default async function Page() {
 
+/* Aun no se usa esta funcion pero es necesaria para futuras implementaciones
+async function getAffiliateData() {
     const supabase = await createClient();
-    const{ data:{ user } ,error} = await supabase.auth.getUser();
+    const { data: { user } } = await supabase.auth.getUser();
 
-    if (error || !user) {
+    if (!user) {
         redirect('/login');
     }
 
+    // Verificar si el user.id existe en la base de datos
+    const { data: comercio, error } = await supabase
+        .from('affiliatedbusiness') // Cambia esto al nombre de tu tabla
+        .select('*')
+        .eq('affiliated_business_id', user.id) // Cambia 'user_id' al nombre de tu columna
+        .single();
+
+    console.log('¿Se encontró comercio?:', comercio);
+    console.log('¿Hubo error?:', error);
+
+    return user;
+}*/
+
+
+export default async function Page() {
+
+    //const user = await getAffiliateData();
 
     const columns = [
         { header: 'Numero de Transacción', accessorKey: 'transactionID' },
@@ -25,39 +43,11 @@ export default async function Page() {
 
 
 
-    //TODO: Hay que cambiar estos valores por llamadas a la API
-    const monthlyTotal = 1500; // Ejemplo de total mensual de EcoColones
-    const exchangeRate = 0.05; // Ejemplo de tasa de cambio EcoColones a moneda local
+    //TODO: Hay que cambiar estos valores por consultas a la BD y los mockups solo son para pruebas
+    //TODO: Aun falta arreglar las rutas de los botones editar.
+    const monthlyTotal = 1500; 
+    const exchangeRate = 0.05; 
 
-    const mockdata = [ //TODO:Hay que cambiar esto por llamadas a la API
-        {
-            transactionID: 'TXN123456',
-            user: 'Maria Lopez',
-            product: 'Crunchy Tacos',
-            quantity: 10,
-            date: '2024-06-15',
-            amount: '2500',
-            status: 'Completado',
-        },
-        {
-            transactionID: 'TXN123456',
-            user: 'Maria Lopez',
-            product: 'Crunchy Tacos',
-            quantity: 10,
-            date: '2024-06-15',
-            amount: '2500',
-            status: 'Pendiente',
-        },
-        {
-            transactionID: 'TXN123456',
-            user: 'Maria Lopez',
-            product: 'Crunchy Tacos',
-            quantity: 10,
-            date: '2024-06-15',
-            amount: '2500',
-            status: 'Cancelado',
-        }
-    ];
 
 
     return (
@@ -67,19 +57,18 @@ export default async function Page() {
         {/* This is the table container*/}
         <div className="bg-green-50 min-h-96 max-h-96 border border-gray-300 rounded-lg p-6 shadow-md"> 
             <h3 className="text-xl font-semibold mb-4">Transacciones recientes</h3>
-            <CustomTable columns={columns} data={mockdata} />
+            <CustomTable columns={columns} data={mockTransactions} />
         </div>
 
         {/* This is the redeem points section */}
-        
         <div>
             <h3 className="text-xl font-semibold mb-4">Canje de Puntos</h3>
             <PointsExchangeCards monthlyTotal={monthlyTotal} exchangeRate={exchangeRate} />
         </div>
-        
         {/* This is the products section */}
-        <div>
-            Sección de productos
+        <div className="mb-20">
+            <h3 className="text-xl font-semibold mb-4">Productos Registrados</h3>
+            <DashProducts products={mockProducts} />
         </div>
     </div>
   );
