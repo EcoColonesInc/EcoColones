@@ -27,7 +27,7 @@ export const USER_ROUTES = {
     PROFILE: "/user/profile",
     SETTINGS: "/user/settings",
     MIECOQR: "/user/miEcoQr",
-    RECYCLE: "/user/recycle",
+    CENTERS: "/user/centers",
     REDEEM: "/user/redeem",
 };
 
