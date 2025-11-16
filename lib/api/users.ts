@@ -56,14 +56,75 @@ export async function getUserData() {
     return { error: 'Unauthorized', data: null };
   }
 
-  const { data, error } = await supabase
-    .from('person')
-    .select('*')
-    .eq('user_id', user.id);
+  // Use the Postgres function `get_profile_info(p_user_id uuid)`
+  // The function returns a TABLE; call it via RPC to get consolidated profile info.
+  const { data, error } = await supabase.rpc('get_profile_info', { p_user_id: user.id });
 
   if (error) {
     return { error: error.message, data: null };
   }
 
+  return { error: null, data };
+}
+
+// Use the Postgres function `get_user_affiliated_transactions(p_user_id uuid, p_date date)`
+// If no date is provided, it fetches all transactions for the user.
+export async function getUserBusinessTransactions() {
+  const supabase = await createClient();
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: 'Unauthorized', data: null };
+  }
+  
+  const { data, error } = await supabase.rpc('get_user_affiliated_transactions', { p_user_id: user.id, p_date: null });
+  
+  if (error) {
+    return { error: error.message, data: null };
+  }
+  return { error: null, data };
+}
+
+// Use the Postgres function `get_user_affiliated_transactions(p_user_id uuid, p_date date)`
+// If no date is provided, it fetches all transactions for the user.
+export async function getUserCenterTransactions() {
+  const supabase = await createClient();
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: 'Unauthorized', data: null };
+  }
+  
+  const { data, error } = await supabase.rpc('get_user_collectioncenter_transactions', { p_user_id: user.id, p_date: null });
+  
+  if (error) {
+    return { error: error.message, data: null };
+  }
+  return { error: null, data };
+}
+
+// Fetch material conversion rates from the 'material' table
+export async function getMaterialConversionRates() {
+  const supabase = await createClient();
+  
+  const { data, error } = await supabase
+    .from('material')
+		.select('material_id, name, equivalent_points, unit_id(unit_id, unit_name)')
+		.order('name', { ascending: true });
+  if (error) {
+    return { error: error.message, data: null };
+  }
+  return { error: null, data };
+}
+
+// Fetch the default currency using the Postgres function `get_default_currency()`
+export async function getDefaultCurrency() {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase.rpc('get_default_currency');
+
+  if (error) {
+    return { error: error.message, data: null };
+  }
   return { error: null, data };
 }
