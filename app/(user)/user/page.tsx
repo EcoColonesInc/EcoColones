@@ -2,25 +2,37 @@
 
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { useAuth } from "@/contexts/AuthProvider";
+import { useToast } from "@/components/ui/toast";
+
+type Profile = {
+  first_name?: string | null;
+  last_name?: string | null;
+  second_last_name?: string | null;
+  telephone_number?: string | null;
+  birth_date?: string | null;
+  user_name?: string | null;
+  identification?: string | null | number;
+  gender?: string | null;
+  avatar_url?: string | null;
+  points?: number | null;
+  redeemed_points?: number | null;
+  recycled?: string | null;
+};
 
 export default function UserDashboard() {
-    
-  const user = {
-    name: "Miguel Antonio de La Cruz Roja",
-    gender: "Hombre",
-    age: 25,
-    identification: "6712381239123",
-    points: 12300,
-    recycled: "10kg",
-    rate: "1 = 1",
-    avatar: "/logo.png",
-  };
+  const { user: authUser } = useAuth();
+  const { showToast } = useToast();
+
+  const [profile, setProfile] = useState<Profile | null>(null);
 
   const transactions = [
-    { id: "TXN73849", center: "La Gasel", material: "Plastic", qty: "15.5 kg", date: "2024-07-29", status: "Completed" },
+    { id: "TXN73849", center: "La Gasel", material: "Plastico", qty: "15.5 kg", date: "2024-07-29", status: "Completed" },
     { id: "TXN73848", center: "La Gasel", material: "Metal", qty: "8.2 kg", date: "2024-07-29", status: "Completed" },
-    { id: "TXN73847", center: "La Gasel", material: "Paper", qty: "25.0 kg", date: "2024-07-28", status: "Completed" },
-    { id: "TXN73846", center: "La Carpio", material: "Glass", qty: "12.7 kg", date: "2024-07-27", status: "Completed" },
+    { id: "TXN73847", center: "La Gasel", material: "Papel", qty: "25.0 kg", date: "2024-07-28", status: "Completed" },
+    { id: "TXN73846", center: "La Carpio", material: "Vidrio", qty: "12.7 kg", date: "2024-07-27", status: "Completed" },
   ];
 
   const conversionRates = [
@@ -33,6 +45,88 @@ export default function UserDashboard() {
     { material: "Aluminio", points: 25 },
   ];
 
+  useEffect(() => {
+    const userId = authUser?.id;
+    if (!userId) return;
+
+    async function fetchProfile() {
+      // start loading
+      try {
+        const res = await fetch(`/api/persons/${userId}/get`);
+        const body = await res.json();
+        if (!res.ok) {
+          throw new Error(body?.error ?? 'Error fetching profile');
+        }
+
+        const data = body?.data;
+        const record = Array.isArray(data) ? data[0] ?? null : data ?? null;
+
+        setProfile(record);
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        console.error("Error fetching profile", err);
+        showToast(message ?? 'Error fetching profile');
+      }
+    }
+
+    fetchProfile();
+  }, [authUser?.id, showToast]);
+
+  const displayName = profile
+    ? `${profile.first_name ?? ''} ${profile.last_name ?? ''} ${profile.second_last_name ?? ''}`.trim()
+    : 'Usuario';
+
+  const identification = profile?.identification ?? '—';
+  const avatarSrc = profile?.avatar_url ?? '/logo.png';
+  
+  function capitalizeWords(s: string) {
+    return s
+      .split(/\s+/)
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+      .join(" ");
+  }
+
+  function translateGender(g?: string | null) {
+    if (!g) return '—';
+    const gstr = String(g).trim().toLowerCase();
+    switch (gstr) {
+      case 'male':
+        return 'Hombre';
+      case 'female':
+        return 'Mujer';
+      case 'non-binary':
+      case 'nonbinary':
+      case 'non_binary':
+      case 'nb':
+        return 'No binario';
+      case 'other':
+        return 'Otro';
+      default:
+        return capitalizeWords(gstr);
+    }
+  }
+
+  const gender = translateGender(profile?.gender ?? null);
+  const points = profile?.points ?? 0;
+  const redeemed = profile?.redeemed_points ?? 0;
+  const difference = Math.max(0, points - redeemed);
+  const recycled = profile?.recycled ?? '—';
+  const rate = '1 = 1';
+
+  function computeAge(birth?: string | null) {
+    if (!birth) return '—';
+    try {
+      const bd = new Date(birth);
+      const diff = Date.now() - bd.getTime();
+      const ageDt = new Date(diff);
+      return Math.abs(ageDt.getUTCFullYear() - 1970);
+    } catch {
+      return '—';
+    }
+  }
+
+  const age = computeAge(profile?.birth_date);
+
   return (
     <div className="min-h-screen bg-[#F7FCFA] px-6 py-10">
       <div className="max-w-7xl mx-auto space-y-8">
@@ -40,20 +134,20 @@ export default function UserDashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Profile Card */}
           <div className="col-span-2 bg-white rounded-xl border border-gray-100 p-6 flex items-center justify-center">
-            <div className="flex flex-col md:flex-row items-center gap-6">
+              <div className="flex flex-col md:flex-row items-center gap-6">
               <Image
-                src={user.avatar}
+                src={avatarSrc}
                 alt="Foto de usuario"
                 width={160}
                 height={160}
                 className="rounded-full object-cover"
               />
               <div>
-                <h2 className="text-lg font-semibold text-gray-900">{user.name}</h2>
-                <p className="text-sm text-gray-700 mt-2">Género: {user.gender}</p>
-                <p className="text-sm text-gray-700">Edad: {user.age} años</p>
+                <h2 className="text-lg font-semibold text-gray-900">{displayName}</h2>
+                <p className="text-sm text-gray-700 mt-2">Género: {gender}</p>
+                <p className="text-sm text-gray-700">Edad: {age} años</p>
                 <p className="text-sm text-gray-700">
-                  Identificación: {user.identification}
+                  Identificación: {identification}
                 </p>
               </div>
             </div>
@@ -63,13 +157,19 @@ export default function UserDashboard() {
           <div className="bg-white rounded-xl border border-gray-100 p-6 flex flex-col justify-between">
             <div>
               <p className="text-sm text-gray-600">Puntos acumulados:</p>
-              <p className="text-xl font-semibold">{user.points}</p>
+              <p className="text-xl font-semibold">{points}</p>
+
+              <p className="text-sm text-gray-600 mt-3">Puntos canjeados:</p>
+              <p className="text-xl font-semibold">{redeemed}</p>
+
+              <p className="text-sm text-gray-600 mt-3">Diferencia de puntos:</p>
+              <p className="text-xl font-semibold">{difference}</p>
 
               <p className="text-sm text-gray-600 mt-3">Material reciclado:</p>
-              <p className="text-xl font-semibold">{user.recycled}</p>
+              <p className="text-xl font-semibold">{recycled}</p>
 
               <p className="text-sm text-gray-600 mt-3">Tipo de cambio:</p>
-              <p className="text-xl font-semibold">{user.rate}</p>
+              <p className="text-xl font-semibold">{rate}</p>
             </div>
 
             <div className="flex flex-col gap-3 mt-6">
