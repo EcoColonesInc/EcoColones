@@ -9,7 +9,8 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client"
 import Image from "next/image";
 import Link from "next/link";
-import { AUTH_ROUTES } from "@/config/routes";
+import { AUTH_ROUTES, ADMIN_ROUTES, USER_ROUTES, AFFILIATE_ROUTES, CENTER_ROUTES } from "@/config/routes";
+import { Role } from "@/types/role";
 
 export default function LoginPage() {
   const { toast, showToast, hideToast } = useToast();
@@ -19,16 +20,47 @@ export default function LoginPage() {
   const supabase = createClient();
 
   async function handleLogin() {
-    // check if email and password are not empty
     if (!email || !password) {
       showToast("Por favor, ingresa tu correo y contraseña.", "error");
       return;
     }
-    const { error } = await supabase.auth.signInWithPassword({email, password});
+    const { error, data } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
       showToast("Por favor, verifica tus credenciales e intenta nuevamente.", "error");
-    } else {
-      showToast("¡Inicio de sesión exitoso!", "success");
+      return;
+    }
+
+    showToast("¡Inicio de sesión exitoso!", "success");
+
+    // Intentar obtener rol para redirigir inmediatamente sin pasar por /authorized
+    try {
+      const userId = data.user?.id;
+      if (userId) {
+        const { data: roleData, error: roleErr } = await supabase.rpc("get_user_role", { p_user_id: userId });
+        const role = (roleData as Role) ?? null;
+        if (roleErr) throw roleErr;
+        switch (role) {
+          case Role.ADMIN:
+            router.push(ADMIN_ROUTES.OVERVIEW);
+            return;
+          case Role.USER:
+            router.push(USER_ROUTES.OVERVIEW);
+            return;
+          case Role.AFFILIATE:
+            router.push(AFFILIATE_ROUTES.OVERVIEW);
+            return;
+          case Role.CENTER:
+            router.push(CENTER_ROUTES.OVERVIEW);
+            return;
+          default:
+            router.push(AUTH_ROUTES.REGISTER);
+            return;
+        }
+      }
+      // Si no hay userId todavía, usar flujo estándar
+      router.push(AUTH_ROUTES.AUTHORIZED);
+    } catch {
+      // Fallback seguro a /authorized para que middleware decida
       router.push(AUTH_ROUTES.AUTHORIZED);
     }
   }
