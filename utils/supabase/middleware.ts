@@ -1,6 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
-import { USER_ROUTES, ADMIN_ROUTES, CENTER_ROUTES, AFFILIATE_ROUTES, AUTH_ROUTES} from '@/config/routes'
+import { LANDING_PAGE_ROUTES, USER_ROUTES, ADMIN_ROUTES, CENTER_ROUTES, AFFILIATE_ROUTES, AUTH_ROUTES} from '@/config/routes'
 import { Role } from '@/types/role'
 
 export async function updateSession(request: NextRequest) {
@@ -60,18 +60,21 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
+  // redirige a los usuarios autenticados que intentan acceder a /signup
   if (user && request.nextUrl.pathname === AUTH_ROUTES.SIGNUP) {
     const url = request.nextUrl.clone()
     url.pathname = AUTH_ROUTES.AUTHORIZED
     return NextResponse.redirect(url)
   }
 
+  // redirige a los usuarios no autenticados que intentan acceder a /register
   if (!user && request.nextUrl.pathname === AUTH_ROUTES.REGISTER) {
     const url = request.nextUrl.clone()
     url.pathname = AUTH_ROUTES.SIGNUP
     return NextResponse.redirect(url)
   }
 
+  // redirige a los usuarios que intentan acceder a /register si ya tienen un rol asignado
   if (user && request.nextUrl.pathname === AUTH_ROUTES.REGISTER && role !== null) {
     const url = request.nextUrl.clone()
     url.pathname = AUTH_ROUTES.AUTHORIZED
@@ -123,31 +126,42 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  /* Role based access control for dashboard routes */
+  /** ========= Role based access control for dashboard routes ========== **/
+
+  // redirige a los usuarios que intentan acceder a rutas solo para administradores
   if (request.nextUrl.pathname.startsWith(ADMIN_ROUTES.OVERVIEW) && role !== Role.ADMIN) {
     const url = request.nextUrl.clone()
     url.pathname = AUTH_ROUTES.AUTHORIZED
     return NextResponse.redirect(url)
   }
 
+  // redirige a los usuarios que intentan acceder a rutas solo para afiliados
   if (request.nextUrl.pathname.startsWith(AFFILIATE_ROUTES.OVERVIEW) && role !== Role.AFFILIATE) {
     const url = request.nextUrl.clone()
     url.pathname = AUTH_ROUTES.AUTHORIZED
     return NextResponse.redirect(url)
   }
 
+  // redirige a los usuarios que intentan acceder a rutas solo para centros
   if (request.nextUrl.pathname.startsWith(CENTER_ROUTES.OVERVIEW) && role !== Role.CENTER) {
     const url = request.nextUrl.clone()
     url.pathname = AUTH_ROUTES.AUTHORIZED
     return NextResponse.redirect(url)
   }
 
+  // redirige a los usuarios que intentan acceder a rutas solo para usuarios
   if (request.nextUrl.pathname.startsWith(USER_ROUTES.OVERVIEW) && role !== Role.USER) {
     const url = request.nextUrl.clone()
     url.pathname = AUTH_ROUTES.AUTHORIZED
     return NextResponse.redirect(url)
   }
 
+  // redirect logged in users trying to access the landing page to /authorized
+  if (request.nextUrl.pathname === LANDING_PAGE_ROUTES.HOME && role !== null) {
+    const url = request.nextUrl.clone()
+    url.pathname = AUTH_ROUTES.AUTHORIZED
+    return NextResponse.redirect(url)
+  }
 
   // IMPORTANT: You *must* return the supabaseResponse object as it is.
   // If you're creating a new response object with NextResponse.next() make sure to:

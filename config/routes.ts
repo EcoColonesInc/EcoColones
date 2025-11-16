@@ -27,7 +27,7 @@ export const USER_ROUTES = {
     PROFILE: "/user/profile",
     SETTINGS: "/user/settings",
     MIECOQR: "/user/miEcoQr",
-    RECYCLE: "/user/recycle",
+    CENTERS: "/user/centers",
     REDEEM: "/user/redeem",
 };
 
@@ -42,6 +42,8 @@ export const ADMIN_ROUTES = {
 export const AFFILIATE_ROUTES = {
     OVERVIEW: "/affiliate/dashboard",
     SETTINGS: "/affiliate/dashboard/settings",
+    PRODUCTS: "/affiliate/products",
+    TRANSACTIONS: "/affiliate/transactions",
 };
 
 /* Centers side dashboard routes */
