@@ -186,24 +186,6 @@ export default function UserProfile() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Puntos Canjeados:</label>
-                  <input
-                    type="text"
-                    value={points}
-                    disabled
-                    className="w-full bg-gray-100 rounded-md px-3 py-2"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Diferencia de puntos:</label>
-                  <input
-                    type="text"
-                    value={points}
-                    disabled
-                    className="w-full bg-gray-100 rounded-md px-3 py-2"
-                  />
-                </div>
-                <div>
                   <label className="block text-sm font-medium mb-1">Material Reciclado:</label>
                   <input
                     type="text"

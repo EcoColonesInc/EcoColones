@@ -10,7 +10,7 @@ import { useState } from "react";
 
 import { Role } from "@/types/role";
 
-import { LANDING_PAGE_ROUTES, AUTH_ROUTES, USER_ROUTES, AFFILIATE_ROUTES } from "@/config/routes";
+import { LANDING_PAGE_ROUTES, AUTH_ROUTES, USER_ROUTES } from "@/config/routes";
 
 export function Navbar() {
   const { user, signOut, role } = useAuth();
@@ -90,7 +90,7 @@ export function Navbar() {
             </Link>
 
             <Link
-              href={USER_ROUTES.CENTERS}
+              href={USER_ROUTES.RECYCLE}
               className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
             >
               Centros de Acopio
@@ -111,32 +111,6 @@ export function Navbar() {
             </Link>
 
             </>
-          )}
-
-          {role === Role.AFFILIATE && (
-            <>
-            <Link
-              href={AFFILIATE_ROUTES.OVERVIEW}
-              className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
-            >
-              Panel de Control
-            </Link>
-
-            <Link
-              href={AFFILIATE_ROUTES.PRODUCTS}
-              className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
-            >
-              Productos
-            </Link>
-
-            <Link
-              href={AFFILIATE_ROUTES.TRANSACTIONS}
-              className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
-            >
-              Transacciones
-            </Link>
-
-          </>
           )}
 
           {/* Auth Buttons */}
