@@ -62,7 +62,7 @@ export default function AdminNavbar() {
 								<Link
 									key={it.label}
 									href={it.href}
-									className={`rounded-full px-3 py-1 text-sm ${active ? "bg-muted text-foreground" : "bg-muted text-foreground/80"}`}
+									className={`${active ? "rounded-full px-3 py-1 bg-muted text-foreground" : `${base} text-foreground/80 hover:text-foreground`}`}
 								>
 									{it.label}
 								</Link>
@@ -72,7 +72,7 @@ export default function AdminNavbar() {
 						// Item with dropdown menu (hover)
 						if (it.hasMenu && it.href === ADMIN_ROUTES.CONSULTAS) {
 							// Only open when hovering the button, not the dropdown box itself
-							return <ConsultasMenu key={it.label} active={active} base={base} pathname={pathname} />;
+							return <ConsultasMenu key={it.label} active={active} base={base} />;
 						}
 
 						// Default link item
@@ -80,7 +80,7 @@ export default function AdminNavbar() {
 							<Link
 								key={it.label}
 								href={it.href}
-								className={`${base} ${active ? "text-foreground" : "text-foreground/80 hover:text-foreground"}`}
+								className={`${active ? "rounded-full px-3 py-1 bg-muted text-foreground" : `${base} text-foreground/80 hover:text-foreground`}`}
 							>
 								{it.label}
 							</Link>
@@ -103,8 +103,8 @@ export default function AdminNavbar() {
 					{items.map((it) => {
 						const active = pathname.startsWith(it.href);
 						const classes = it.isPill
-							? `rounded-full px-3 py-1 text-xs ${active ? "bg-muted text-foreground" : "bg-muted text-foreground/80"}`
-							: `text-xs ${active ? "text-foreground" : "text-foreground/80"}`;
+							? `${active ? "rounded-full px-3 py-1 bg-muted text-foreground" : "text-xs text-foreground/80"}`
+							: `${active ? "rounded-full px-3 py-1 bg-muted text-foreground" : "text-xs text-foreground/80"}`;
 						// For mobile, we won't render a hover dropdown; list parent only
 						// Optionally, we could add the submenu inline later if needed
 						return (
@@ -120,7 +120,7 @@ export default function AdminNavbar() {
 }
 
 // Separate component to manage precise hover behavior for Consultas dropdown
-function ConsultasMenu({ active, base, pathname }: { active: boolean; base: string; pathname: string }) {
+function ConsultasMenu({ active, base }: { active: boolean; base: string }) {
 	const [open, setOpen] = useState(false);
 
 	return (
@@ -130,7 +130,7 @@ function ConsultasMenu({ active, base, pathname }: { active: boolean; base: stri
 		>
 			<button
 				type="button"
-				className={`${base} ${active ? "text-foreground" : "text-foreground/80 hover:text-foreground"} appearance-none bg-transparent p-0 cursor-pointer`}
+				className={`${active ? "rounded-full px-3 py-1 bg-muted text-foreground" : `${base} text-foreground/80 hover:text-foreground`} } appearance-none bg-transparent p-0 cursor-pointer`}
 				onMouseEnter={() => setOpen(true)}
 				aria-haspopup="menu"
 				aria-expanded={open}
@@ -147,19 +147,19 @@ function ConsultasMenu({ active, base, pathname }: { active: boolean; base: stri
 						>
 							<Link
 								href={ADMIN_ROUTES.CONSULTAS_USERS}
-								className={`rounded px-3 py-2 text-sm hover:bg-muted ${pathname.startsWith(ADMIN_ROUTES.CONSULTAS_USERS) ? "bg-muted" : ""}`}
+								className={"rounded px-3 py-2 text-sm hover:bg-muted"}
 							>
 								Usuarios
 							</Link>
 							<Link
 								href={ADMIN_ROUTES.CONSULTAS_CENTERS}
-								className={`rounded px-3 py-2 text-sm hover:bg-muted ${pathname.startsWith(ADMIN_ROUTES.CONSULTAS_CENTERS) ? "bg-muted" : ""}`}
+								className={"rounded px-3 py-2 text-sm hover:bg-muted"}
 							>
 								Centro de Acopio
 							</Link>
 							<Link
 								href={ADMIN_ROUTES.CONSULTAS_BUSINESSES}
-								className={`rounded px-3 py-2 text-sm hover:bg-muted ${pathname.startsWith(ADMIN_ROUTES.CONSULTAS_BUSINESSES) ? "bg-muted" : ""}`}
+								className={"rounded px-3 py-2 text-sm hover:bg-muted"}
 							>
 								Comercios
 							</Link>
