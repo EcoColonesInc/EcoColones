@@ -17,7 +17,7 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
             .from('point')
             .select('person_id(user_name), point_amount')
             .eq('person_id', personId)
-            .single();
+            .maybeSingle();
         if (error) {
             console.error('Get point by user error:', error);
             return NextResponse.json({ error: error.message }, { status: 400 });

@@ -36,6 +36,12 @@ export const ADMIN_ROUTES = {
     OVERVIEW: "/admin",
     REPORTS: "/admin/reports",
     SETTINGS: "/admin/settings",
+    AUDIT: "/admin/auditoria",
+    CONSULTAS: "/admin/consultas",
+    // Usuarios apunta al listado principal de consultas (usuarios)
+    CONSULTAS_USERS: "/admin/consultas",
+    CONSULTAS_CENTERS: "/admin/consultas/centers",
+    CONSULTAS_BUSINESSES: "/admin/consultas/comercios",
 };
 
 /* Affiliates side dashboard routes */

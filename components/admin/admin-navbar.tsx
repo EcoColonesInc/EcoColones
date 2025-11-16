@@ -7,6 +7,7 @@ import { ArrowLeft, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthProvider";
 import { ADMIN_ROUTES } from "@/config/routes";
+import { useState } from "react";
 
 // Navbar exclusivo para el área de administración
 // Inspirado en el navbar público pero con las secciones mostradas en el mock
@@ -15,11 +16,11 @@ export default function AdminNavbar() {
 	const pathname = usePathname();
 	const { signOut } = useAuth();
 
-	const items: Array<{ label: string; href: string; isPill?: boolean }> = [
-		{ label: "Auditoría", href: "/admin/auditoria", isPill: true },
+	const items: Array<{ label: string; href: string; isPill?: boolean; hasMenu?: boolean }> = [
+		{ label: "Auditoría", href: ADMIN_ROUTES.AUDIT, isPill: true },
 		{ label: "Configuraciones", href: ADMIN_ROUTES.SETTINGS },
 		{ label: "Solicitudes", href: "#" },
-		{ label: "Consultas", href: "#" },
+		{ label: "Consultas", href: ADMIN_ROUTES.CONSULTAS, hasMenu: true },
 		{ label: "Estadísticas", href: ADMIN_ROUTES.REPORTS },
 	];
 
@@ -52,8 +53,10 @@ export default function AdminNavbar() {
 				{/* Nav items */}
 				<div className="hidden md:flex items-center gap-6">
 					{items.map((it) => {
-						const active = pathname === it.href;
+						const active = pathname.startsWith(it.href);
 						const base = "text-sm transition-colors";
+
+						// Pill style item
 						if (it.isPill) {
 							return (
 								<Link
@@ -65,6 +68,14 @@ export default function AdminNavbar() {
 								</Link>
 							);
 						}
+
+						// Item with dropdown menu (hover)
+						if (it.hasMenu && it.href === ADMIN_ROUTES.CONSULTAS) {
+							// Only open when hovering the button, not the dropdown box itself
+							return <ConsultasMenu key={it.label} active={active} base={base} pathname={pathname} />;
+						}
+
+						// Default link item
 						return (
 							<Link
 								key={it.label}
@@ -90,10 +101,12 @@ export default function AdminNavbar() {
 			<div className="md:hidden border-t">
 				<div className="px-4 py-2 flex flex-wrap gap-2 items-center">
 					{items.map((it) => {
-						const active = pathname === it.href;
+						const active = pathname.startsWith(it.href);
 						const classes = it.isPill
 							? `rounded-full px-3 py-1 text-xs ${active ? "bg-muted text-foreground" : "bg-muted text-foreground/80"}`
 							: `text-xs ${active ? "text-foreground" : "text-foreground/80"}`;
+						// For mobile, we won't render a hover dropdown; list parent only
+						// Optionally, we could add the submenu inline later if needed
 						return (
 							<Link key={it.label} href={it.href} className={classes}>
 								{it.label}
@@ -103,6 +116,58 @@ export default function AdminNavbar() {
 				</div>
 			</div>
 		</nav>
+	);
+}
+
+// Separate component to manage precise hover behavior for Consultas dropdown
+function ConsultasMenu({ active, base, pathname }: { active: boolean; base: string; pathname: string }) {
+	const [open, setOpen] = useState(false);
+
+	return (
+		<div
+			className="relative"
+			onMouseLeave={() => setOpen(false)}
+		>
+			<button
+				type="button"
+				className={`${base} ${active ? "text-foreground" : "text-foreground/80 hover:text-foreground"} appearance-none bg-transparent p-0 cursor-pointer`}
+				onMouseEnter={() => setOpen(true)}
+				aria-haspopup="menu"
+				aria-expanded={open}
+			>
+				Consultas
+			</button>
+			{/* Dropdown: appears only after hovering the button; hovering the box alone won't open it */}
+			{open && (
+				<div className="absolute left-0 top-full z-50 mt-0 pt-2 min-w-56">
+					<div className="rounded-md border bg-white p-2 shadow-md">
+						<div
+							className="flex flex-col gap-1"
+							onMouseEnter={() => setOpen(true)}
+						>
+							<Link
+								href={ADMIN_ROUTES.CONSULTAS_USERS}
+								className={`rounded px-3 py-2 text-sm hover:bg-muted ${pathname.startsWith(ADMIN_ROUTES.CONSULTAS_USERS) ? "bg-muted" : ""}`}
+							>
+								Usuarios
+							</Link>
+							<Link
+								href={ADMIN_ROUTES.CONSULTAS_CENTERS}
+								className={`rounded px-3 py-2 text-sm hover:bg-muted ${pathname.startsWith(ADMIN_ROUTES.CONSULTAS_CENTERS) ? "bg-muted" : ""}`}
+							>
+								Centro de Acopio
+							</Link>
+							<Link
+								href={ADMIN_ROUTES.CONSULTAS_BUSINESSES}
+								className={`rounded px-3 py-2 text-sm hover:bg-muted ${pathname.startsWith(ADMIN_ROUTES.CONSULTAS_BUSINESSES) ? "bg-muted" : ""}`}
+							>
+								Comercios
+							</Link>
+						</div>
+					</div>
+				</div>
+			)}
+		</div>
 	);
 }
 
