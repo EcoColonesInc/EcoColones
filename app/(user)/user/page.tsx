@@ -173,9 +173,12 @@ export default function UserDashboard() {
             </div>
 
             <div className="flex flex-col gap-3 mt-6">
+
+              <Link href="/user/redeem">
               <Button className="bg-green-600 hover:bg-green-700 text-white font-medium rounded-md py-2">
                 Canjear
               </Button>
+              </Link>
               <Button className="bg-green-100 hover:bg-green-200 text-green-700 font-medium rounded-md py-2">
                 Calculadora de puntos
               </Button>
