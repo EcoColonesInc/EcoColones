@@ -90,7 +90,7 @@ export function Navbar() {
             </Link>
 
             <Link
-              href={USER_ROUTES.RECYCLE}
+              href={USER_ROUTES.CENTERS}
               className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
             >
               Centros de Acopio
