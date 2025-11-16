@@ -7,6 +7,40 @@ import { getUserData, calculateAge, getProfilePictureUrl, getUserCenterTransacti
          getMaterialConversionRates, getDefaultCurrency
 } from "@/lib/api/users";
 
+// --- Local types to avoid `any` usage ---
+type UserCenterTransaction = {
+  user_name?: string;
+  first_name?: string;
+  last_name?: string;
+  collection_center_name?: string;
+  material_name?: string;
+  total_points?: number;
+  material_amount?: number;
+  created_at?: string;
+};
+
+type TransactionRow = {
+  id: string;
+  center: string;
+  material: string;
+  qty: string;
+  date: string;
+  status?: string;
+};
+
+type ConversionRateApi = {
+  material_id?: string;
+  name?: string;
+  equivalent_points?: number;
+  unit_id?: { unit_id?: string; unit_name?: string } | null;
+};
+
+type ConversionRate = {
+  material: string;
+  points: number | string;
+  unit?: string;
+};
+
 export default async function UserDashboard() {
   
   // Fetch user data using shared API logic
@@ -52,8 +86,10 @@ export default async function UserDashboard() {
   };
 
   // Map API transactions into the table format expected by the UI
-  const transactions = (transactionsData && transactionsData.length > 0)
-    ? transactionsData.map((t: any, idx: number) => ({
+  const _rawTransactions = (transactionsData as UserCenterTransaction[]) || [];
+
+  const transactions: TransactionRow[] = (_rawTransactions && _rawTransactions.length > 0)
+    ? _rawTransactions.map((t: UserCenterTransaction, idx: number) => ({
         // Create a stable-ish id from timestamp + index when no id provided by API
         id: t.created_at ? `TXN${new Date(t.created_at).getTime()}` : `TXN_FALLBACK_${idx}`,
         center: t.collection_center_name || "N/A",
@@ -61,15 +97,15 @@ export default async function UserDashboard() {
         qty: t.material_amount != null ? `${t.material_amount} kg` : "N/A",
         date: t.created_at
           ? new Date(t.created_at).toLocaleDateString("es-CR", { year: "numeric", month: "2-digit", day: "2-digit" })
-          : "N/A"
+          : "N/A",
       }))
     : [];
 
   // Map API `conversionRatesData` to the UI format.
-  const _rawConversionRateData = conversionRatesData || [];
+  const _rawConversionRateData = (conversionRatesData as ConversionRateApi[]) || [];
 
-  const conversionRates = (_rawConversionRateData && _rawConversionRateData.length > 0)
-    ? _rawConversionRateData.map((c: any) => ({
+  const conversionRates: ConversionRate[] = (_rawConversionRateData && _rawConversionRateData.length > 0)
+    ? _rawConversionRateData.map((c: ConversionRateApi) => ({
         material: c.name || "N/A",
         points: c.equivalent_points != null ? c.equivalent_points : "N/A",
         unit: c.unit_id?.unit_name || "N/A",
@@ -149,7 +185,7 @@ export default async function UserDashboard() {
                   </tr>
                 </thead>
                 <tbody>
-                  {transactions.map((txn: any) => (
+                  {transactions.map((txn: TransactionRow) => (
                     <tr
                       key={txn.id}
                       className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
@@ -179,7 +215,7 @@ export default async function UserDashboard() {
                 </tr>
               </thead>
               <tbody>
-                {conversionRates.map((row: any) => (
+                {conversionRates.map((row: ConversionRate) => (
                   <tr key={row.material} className="border-b border-gray-100">
                     <td className="py-2 px-3">{row.material}</td>
                     <td className="py-2 px-3">{row.points} pts {row.unit ? ` / ${row.unit}` : ''}</td>
