@@ -2,6 +2,10 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { redirect } from "next/navigation";
 import { AUTH_ROUTES } from "@/config/routes";
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { useAuth } from "@/contexts/AuthProvider";
+import { useToast } from "@/components/ui/toast";
 
 import { getUserData, calculateAge, getProfilePictureUrl, getUserCenterTransactions,
          getMaterialConversionRates, getDefaultCurrency
@@ -42,6 +46,7 @@ type ConversionRate = {
 };
 
 export default async function UserDashboard() {
+  const { showToast } = useToast();
   
   // Fetch user data using shared API logic
   const { data, error } = await getUserData();
@@ -112,6 +117,88 @@ export default async function UserDashboard() {
       }))
     : [];
 
+  useEffect(() => {
+    const userId = authUser?.id;
+    if (!userId) return;
+
+    async function fetchProfile() {
+      // start loading
+      try {
+        const res = await fetch(`/api/persons/${userId}/get`);
+        const body = await res.json();
+        if (!res.ok) {
+          throw new Error(body?.error ?? 'Error fetching profile');
+        }
+
+        const data = body?.data;
+        const record = Array.isArray(data) ? data[0] ?? null : data ?? null;
+
+        setProfile(record);
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        console.error("Error fetching profile", err);
+        showToast(message ?? 'Error fetching profile');
+      }
+    }
+
+    fetchProfile();
+  }, [authUser?.id, showToast]);
+
+  const displayName = profile
+    ? `${profile.first_name ?? ''} ${profile.last_name ?? ''} ${profile.second_last_name ?? ''}`.trim()
+    : 'Usuario';
+
+  const identification = profile?.identification ?? '—';
+  const avatarSrc = profile?.avatar_url ?? '/logo.png';
+  
+  function capitalizeWords(s: string) {
+    return s
+      .split(/\s+/)
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+      .join(" ");
+  }
+
+  function translateGender(g?: string | null) {
+    if (!g) return '—';
+    const gstr = String(g).trim().toLowerCase();
+    switch (gstr) {
+      case 'male':
+        return 'Hombre';
+      case 'female':
+        return 'Mujer';
+      case 'non-binary':
+      case 'nonbinary':
+      case 'non_binary':
+      case 'nb':
+        return 'No binario';
+      case 'other':
+        return 'Otro';
+      default:
+        return capitalizeWords(gstr);
+    }
+  }
+
+  const gender = translateGender(profile?.gender ?? null);
+  const points = profile?.points ?? 0;
+  const redeemed = profile?.redeemed_points ?? 0;
+  const difference = Math.max(0, points - redeemed);
+  const recycled = profile?.recycled ?? '—';
+  const rate = '1 = 1';
+
+  function computeAge(birth?: string | null) {
+    if (!birth) return '—';
+    try {
+      const bd = new Date(birth);
+      const diff = Date.now() - bd.getTime();
+      const ageDt = new Date(diff);
+      return Math.abs(ageDt.getUTCFullYear() - 1970);
+    } catch {
+      return '—';
+    }
+  }
+
+  const age = computeAge(profile?.birth_date);
+
   return (
     <div className="min-h-screen bg-[#F7FCFA] px-6 py-10">
       <div className="max-w-7xl mx-auto space-y-8">
@@ -119,20 +206,20 @@ export default async function UserDashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Profile Card */}
           <div className="col-span-2 bg-white rounded-xl border border-gray-100 p-6 flex items-center justify-center">
-            <div className="flex flex-col md:flex-row items-center gap-6">
+              <div className="flex flex-col md:flex-row items-center gap-6">
               <Image
-                src={user.avatar}
+                src={avatarSrc}
                 alt="Foto de usuario"
                 width={160}
                 height={160}
                 className="rounded-full object-cover"
               />
               <div>
-                <h2 className="text-lg font-semibold text-gray-900">{user.name}</h2>
-                <p className="text-sm text-gray-700 mt-2">Género: {user.gender}</p>
-                <p className="text-sm text-gray-700">Edad: {user.age} años</p>
+                <h2 className="text-lg font-semibold text-gray-900">{displayName}</h2>
+                <p className="text-sm text-gray-700 mt-2">Género: {gender}</p>
+                <p className="text-sm text-gray-700">Edad: {age} años</p>
                 <p className="text-sm text-gray-700">
-                  Identificación: {user.identification}
+                  Identificación: {identification}
                 </p>
               </div>
             </div>
@@ -142,19 +229,28 @@ export default async function UserDashboard() {
           <div className="bg-white rounded-xl border border-gray-100 p-6 flex flex-col justify-between">
             <div>
               <p className="text-sm text-gray-600">Puntos acumulados:</p>
-              <p className="text-xl font-semibold">{user.points}</p>
+              <p className="text-xl font-semibold">{points}</p>
+
+              <p className="text-sm text-gray-600 mt-3">Puntos canjeados:</p>
+              <p className="text-xl font-semibold">{redeemed}</p>
+
+              <p className="text-sm text-gray-600 mt-3">Diferencia de puntos:</p>
+              <p className="text-xl font-semibold">{difference}</p>
 
               <p className="text-sm text-gray-600 mt-3">Material reciclado:</p>
-              <p className="text-xl font-semibold">{user.recycled}</p>
+              <p className="text-xl font-semibold">{recycled}</p>
 
               <p className="text-sm text-gray-600 mt-3">Tipo de cambio:</p>
-              <p className="text-xl font-semibold">{user.rate}</p>
+              <p className="text-xl font-semibold">{rate}</p>
             </div>
 
             <div className="flex flex-col gap-3 mt-6">
+
+              <Link href="/user/redeem">
               <Button className="bg-green-600 hover:bg-green-700 text-white font-medium rounded-md py-2">
                 Canjear
               </Button>
+              </Link>
               <Button className="bg-green-100 hover:bg-green-200 text-green-700 font-medium rounded-md py-2">
                 Calculadora de puntos
               </Button>

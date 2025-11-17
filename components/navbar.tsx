@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthProvider";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import { useState } from "react";
 
@@ -15,6 +15,7 @@ import { LANDING_PAGE_ROUTES, AUTH_ROUTES, USER_ROUTES, AFFILIATE_ROUTES } from 
 export function Navbar() {
   const { user, signOut, role } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const handleSignOut = async () => {
@@ -28,6 +29,11 @@ export function Navbar() {
 
   const closeMenu = () => {
     setIsMenuOpen(false);
+  }
+
+  // No mostrar la navbar genérica en el área de administración
+  if (pathname?.startsWith("/admin")) {
+    return null;
   }
 
   return (
@@ -88,9 +94,15 @@ export function Navbar() {
             >
               Mi EcoQR
             </Link>
+            <Link
+              href={USER_ROUTES.OVERVIEW}
+              className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
+            >
+              Inicio
+            </Link>
 
             <Link
-              href={USER_ROUTES.RECYCLE}
+              href={USER_ROUTES.CENTERS}
               className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
             >
               Centros de Acopio
@@ -141,7 +153,7 @@ export function Navbar() {
 
           {/* Auth Buttons */}
           {user ? (
-            <Button variant="default" size="sm" onClick={handleSignOut}>Cerrar Sesión</Button>
+            <Button variant="close" size="sm" onClick={handleSignOut}>Cerrar Sesión</Button>
           ) : (
             <Link href={AUTH_ROUTES.LOGIN}>
               <Button variant="default" size="sm">Ingresar</Button>
