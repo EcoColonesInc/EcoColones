@@ -63,7 +63,7 @@ export function ProductCard({ data, onStateChange, onEdit }: ProductCardProps) {
   const description = data.product_id.description || "Sin descripción";
   const points = data.product_price;
   // El id puede venir anidado o solo en relación (no lo devuelve el select actual), se intenta deducir.
-  const derivedId = (data as any).product_id?.product_id || data.rawProductId;
+  const derivedId = data.product_id.product_id || data.rawProductId;
   const state = data.product_id.state || "active"; // default
   const inactive = state !== "active";
 

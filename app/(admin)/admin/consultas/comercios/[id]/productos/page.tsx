@@ -36,7 +36,7 @@ export default function ProductosComercioPage() {
       const raw: RelationRow[] = j.data || [];
       // Filtrar por el negocio actual (intentamos comparar por id si lo trae, sino por nombre) - el get actual trae nested sin id del business, depende del select en backend.
       const filtered = raw.filter(r => {
-        const nestedId = (r.affiliated_business_id as any).affiliated_business_id;
+        const nestedId = r.affiliated_business_id.affiliated_business_id;
         if (nestedId) return nestedId === businessId;
         // fallback (no ideal): comparar nombre si param id es nombre
         return businessId && r.affiliated_business_id.affiliated_business_name?.toLowerCase() === businessId.toLowerCase();
