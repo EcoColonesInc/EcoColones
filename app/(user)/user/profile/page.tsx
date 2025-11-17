@@ -73,7 +73,7 @@ export default function UserProfile() {
                     value={username}
                     disabled
                     onChange={(e) => setUsername(e.target.value)}
-                    className="w-full bg-[#E6F2EA] rounded-md px-3 py-2"
+                    className="w-full bg-gray-100 rounded-md px-3 py-2"
                   />
                 </div>
 
