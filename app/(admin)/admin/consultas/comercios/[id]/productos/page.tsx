@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 interface RelationRow {
   affiliated_business_x_prod: string;
   product_price: number;
-  product_id: { product_name: string; description: string | null; state?: string | null };
+  product_id: { product_id?: string; product_name: string; description: string | null; state?: string | null };
   affiliated_business_id: { affiliated_business_name: string; description: string | null; affiliated_business_id?: string };
 }
 
@@ -65,7 +65,7 @@ export default function ProductosComercioPage() {
     .map(r => ({ ...r }));
 
   return (
-    <div className="min-h-screen px-4 md:px-8 lg:px-12 py-6 space-y-6">
+    <div className="min-h-screen px-4 md:px-8 lg:px-12 py-6 space-y-6 max-w-6xl mx-auto">
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div className="space-y-1">
           <h1 className="text-2xl md:text-3xl font-bold">Productos del comercio</h1>
@@ -85,7 +85,7 @@ export default function ProductosComercioPage() {
             <input
               aria-label="Buscar producto"
               placeholder="Buscar Producto"
-              className="flex-1 border rounded-full px-4 py-2 bg-green-50 focus:outline-none"
+              className="w-full md:max-w-xl border rounded-full px-4 py-2 bg-green-50 focus:outline-none"
               value={search}
               onChange={e => setSearch(e.target.value)}
             />
@@ -103,7 +103,7 @@ export default function ProductosComercioPage() {
                 onStateChange={async () => {
                   await load();
                 }}
-                onEdit={() => alert("Pantalla de edición pendiente")}
+                onEdit={() => router.push(`/admin/consultas/comercios/${businessId}/productos/${rel.affiliated_business_x_prod}`)}
               />
             ))}
           </div>
