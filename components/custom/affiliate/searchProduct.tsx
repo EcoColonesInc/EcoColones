@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 interface Product {
     id: number;
@@ -21,7 +22,8 @@ interface ProductSearchProps {
     
 export const ProductSearch = ({ products }: ProductSearchProps) => {
     const [searchTerm, setSearchTerm] = useState("");
-    const [productList, setProductList] = useState<Product[]>(products); // Estado local para manejar cambios en el estado del producto
+    const [productList, setProductList] = useState<Product[]>(products);
+    const router = useRouter();
 
     const handleState = (productId: number) => {
         setProductList(prevProducts => 
@@ -96,7 +98,10 @@ export const ProductSearch = ({ products }: ProductSearchProps) => {
                                         Desactivar
                                     </Button>
                                         
-                                    <Button className="flex-1 bg-green-300 hover:bg-green-700">
+                                    <Button 
+                                        onClick={() => router.push(`/affiliate/products/${product.id}/edit`)}
+                                        className="flex-1 bg-green-300 hover:bg-green-700"
+                                    >
                                         Editar
                                     </Button>
                                 </>

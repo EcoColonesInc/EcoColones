@@ -19,12 +19,8 @@ interface DashProductsProps {
 
 export const DashProducts: React.FC<DashProductsProps> = ({ products }) => {
     const router = useRouter();
-    
-    const handleEdit = (productId: string) => {
-        router.push(`/products/${productId}/edit`);
-    };
 
-return (
+    return (
     <div className="bg-green-50 max-h-96 overflow-y-auto p-4 rounded-lg border border-gray-300">
         
         {products.length > 0 ? (
@@ -57,7 +53,7 @@ return (
 
                             {/* Botón de editar */}
                             <Button 
-                                onClick={() => handleEdit((product.id).toString())}
+                                onClick={() => router.push(`/affiliate/products/${product.id}/edit`)}
                                 className="bg-blue-600 hover:bg-blue-700 text-white flex-shrink-0"
                             >
                                 Editar

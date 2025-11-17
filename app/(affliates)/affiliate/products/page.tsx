@@ -1,16 +1,9 @@
-import { mockProducts } from "@/app/mockups/mockups";
+import { mockProducts, mockaffiliate } from "@/app/mockups/mockups";
 import { ProductSearch } from "@/components/custom/affiliate/searchProduct";
 
 export default function products() {
 
 
-const mockaffiliate = {
-    id: 1,
-    name: 'Taco Bell - Belen',
-    direccion: '123 Affiliate St, City, Country',
-    telefono: '123-456-7890',
-    email: 'affiliate@example.com'
-};
 
 //TODO: Hay que configurar los botones de editar producto para que funcionen correctamente
 

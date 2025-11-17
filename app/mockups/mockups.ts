@@ -1,5 +1,5 @@
 
-export interface Product {
+interface Product {
     id: number;
     imagen: string;
     titulo: string;
@@ -8,7 +8,7 @@ export interface Product {
     state: boolean;
 }
 
-export const mockProducts: Product[] = [
+const mockProducts: Product[] = [
     {
         id: 1,
         imagen: '/mockImage.png',
@@ -111,7 +111,7 @@ export const mockProducts: Product[] = [
         [key : string]: string | number;
     }
 
-    export const mockTransactions: Transaction[] = [
+const mockTransactions: Transaction[] = [
         {
             transactionID: 'TXN123456',
             user: 'Maria Lopez',
@@ -141,3 +141,14 @@ export const mockProducts: Product[] = [
         }
         
     ];
+
+    
+const mockaffiliate = {
+    id: 1,
+    name: 'Taco Bell - Belen',
+    direccion: '123 Affiliate St, City, Country',
+    telefono: '123-456-7890',
+    email: 'affiliate@example.com'
+};
+
+export { mockaffiliate, mockProducts, mockTransactions };
