@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Modal } from "@/components/ui/modal";
 
 type BusinessType = { business_type_id: string; name: string };
 
@@ -42,6 +43,10 @@ export default function AdminComercioDetallePage() {
   const [types, setTypes] = useState<BusinessType[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  // Estados de modales
+  const [showSaveModal, setShowSaveModal] = useState(false);
+  const [showDeactivateModal, setShowDeactivateModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   // Editable fields
   const [name, setName] = useState("");
@@ -77,7 +82,7 @@ export default function AdminComercioDetallePage() {
     if (id) load();
   }, [id, load]);
 
-  async function handleSave() {
+  async function performSave() {
     if (!business) return;
     try {
       setSaving(true);
@@ -106,7 +111,7 @@ export default function AdminComercioDetallePage() {
     }
   }
 
-  async function handleDeactivate() {
+  async function performDeactivate() {
     if (!business) return;
     try {
       setSaving(true);
@@ -126,9 +131,8 @@ export default function AdminComercioDetallePage() {
     }
   }
 
-  async function handleDelete() {
+  async function performDelete() {
     if (!business) return;
-    if (!confirm("¿Eliminar este comercio? Esta acción es permanente.")) return;
     try {
       setSaving(true);
       const res = await fetch(`/api/affiliatedbusiness/${business.affiliated_business_id}/delete`, {
@@ -244,8 +248,7 @@ export default function AdminComercioDetallePage() {
             <Button
               variant="info"
               className="w-full rounded-xl"
-              // Placeholder para "Ver productos"
-              onClick={() => alert("Pendiente de implementación")}
+              onClick={() => router.push(`/admin/consultas/comercios/${id}/productos`)}
               disabled={saving}
             >
               Ver productos
@@ -253,15 +256,15 @@ export default function AdminComercioDetallePage() {
             <Button
               variant="default"
               className="w-full rounded-xl"
-              onClick={handleSave}
+              onClick={() => setShowSaveModal(true)}
               disabled={saving || loading}
             >
-              {saving ? "Guardando..." : "Guardar cambios"}
+              {saving && showSaveModal ? "Guardando..." : "Guardar cambios"}
             </Button>
             <Button
               variant="warning"
               className="w-full rounded-xl"
-              onClick={handleDeactivate}
+              onClick={() => setShowDeactivateModal(true)}
               disabled={saving || loading}
             >
               Desactivar
@@ -269,7 +272,7 @@ export default function AdminComercioDetallePage() {
             <Button
               variant="destructive"
               className="w-full rounded-xl"
-              onClick={handleDelete}
+              onClick={() => setShowDeleteModal(true)}
               disabled={saving || loading}
             >
               Eliminar
@@ -277,6 +280,44 @@ export default function AdminComercioDetallePage() {
           </CardContent>
         </Card>
       </div>
+      {/* Modales */}
+      <Modal
+        open={showSaveModal}
+        title="¿Seguro de tus cambios?"
+        onCancel={() => { if (!saving) setShowSaveModal(false); }}
+        onConfirm={async () => { await performSave(); setShowSaveModal(false); }}
+        loading={saving}
+      >
+        <p className="text-sm">
+          Has cambiado la información del comercio <strong>{name || business?.affiliated_business_name}</strong>. ¿Estás
+          seguro de que quieres realizar esta acción?
+        </p>
+      </Modal>
+      <Modal
+        open={showDeactivateModal}
+        title="¡Atención!"
+        onCancel={() => { if (!saving) setShowDeactivateModal(false); }}
+        onConfirm={async () => { await performDeactivate(); setShowDeactivateModal(false); }}
+        loading={saving}
+      >
+        <p className="text-sm">
+          Vas a desactivar este comercio <strong>{name || business?.affiliated_business_name}</strong>. ¿Estás seguro? El
+          comercio no podrá acceder a su cuenta y los usuarios perderán acceso a los productos relacionados.
+        </p>
+      </Modal>
+      <Modal
+        open={showDeleteModal}
+        title="¡Cuidado vas a eliminar un comercio!"
+        onCancel={() => { if (!saving) setShowDeleteModal(false); }}
+        onConfirm={async () => { await performDelete(); setShowDeleteModal(false); }}
+        loading={saving}
+        dangerNote="¡Esta acción no se puede deshacer!"
+      >
+        <p className="text-sm">
+          Has seleccionado el comercio <strong>{name || business?.affiliated_business_name}</strong> para ser eliminado.
+          ¿Estás seguro de que quieres realizar esta acción?
+        </p>
+      </Modal>
     </div>
   );
 }

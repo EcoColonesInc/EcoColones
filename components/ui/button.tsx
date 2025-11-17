@@ -24,6 +24,7 @@ const buttonVariants = cva(
         // Added project-specific colors
         info: "bg-[#3B6EC6] text-white hover:bg-[#3B6EC6]/90 p-5",
         warning: "bg-[#E3C15A] text-black hover:bg-[#E3C15A]/90 p-5",
+        success: "bg-[#12D452] text-black hover:bg-[#12D452]/90 p-5",
       },
       size: {
         default: "h-9 px-4 py-2 has-[>svg]:px-3",

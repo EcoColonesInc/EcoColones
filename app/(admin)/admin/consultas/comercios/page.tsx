@@ -19,6 +19,14 @@ type AffiliatedBusiness = {
   district_id?: { district_name?: string | null } | null;
 };
 
+type TopProduct = {
+  product_name: string;
+  product_price?: number | null;
+  affiliated_business_name?: string | null;
+  total_quantity_sold?: number | null;
+  times_purchased: number;
+};
+
 function FilterTag({ label, onClear }: { label: string; onClear?: () => void }) {
   return (
     <div className="flex items-center gap-2 rounded-full bg-muted px-2 py-1 text-xs">
@@ -50,6 +58,11 @@ export default function AdminConsultasComerciosPage() {
   const [types, setTypes] = useState<BusinessType[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // top products
+  const [topProducts, setTopProducts] = useState<TopProduct[]>([]);
+  const [topLoading, setTopLoading] = useState(true);
+  const [topError, setTopError] = useState<string | null>(null);
 
   // filters
   const [fName, setFName] = useState("");
@@ -85,6 +98,29 @@ export default function AdminConsultasComerciosPage() {
     };
   }, []);
 
+  useEffect(() => {
+    let active = true;
+    async function loadTop() {
+      try {
+        setTopLoading(true);
+        const res = await fetch("/api/products/most-popular/get", { cache: "no-store" });
+        const j = await res.json();
+        if (!res.ok) throw new Error(j?.error || "Error cargando top de productos");
+        if (!active) return;
+        setTopProducts((j?.data ?? []) as TopProduct[]);
+        setTopError(null);
+      } catch (e: unknown) {
+        if (active) setTopError(e instanceof Error ? e.message : "Error inesperado");
+      } finally {
+        if (active) setTopLoading(false);
+      }
+    }
+    loadTop();
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const filtered = useMemo(() => {
     const nameQ = fName.trim().toLowerCase();
     const managerQ = fManager.trim().toLowerCase();
@@ -102,7 +138,7 @@ export default function AdminConsultasComerciosPage() {
   }, [businesses, fName, fManager, fType]);
 
   return (
-    <div className="min-h-screen px-4 md:px-8 lg:px-12 py-6 space-y-8">
+    <div className="min-h-screen px-4 md:px-6 lg:px-8 py-6 space-y-8 max-w-7xl mx-auto">
       <h1 className="text-2xl md:text-3xl font-bold">Comercios afiliados - consultas</h1>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -114,40 +150,43 @@ export default function AdminConsultasComerciosPage() {
             {error && <p className="text-sm text-red-600 mb-2">{error}</p>}
             <div className="mb-2 text-sm text-muted-foreground">Total de comercios: {businesses.length}</div>
 
-            {/* Header */}
-            <Table className="mb-1">
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nombre</TableHead>
-                  <TableHead>Nombre de Gerente</TableHead>
-                  <TableHead>Teléfono</TableHead>
-                  <TableHead>Tipo de comercio</TableHead>
-                  <TableHead className="text-right">Selección</TableHead>
-                </TableRow>
-              </TableHeader>
-            </Table>
-
-            {/* Scrollbar aparece sólo si el contenido excede la altura máxima */}
-            <div className="overflow-y-auto pr-2 flex-1 max-h-[420px] md:max-h-[460px]">
-              <Table>
+            {/* Tabla con header sticky y body scrollable */}
+            <div className="overflow-y-auto overflow-x-hidden pr-2 flex-1 max-h-[460px] md:max-h-[480px]">
+              <Table className="w-full" containerClassName="overflow-x-hidden px-2">
+                <colgroup>
+                  <col className="w-[28%]" />
+                  <col className="w-[28%]" />
+                  <col className="w-[16%]" />
+                  <col className="w-[18%]" />
+                  <col className="w-[128px]" />
+                </colgroup>
+                <TableHeader className="sticky top-0 z-10 bg-background">
+                  <TableRow>
+                    <TableHead className="text-center">Nombre</TableHead>
+                    <TableHead className="text-center">Nombre de Gerente</TableHead>
+                    <TableHead className="text-center">Teléfono</TableHead>
+                    <TableHead className="text-center">Tipo de comercio</TableHead>
+                    <TableHead className="text-center">Selección</TableHead>
+                  </TableRow>
+                </TableHeader>
                 <TableBody>
                   {loading
                     ? Array.from({ length: 7 }).map((_, i) => (
                         <TableRow key={i}>
-                          <TableCell><div className="h-4 w-48 animate-pulse bg-muted rounded" /></TableCell>
-                          <TableCell><div className="h-4 w-40 animate-pulse bg-muted rounded" /></TableCell>
-                          <TableCell><div className="h-4 w-28 animate-pulse bg-muted rounded" /></TableCell>
-                          <TableCell><div className="h-4 w-40 animate-pulse bg-muted rounded" /></TableCell>
-                          <TableCell className="text-right"><div className="h-8 w-24 ml-auto animate-pulse bg-muted rounded" /></TableCell>
+                          <TableCell className="text-center"><div className="h-4 w-48 mx-auto animate-pulse bg-muted rounded" /></TableCell>
+                          <TableCell className="text-center"><div className="h-4 w-40 mx-auto animate-pulse bg-muted rounded" /></TableCell>
+                          <TableCell className="text-center"><div className="h-4 w-28 mx-auto animate-pulse bg-muted rounded" /></TableCell>
+                          <TableCell className="text-center"><div className="h-4 w-40 mx-auto animate-pulse bg-muted rounded" /></TableCell>
+                          <TableCell className="text-center"><div className="h-8 w-24 mx-auto animate-pulse bg-muted rounded" /></TableCell>
                         </TableRow>
                       ))
                     : filtered.map((b) => (
                         <TableRow key={b.affiliated_business_id}>
-                          <TableCell>{b.affiliated_business_name}</TableCell>
-                          <TableCell>{[b.manager_id?.first_name, b.manager_id?.last_name, b.manager_id?.second_last_name].filter(Boolean).join(" ") || "-"}</TableCell>
-                          <TableCell>{b.phone ?? "-"}</TableCell>
-                          <TableCell>{b.business_type_id?.name ?? "-"}</TableCell>
-                          <TableCell className="text-right">
+                          <TableCell className="text-center">{b.affiliated_business_name}</TableCell>
+                          <TableCell className="text-center">{[b.manager_id?.first_name, b.manager_id?.last_name, b.manager_id?.second_last_name].filter(Boolean).join(" ") || "-"}</TableCell>
+                          <TableCell className="text-center">{b.phone ?? "-"}</TableCell>
+                          <TableCell className="text-center">{b.business_type_id?.name ?? "-"}</TableCell>
+                          <TableCell className="text-center">
                             <Button
                               size="sm"
                               variant="default"
@@ -164,8 +203,52 @@ export default function AdminConsultasComerciosPage() {
           </CardContent>
         </Card>
 
-        {/* Filtros */}
-        <FiltersPanel>
+        {/* Lado derecho: Top 5 + Filtros */}
+        <div className="flex flex-col gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Top 5 de productos más canjeados</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {topError && <p className="text-sm text-red-600 mb-2">{topError}</p>}
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-center">Puesto</TableHead>
+                    <TableHead className="text-center">Nombre</TableHead>
+                    <TableHead className="text-right">Veces Canjeado</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {topLoading
+                    ? Array.from({ length: 5 }).map((_, i) => (
+                        <TableRow key={i}>
+                          <TableCell><div className="h-4 w-10 animate-pulse bg-muted rounded" /></TableCell>
+                          <TableCell><div className="h-4 w-40 animate-pulse bg-muted rounded" /></TableCell>
+                          <TableCell className="text-right"><div className="h-4 w-16 ml-auto animate-pulse bg-muted rounded" /></TableCell>
+                        </TableRow>
+                      ))
+                    : topProducts.slice(0, 5).map((p, idx) => {
+                        const rank = idx + 1;
+                        const medal = rank === 1 ? "🥇" : rank === 2 ? "🥈" : rank === 3 ? "🥉" : "";
+                        return (
+                          <TableRow key={`${p.product_name}-${idx}`}>
+                            <TableCell className="whitespace-nowrap flex items-center gap-2">
+                              <span aria-hidden>{medal}</span>
+                              <span>{rank}</span>
+                            </TableCell>
+                            <TableCell>{p.product_name}</TableCell>
+                            <TableCell className="text-right">{p.times_purchased}</TableCell>
+                          </TableRow>
+                        );
+                      })}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+
+          {/* Filtros */}
+          <FiltersPanel>
           {/* Nombre del comercio */}
           <div className="flex flex-col gap-1">
             <label className="font-medium">Nombre del comercio</label>
@@ -221,7 +304,8 @@ export default function AdminConsultasComerciosPage() {
           >
             Limpiar filtros
           </button>
-        </FiltersPanel>
+          </FiltersPanel>
+        </div>
       </div>
     </div>
   );
