@@ -62,7 +62,11 @@ export default function AdminNavbar() {
 								<Link
 									key={it.label}
 									href={it.href}
-									className={`${active ? "rounded-full px-3 py-1 bg-muted text-foreground" : `${base} text-foreground/80 hover:text-foreground`}`}
+									className={`${
+										active
+											? "rounded-full px-3 py-1 bg-muted text-foreground hover:text-white hover:bg-[#12D452]"
+											: `${base} text-foreground/80 hover:text-white hover:bg-[#12D452] rounded-full px-3 py-1`
+									}`}
 								>
 									{it.label}
 								</Link>
@@ -80,7 +84,11 @@ export default function AdminNavbar() {
 							<Link
 								key={it.label}
 								href={it.href}
-								className={`${active ? "rounded-full px-3 py-1 bg-muted text-foreground" : `${base} text-foreground/80 hover:text-foreground`}`}
+								className={`${
+									active
+										? "rounded-full px-3 py-1 bg-muted text-foreground hover:text-white hover:bg-[#12D452]"
+										: `${base} text-foreground/80 hover:text-white hover:bg-[#12D452] rounded-full px-3 py-1`
+								}`}
 							>
 								{it.label}
 							</Link>
@@ -130,7 +138,11 @@ function ConsultasMenu({ active, base }: { active: boolean; base: string }) {
 		>
 			<button
 				type="button"
-				className={`${active ? "rounded-full px-3 py-1 bg-muted text-foreground" : `${base} text-foreground/80 hover:text-foreground`} } appearance-none bg-transparent p-0 cursor-pointer`}
+				className={`${
+					active
+						? "rounded-full px-3 py-1 bg-muted text-foreground hover:text-white hover:bg-[#12D452]"
+						: `${base} text-foreground/80 hover:text-white hover:bg-[#12D452] rounded-full px-3 py-1`
+				} appearance-none cursor-pointer`}
 				onMouseEnter={() => setOpen(true)}
 				aria-haspopup="menu"
 				aria-expanded={open}

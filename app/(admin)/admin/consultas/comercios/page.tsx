@@ -221,8 +221,6 @@ export default function AdminConsultasComerciosPage() {
           >
             Limpiar filtros
           </button>
-
-          <div className="pt-2 text-sm text-muted-foreground">Total de comercios: {filtered.length}</div>
         </FiltersPanel>
       </div>
     </div>
