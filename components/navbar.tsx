@@ -94,6 +94,12 @@ export function Navbar() {
             >
               Mi EcoQR
             </Link>
+            <Link
+              href={USER_ROUTES.OVERVIEW}
+              className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors"
+            >
+              Inicio
+            </Link>
 
             <Link
               href={USER_ROUTES.CENTERS}
@@ -147,7 +153,7 @@ export function Navbar() {
 
           {/* Auth Buttons */}
           {user ? (
-            <Button variant="default" size="sm" onClick={handleSignOut}>Cerrar Sesión</Button>
+            <Button variant="close" size="sm" onClick={handleSignOut}>Cerrar Sesión</Button>
           ) : (
             <Link href={AUTH_ROUTES.LOGIN}>
               <Button variant="default" size="sm">Ingresar</Button>
