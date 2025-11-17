@@ -415,14 +415,6 @@ export default function AdminConsultasPage() {
                 ))}
             </select>
           </div>
-          <div className="flex items-center gap-2">
-            <input className="border rounded px-2 py-1 flex-1" placeholder="Ingresa el usuario" value={fUser} onChange={(e) => setFUser(e.target.value)} />
-            {fUser && <FilterTag label="Usuario" onClear={() => setFUser("")} />}
-          </div>
-          <div className="flex items-center gap-2">
-            <input className="border rounded px-2 py-1 flex-1" placeholder="Ingresa el teléfono" value={fPhone} onChange={(e) => setFPhone(e.target.value)} />
-            {fPhone && <FilterTag label="Teléfono" onClear={() => setFPhone("")} />}
-          </div>
           <button
             onClick={() => { setFName(""); setFLast(""); setFId(""); setFUser(""); setFPhone(""); setFCountry(""); setFProvince(""); setFCity(""); setFDistrict(""); }}
             className="border w-full rounded px-2 py-1 bg-muted"

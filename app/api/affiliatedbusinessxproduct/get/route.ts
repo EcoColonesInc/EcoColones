@@ -9,7 +9,7 @@ export async function GET() {
         // Select all affiliated business with related product info
         const { data, error } = await supabase
             .from('affiliatedbusinessxproduct')
-            .select('affiliated_business_x_prod, product_id(product_name, description, state), affiliated_business_id(affiliated_business_name, description), product_price')
+            .select('affiliated_business_x_prod, product_id(product_id, product_name, description, state), affiliated_business_id(affiliated_business_id, affiliated_business_name, description), product_price')
             .order('affiliated_business_x_prod', { ascending: true });
         if (error) {
             console.error('Get affiliated business error:', error);

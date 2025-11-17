@@ -46,6 +46,48 @@ export default function AdminAuditoriaPage() {
   const [binnacles, setBinnacles] = useState<BinnacleRow[]>([]);
   const [recyclings, setRecyclings] = useState<UserRecyclingRow[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const CR_TZ = "America/Costa_Rica";
+  const CR_LOCALE = "es-CR";
+
+  // Helpers para normalizar fechas/horas a la zona horaria de Costa Rica
+  const formatDateYMDInTZ = (date: Date, tz = CR_TZ): string => {
+    const parts = new Intl.DateTimeFormat("en-CA", {
+      timeZone: tz,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).formatToParts(date);
+    const y = parts.find((p) => p.type === "year")?.value ?? "0000";
+    const m = parts.find((p) => p.type === "month")?.value ?? "01";
+    const d = parts.find((p) => p.type === "day")?.value ?? "01";
+    return `${y}-${m}-${d}`;
+  };
+
+  const formatTimeHMInTZ = (date: Date, tz = CR_TZ): string => {
+    const parts = new Intl.DateTimeFormat("en-US", {
+      timeZone: tz,
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    }).formatToParts(date);
+    const h = parts.find((p) => p.type === "hour")?.value ?? "00";
+    const m = parts.find((p) => p.type === "minute")?.value ?? "00";
+    return `${h}:${m}`;
+  };
+
+  const getYearMonthInTZ = (date: Date, tz = CR_TZ) => {
+    const parts = new Intl.DateTimeFormat("en-CA", {
+      timeZone: tz,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).formatToParts(date);
+    const y = Number(parts.find((p) => p.type === "year")?.value ?? "0");
+    const m = parts.find((p) => p.type === "month")?.value ?? "01";
+    const key = `${String(y)}-${m}`;
+    const monthName = new Intl.DateTimeFormat(CR_LOCALE, { timeZone: tz, month: "long" }).format(date);
+    return { year: y, month: monthName, key };
+  };
   // Filtros bitácora
   const [filterUser, setFilterUser] = useState("");
   const [filterType, setFilterType] = useState("");
@@ -149,9 +191,7 @@ export default function AdminAuditoriaPage() {
   const topMonthly = useMemo(() => {
     const key = (d: string) => {
       const dt = new Date(d);
-      const y = dt.getFullYear();
-      const m = String(dt.getMonth() + 1).padStart(2, "0");
-      return `${y}-${m}`;
+      return getYearMonthInTZ(dt).key;
     };
 
     const map: Map<string, Map<string, TopEntry>> = new Map();
@@ -164,8 +204,7 @@ export default function AdminAuditoriaPage() {
       const center = r.collection_center_id?.name ?? r.center_name ?? undefined;
       const kg = Number(r.amount_recycle ?? r.amount ?? 0);
       const dt = new Date(date);
-      const year = dt.getFullYear();
-      const month = dt.toLocaleString("es", { month: "long" });
+      const { year, month } = getYearMonthInTZ(dt);
 
       if (!map.has(k)) map.set(k, new Map<string, TopEntry>());
       const monthMap = map.get(k)!;
@@ -207,8 +246,8 @@ export default function AdminAuditoriaPage() {
       const d = dateStr ? new Date(dateStr) : null;
       const inUser = !filterUser || userName.toLowerCase().includes(filterUser.toLowerCase());
       const inType = !filterType || type.toLowerCase() === filterType.toLowerCase();
-      const inDate = !filterDate || (d && d.toISOString().slice(0, 10) === filterDate);
-      const inTime = !filterTime || (d && `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`.startsWith(filterTime));
+      const inDate = !filterDate || (d && formatDateYMDInTZ(d) === filterDate);
+      const inTime = !filterTime || (d && formatTimeHMInTZ(d).startsWith(filterTime));
       return inUser && inType && inDate && inTime;
     });
   }, [binnacles, filterUser, filterType, filterDate, filterTime]);
@@ -279,9 +318,17 @@ export default function AdminAuditoriaPage() {
                   : latestByTable.map((row, idx) => (
                       <TableRow key={idx}>
                         <TableCell>{row.createdBy ?? "-"}</TableCell>
-                        <TableCell>{row.createdAt ? new Date(row.createdAt).toLocaleDateString() : "-"}</TableCell>
+                        <TableCell>
+                          {row.createdAt
+                            ? new Date(row.createdAt).toLocaleDateString(CR_LOCALE, { timeZone: CR_TZ })
+                            : "-"}
+                        </TableCell>
                         <TableCell>{row.updatedBy ?? "-"}</TableCell>
-                        <TableCell>{row.updatedAt ? new Date(row.updatedAt).toLocaleDateString() : "-"}</TableCell>
+                        <TableCell>
+                          {row.updatedAt
+                            ? new Date(row.updatedAt).toLocaleDateString(CR_LOCALE, { timeZone: CR_TZ })
+                            : "-"}
+                        </TableCell>
                         <TableCell>{row.table ?? "-"}</TableCell>
                       </TableRow>
                     ))}
@@ -345,8 +392,19 @@ export default function AdminAuditoriaPage() {
                         return (
                           <TableRow key={i}>
                             <TableCell>{userName}</TableCell>
-                            <TableCell>{d ? d.toLocaleDateString() : "-"}</TableCell>
-                            <TableCell>{d ? d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "-"}</TableCell>
+                            <TableCell>
+                              {d ? d.toLocaleDateString(CR_LOCALE, { timeZone: CR_TZ }) : "-"}
+                            </TableCell>
+                            <TableCell>
+                              {d
+                                ? new Intl.DateTimeFormat("es-CR", {
+                                    timeZone: CR_TZ,
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                    hour12: false,
+                                  }).format(d)
+                                : "-"}
+                            </TableCell>
                             <TableCell>{changeType || "-"}</TableCell>
                           </TableRow>
                         );
