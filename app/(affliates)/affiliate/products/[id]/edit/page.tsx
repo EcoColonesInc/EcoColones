@@ -6,17 +6,14 @@ import { ProductDisplay } from "@/components/custom/affiliate/productDisplay";
 import { DashProducts } from "@/components/custom/affiliate/dashProducts";
 
 export default function EditProductPage({ params }: { params: Promise<{ id: string }> }) {
-    const [products, setProducts] = useState(mockProducts);
+    const [products] = useState(mockProducts);
     const [currentId, setCurrentId] = useState<string>("");
     
     useEffect(() => {
         params.then(({ id }) => setCurrentId(id));
     }, [params]);
     
-    const handleProductChange = () => {
-        // llamado al api para actualizar productos
-        setProducts([...mockProducts]);
-    };
+    // Eliminado handleProductChange no usado (lint)
 
     const currentProduct = products.find(p => p.id.toString() === currentId);
     

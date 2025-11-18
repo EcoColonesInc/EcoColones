@@ -1,30 +1,18 @@
-import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/utils/supabase/server";
+import { NextResponse } from 'next/server';
+import { getProvinceById } from '@/lib/api/locations';
 
-// GET - Obtained a specific province by ID with its info
-export async function GET(request: NextRequest, context: { params: Promise<{ id: string }> }) {
-    try {
-        const supabase = await createClient();
-        const resolvedParams = await context.params;
-        const provinceId = resolvedParams.id;
+export async function GET(request: Request, context: { params: Promise<{ id: string }> }) {
+  const resolvedParams = await context.params;
+  const id = resolvedParams?.id;
+  if (!id) {
+    return NextResponse.json({ error: 'Missing province id' }, { status: 400 });
+  }
 
-        // Select the province with related country info
-        const { data, error } = await supabase
-            .from('province')
-            .select('province_id, province_name, country(country_id, country_name)')
-            .eq('province_id', provinceId)
-            .single();
-        if (error) {
-            console.error('Get province error:', error);
-            return NextResponse.json({ error: error.message }, { status: 400 });
-        }
-        return NextResponse.json({ data }, { status: 200 });
+  const { data, error } = await getProvinceById(id);
 
-    } catch (err: unknown) {
-        console.error('Get province unexpected error:', err);
-        if (err instanceof Error) {
-            return NextResponse.json({ error: err.message }, { status: 500 });
-        }
-        return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
-    }
+  if (error) {
+    return NextResponse.json({ error }, { status: 404 });
+  }
+
+  return NextResponse.json(data);
 }

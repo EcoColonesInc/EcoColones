@@ -1,0 +1,47 @@
+import { createClient } from '@/utils/supabase/server';
+
+// Fetch all affiliated businesses with their info
+export async function getAllAffiliatedBusiness() {
+  const supabase = await createClient();
+  
+  const { data, error } = await supabase
+    .from('affiliatedbusiness')
+	.select(`
+		affiliated_business_id,
+		affiliated_business_name,
+		description,
+		phone,
+		email,
+		manager_id(first_name,last_name,second_last_name),
+		business_type_id(name),
+		district_id(district_name)
+	`)
+	.order('affiliated_business_name', { ascending: true });
+  if (error) {
+    return { error: error.message, data: null };
+  }
+  return { error: null, data };
+}
+
+// Fetch a single affiliated business by its ID
+export async function getAffiliatedBusinessById(affiliatedBusinessId: string) {
+  const supabase = await createClient();
+    const { data, error } = await supabase
+      .from('affiliatedbusiness')
+        .select(`
+            affiliated_business_id,
+            affiliated_business_name,
+            description,
+            phone,
+            email,
+            manager_id(first_name,last_name,second_last_name),
+            business_type_id(name),
+            district_id(district_name, city_id(city_name, province_id(province_name, country_id(country_name))))
+        `)
+        .eq('affiliated_business_id', affiliatedBusinessId)
+        .single();
+    if (error) {
+      return { error: error.message, data: null };
+    }
+    return { error: null, data };
+}

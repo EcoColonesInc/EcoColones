@@ -67,64 +67,45 @@ export async function getUserData() {
   return { error: null, data };
 }
 
-// Use the Postgres function `get_user_affiliated_transactions(p_user_id uuid, p_date date)`
-// If no date is provided, it fetches all transactions for the user.
-export async function getUserBusinessTransactions() {
-  const supabase = await createClient();
-
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    return { error: 'Unauthorized', data: null };
-  }
-  
-  const { data, error } = await supabase.rpc('get_user_affiliated_transactions', { p_user_id: user.id, p_date: null });
-  
-  if (error) {
-    return { error: error.message, data: null };
-  }
-  return { error: null, data };
-}
-
-// Use the Postgres function `get_user_affiliated_transactions(p_user_id uuid, p_date date)`
-// If no date is provided, it fetches all transactions for the user.
-export async function getUserCenterTransactions() {
-  const supabase = await createClient();
-
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    return { error: 'Unauthorized', data: null };
-  }
-  
-  const { data, error } = await supabase.rpc('get_user_collectioncenter_transactions', { p_user_id: user.id, p_date: null });
-  
-  if (error) {
-    return { error: error.message, data: null };
-  }
-  return { error: null, data };
-}
-
-// Fetch material conversion rates from the 'material' table
-export async function getMaterialConversionRates() {
+// Fetch users with the most recycled amounts
+// It is retrieved from the job's table 'userrecycling'
+export async function getUsersWithMostRecycled() {
   const supabase = await createClient();
   
   const { data, error } = await supabase
-    .from('material')
-		.select('material_id, name, equivalent_points, unit_id(unit_id, unit_name)')
-		.order('name', { ascending: true });
+    .from('userrecycling')
+    .select('person_id(first_name, last_name, second_last_name), collection_center_id(name), amount_recycle, date')
+    .order('date', { ascending: true });
   if (error) {
     return { error: error.message, data: null };
   }
   return { error: null, data };
 }
 
-// Fetch the default currency using the Postgres function `get_default_currency()`
-export async function getDefaultCurrency() {
+// Fetch all user points with their info
+// The points are retrieved by user
+export async function getAllUsersPoints() {
   const supabase = await createClient();
-
-  const { data, error } = await supabase.rpc('get_default_currency');
-
+  
+  const { data, error } = await supabase
+    .from('point')
+    .select('person_id(user_name), point_amount')
+    .order('point_amount', { ascending: true });
   if (error) {
     return { error: error.message, data: null };
   }
   return { error: null, data };
+}
+
+// Fetch the points by user id
+export async function getPointsByUserId(userId: string) {
+  const supabase = await createClient();
+    const { data, error } = await supabase
+      .from('point')
+      .select('person_id(user_name), point_amount')
+      .eq('person_id', userId);
+    if (error) {
+      return { error: error.message, data: null };
+    }
+    return { error: null, data };
 }
