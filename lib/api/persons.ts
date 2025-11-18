@@ -12,7 +12,8 @@ const PERSON_COLUMNS = [
   'identification',
   'role',
   'gender',
-  'document_type'
+  'document_type',
+  'district_id'
 ].join(', ');
 
 export async function getAllPersons() {

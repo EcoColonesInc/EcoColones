@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
@@ -11,7 +11,7 @@ interface MaterialRow {
   name: string;
   equivalent_points: number | string | null;
   unit_id?: { unit_id?: string; unit_name?: string | null };
-  updated_by?: { first_name?: string | null; last_name?: string | null } | null;
+  updated_by?: string | null; // UUID del usuario que modificó
 }
 
 interface PersonRow { user_id: string; first_name?: string | null; last_name?: string | null }
@@ -81,7 +81,7 @@ export default function MaterialesClient({ initialMaterials, persons }: Props) {
                   const puntos = normalizeNumber(m.equivalent_points);
                   const unidad = m.unit_id?.unit_name ?? "-";
                   const modificado = (() => {
-                    const uid = (m as any).updated_by as string | null | undefined;
+                    const uid = m.updated_by;
                     if (!uid) return "-";
                     const p = people.find(x => x.user_id === uid);
                     if (!p) return "-";

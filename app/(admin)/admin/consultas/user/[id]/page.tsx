@@ -3,9 +3,20 @@ import { getProfileInfoByUserId, getEmailByUserId } from "@/lib/api/persons";
 import { getPointsByUserId } from "@/lib/api/users";
 import { createClient } from "@/utils/supabase/server";
 
+interface PointsRow {
+  point_amount?: number | string | null;
+}
+interface MaterialTx {
+  material_amount?: number | string | null;
+}
+
 export const revalidate = 0;
 
-export default async function AdminUserDetailPage({ params }: { params: { id: string } }) {
+export default async function AdminUserDetailPage({
+  params,
+}: {
+  params: { id: string };
+}) {
   const userId = params.id;
 
   const [profileRes, pointsRes, emailRes, materialRes] = await Promise.all([
@@ -15,11 +26,23 @@ export default async function AdminUserDetailPage({ params }: { params: { id: st
     getMaterialTransactions(userId),
   ]);
 
-  const rawProfile = Array.isArray(profileRes.data) ? profileRes.data[0] : profileRes.data;
-  const rawPointsArr = Array.isArray(pointsRes.data) ? pointsRes.data : pointsRes.data ? [pointsRes.data] : [];
+  const rawProfile = Array.isArray(profileRes.data)
+    ? profileRes.data[0]
+    : profileRes.data;
+  const rawPointsArr = Array.isArray(pointsRes.data)
+    ? pointsRes.data
+    : pointsRes.data
+    ? [pointsRes.data]
+    : [];
   // pointsRes returns array of rows with point_amount
-  const pointAmount = rawPointsArr.length ? normalizeNumber((rawPointsArr[0] as any).point_amount) : 0;
-  const materialKg = (materialRes.data ?? []).reduce((acc: number, row: any) => acc + normalizeNumber(row.material_amount), 0);
+  const pointAmount = rawPointsArr.length
+    ? normalizeNumber((rawPointsArr[0] as PointsRow).point_amount)
+    : 0;
+  const materialKg = (materialRes.data ?? []).reduce(
+    (acc: number, row: MaterialTx) =>
+      acc + normalizeNumber(row.material_amount),
+    0
+  );
   const email = emailRes.data?.email ?? "-";
 
   return (
@@ -49,6 +72,6 @@ async function getMaterialTransactions(userId: string) {
     .from("collectioncentertransaction")
     .select("material_amount")
     .eq("person_id", userId);
-  if (error) return { error: error.message, data: [] as any[] };
+  if (error) return { error: error.message, data: [] as MaterialTx[] };
   return { error: null, data };
 }
