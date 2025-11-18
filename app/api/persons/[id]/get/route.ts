@@ -1,32 +1,21 @@
-import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/utils/supabase/server";
+import { NextResponse } from "next/server";
+import { getUserById } from "@/lib/api/users";
 
-// GET - Obtained a specific province by ID with its info
-export async function GET(request: NextRequest, context: { params: Promise<{ id: string }> }) {
-    try {
-        const supabase = await createClient();
-        const resolvedParams = await context.params;
-        const personId = resolvedParams.id;
+export async function GET(
+  request: Request,
+  context: { params: Promise<{ id: string }> }
+) {
+  const resolvedParams = await context.params;
+  const id = resolvedParams?.id;
+  if (!id) {
+    return NextResponse.json({ error: "Missing unit id" }, { status: 400 });
+  }
 
-        if (!personId) {
-            return NextResponse.json({ error: 'person_id is required' }, { status: 400 });
-        }
+  const { data, error } = await getUserById(id);
 
-        // Use stored function to fetch profile info (RPC)
-        const { data, error } = await supabase.rpc('get_profile_info', { p_user_id: personId });
+  if (error) {
+    return NextResponse.json({ error }, { status: 404 });
+  }
 
-        if (error) {
-            console.error('Get profile info (rpc) error:', error);
-            return NextResponse.json({ error: error.message }, { status: 400 });
-        }
-
-        return NextResponse.json({ data }, { status: 200 });
-
-    } catch (err: unknown) {
-        console.error('Get person unexpected error:', err);
-        if (err instanceof Error) {
-            return NextResponse.json({ error: err.message }, { status: 500 });
-        }
-        return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
-    }
+  return NextResponse.json(data);
 }

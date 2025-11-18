@@ -1,20 +1,23 @@
-// Removed unnecessary eslint-disable any
 "use client";
 
 import { useMemo, useState } from "react";
 import { useAuth } from "@/contexts/AuthProvider";
 import { Role } from "@/types/role";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-// NOTA: Para evitar error de build (uso de next/headers en cliente) dejamos de importar
-// funciones server y usamos los endpoints /api para refrescar datos en el cliente.
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 interface AuditoriaClientProps {
   initialBinnacles: unknown[];
   initialRecyclings: unknown[];
 }
 
-// Tipado laxo de filas de bitácora; todas las propiedades opcionales porque el RPC puede variar.
 interface BinnacleRow {
   updated_at?: string;
   created_at?: string;
@@ -34,7 +37,11 @@ interface BinnacleRow {
 }
 
 interface UserRecyclingRow {
-  person_id?: { first_name?: string; last_name?: string; second_last_name?: string };
+  person_id?: {
+    first_name?: string;
+    last_name?: string;
+    second_last_name?: string;
+  };
   collection_center_id?: { name?: string };
   amount_recycle?: number | string;
   amount?: number | string;
@@ -46,13 +53,26 @@ interface UserRecyclingRow {
   [key: string]: unknown;
 }
 
-type TopEntry = { name: string; center?: string; kg: number; year: number; month: string };
+type TopEntry = {
+  name: string;
+  center?: string;
+  kg: number;
+  year: number;
+  month: string;
+};
 
-export default function AuditoriaClient({ initialBinnacles, initialRecyclings }: AuditoriaClientProps) {
+export default function AuditoriaClient({
+  initialBinnacles,
+  initialRecyclings,
+}: AuditoriaClientProps) {
   const { role } = useAuth();
   const [loading, setLoading] = useState(false);
-  const [binnacles, setBinnacles] = useState<BinnacleRow[]>(initialBinnacles as BinnacleRow[]);
-  const [recyclings, setRecyclings] = useState<UserRecyclingRow[]>(initialRecyclings as UserRecyclingRow[]);
+  const [binnacles, setBinnacles] = useState<BinnacleRow[]>(
+    initialBinnacles as BinnacleRow[]
+  );
+  const [recyclings, setRecyclings] = useState<UserRecyclingRow[]>(
+    initialRecyclings as UserRecyclingRow[]
+  );
   const [error, setError] = useState<string | null>(null);
   const CR_TZ = "America/Costa_Rica";
   const CR_LOCALE = "es-CR";
@@ -68,7 +88,8 @@ export default function AuditoriaClient({ initialBinnacles, initialRecyclings }:
       const bJson = await bRes.json();
       const rJson = await rRes.json();
       if (!bRes.ok) throw new Error(bJson?.error || "Error cargando bitácoras");
-      if (!rRes.ok) throw new Error(rJson?.error || "Error cargando reciclajes");
+      if (!rRes.ok)
+        throw new Error(rJson?.error || "Error cargando reciclajes");
       setBinnacles((bJson.data ?? []) as BinnacleRow[]);
       setRecyclings((rJson.data ?? []) as UserRecyclingRow[]);
       setError(null);
@@ -115,7 +136,10 @@ export default function AuditoriaClient({ initialBinnacles, initialRecyclings }:
     const y = Number(parts.find((p) => p.type === "year")?.value ?? "0");
     const m = parts.find((p) => p.type === "month")?.value ?? "01";
     const key = `${String(y)}-${m}`;
-    const monthName = new Intl.DateTimeFormat(CR_LOCALE, { timeZone: tz, month: "long" }).format(date);
+    const monthName = new Intl.DateTimeFormat(CR_LOCALE, {
+      timeZone: tz,
+      month: "long",
+    }).format(date);
     return { year: y, month: monthName, key };
   };
   // Filtros bitácora
@@ -131,7 +155,9 @@ export default function AuditoriaClient({ initialBinnacles, initialRecyclings }:
   const latestByTable = useMemo(() => {
     const byTable = new Map<string, BinnacleRow[]>();
     for (const row of binnacles) {
-      const table = (row.object_name ?? row.table_name ?? "Desconocido") as string;
+      const table = (row.object_name ??
+        row.table_name ??
+        "Desconocido") as string;
       if (!byTable.has(table)) byTable.set(table, []);
       byTable.get(table)!.push(row);
     }
@@ -146,14 +172,22 @@ export default function AuditoriaClient({ initialBinnacles, initialRecyclings }:
 
     byTable.forEach((rows, table) => {
       const sorted = [...rows].sort((a, b) => {
-        const da = new Date(a.updated_at ?? a.date ?? a.created_at ?? 0).getTime();
-        const db = new Date(b.updated_at ?? b.date ?? b.created_at ?? 0).getTime();
+        const da = new Date(
+          a.updated_at ?? a.date ?? a.created_at ?? 0
+        ).getTime();
+        const db = new Date(
+          b.updated_at ?? b.date ?? b.created_at ?? 0
+        ).getTime();
         return db - da;
       });
 
       const last = sorted[0] ?? {};
-      const created = sorted.find((r) => (r.change_type ?? r.type) === "INSERT") ?? sorted.at(-1) ?? {};
-      const updated = sorted.find((r) => (r.change_type ?? r.type) === "UPDATE") ?? last;
+      const created =
+        sorted.find((r) => (r.change_type ?? r.type) === "INSERT") ??
+        sorted.at(-1) ??
+        {};
+      const updated =
+        sorted.find((r) => (r.change_type ?? r.type) === "UPDATE") ?? last;
 
       const nameFrom = (r: Record<string, unknown>): string | null => {
         const keys = [
@@ -175,13 +209,23 @@ export default function AuditoriaClient({ initialBinnacles, initialRecyclings }:
       result.push({
         table,
         createdBy: nameFrom(created),
-        createdAt: (created.updated_at ?? created.created_at ?? created.date ?? null) as string | null,
+        createdAt: (created.updated_at ??
+          created.created_at ??
+          created.date ??
+          null) as string | null,
         updatedBy: nameFrom(updated),
-        updatedAt: (updated.updated_at ?? updated.created_at ?? updated.date ?? null) as string | null,
+        updatedAt: (updated.updated_at ??
+          updated.created_at ??
+          updated.date ??
+          null) as string | null,
       });
     });
 
-    return result.sort((a, b) => new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime());
+    return result.sort(
+      (a, b) =>
+        new Date(b.updatedAt || 0).getTime() -
+        new Date(a.updatedAt || 0).getTime()
+    );
   }, [binnacles]);
 
   const topMonthly = useMemo(() => {
@@ -195,7 +239,9 @@ export default function AuditoriaClient({ initialBinnacles, initialRecyclings }:
       const date: string = r.date ?? r.created_at ?? new Date().toISOString();
       const k = key(date);
       const person = r.person_id?.first_name
-        ? `${r.person_id.first_name} ${r.person_id.last_name ?? ""} ${r.person_id.second_last_name ?? ""}`.trim()
+        ? `${r.person_id.first_name} ${r.person_id.last_name ?? ""} ${
+            r.person_id.second_last_name ?? ""
+          }`.trim()
         : r.user_full_name ?? r.user_name ?? "Desconocido";
       const center = r.collection_center_id?.name ?? r.center_name ?? undefined;
       const kg = Number(r.amount_recycle ?? r.amount ?? 0);
@@ -204,7 +250,13 @@ export default function AuditoriaClient({ initialBinnacles, initialRecyclings }:
 
       if (!map.has(k)) map.set(k, new Map<string, TopEntry>());
       const monthMap = map.get(k)!;
-      const current: TopEntry = monthMap.get(person) ?? { name: person, center, kg: 0, year, month };
+      const current: TopEntry = monthMap.get(person) ?? {
+        name: person,
+        center,
+        kg: 0,
+        year,
+        month,
+      };
       current.kg += kg;
       monthMap.set(person, current);
     }
@@ -215,10 +267,18 @@ export default function AuditoriaClient({ initialBinnacles, initialRecyclings }:
     let top = [...latestMap.values()].sort((a, b) => b.kg - a.kg);
     top = top
       .filter((entry) => {
-        const userMatch = !filterUser || entry.name.toLowerCase().includes(filterUser.toLowerCase());
-        const monthMatch = !filterMonth || entry.month.toLowerCase() === filterMonth.toLowerCase();
+        const userMatch =
+          !filterUser ||
+          entry.name.toLowerCase().includes(filterUser.toLowerCase());
+        const monthMatch =
+          !filterMonth ||
+          entry.month.toLowerCase() === filterMonth.toLowerCase();
         const yearMatch = !filterYear || String(entry.year) === filterYear;
-        const centerMatch = !filterCenter || (entry.center ?? "").toLowerCase().includes(filterCenter.toLowerCase());
+        const centerMatch =
+          !filterCenter ||
+          (entry.center ?? "")
+            .toLowerCase()
+            .includes(filterCenter.toLowerCase());
         return userMatch && monthMatch && yearMatch && centerMatch;
       })
       .slice(0, 10);
@@ -227,23 +287,25 @@ export default function AuditoriaClient({ initialBinnacles, initialRecyclings }:
 
   const filteredBinnacles = useMemo(() => {
     return binnacles.filter((b: BinnacleRow) => {
-      const userName: string = (
-        b.person_user_name ||
+      const userName: string = (b.person_user_name ||
         b.person_full_name ||
         b.user_full_name ||
         b.full_name ||
         b.created_by_display ||
         b.updated_by_display ||
         b.user_name ||
-        ""
-      ) as string;
+        "") as string;
       const type = (b.change_type ?? b.type ?? "").toString();
       const dateStr = b.updated_at ?? b.date ?? b.created_at;
       const d = dateStr ? new Date(dateStr) : null;
-      const inUser = !filterUser || userName.toLowerCase().includes(filterUser.toLowerCase());
-      const inType = !filterType || type.toLowerCase() === filterType.toLowerCase();
+      const inUser =
+        !filterUser ||
+        userName.toLowerCase().includes(filterUser.toLowerCase());
+      const inType =
+        !filterType || type.toLowerCase() === filterType.toLowerCase();
       const inDate = !filterDate || (d && formatDateYMDInTZ(d) === filterDate);
-      const inTime = !filterTime || (d && formatTimeHMInTZ(d).startsWith(filterTime));
+      const inTime =
+        !filterTime || (d && formatTimeHMInTZ(d).startsWith(filterTime));
       return inUser && inType && inDate && inTime;
     });
   }, [binnacles, filterUser, filterType, filterDate, filterTime]);
@@ -276,7 +338,9 @@ export default function AuditoriaClient({ initialBinnacles, initialRecyclings }:
           onClick={refresh}
           className="text-sm border rounded px-3 py-1 bg-muted hover:bg-muted/70"
           disabled={loading}
-        >{loading ? "Actualizando..." : "Refrescar"}</button>
+        >
+          {loading ? "Actualizando..." : "Refrescar"}
+        </button>
       </div>
 
       <Card>
@@ -300,19 +364,43 @@ export default function AuditoriaClient({ initialBinnacles, initialRecyclings }:
                 {loading
                   ? Array.from({ length: 5 }).map((_, idx) => (
                       <TableRow key={idx}>
-                        <TableCell><div className="h-4 w-24 animate-pulse bg-muted rounded" /></TableCell>
-                        <TableCell><div className="h-4 w-24 animate-pulse bg-muted rounded" /></TableCell>
-                        <TableCell><div className="h-4 w-24 animate-pulse bg-muted rounded" /></TableCell>
-                        <TableCell><div className="h-4 w-24 animate-pulse bg-muted rounded" /></TableCell>
-                        <TableCell><div className="h-4 w-24 animate-pulse bg-muted rounded" /></TableCell>
+                        <TableCell>
+                          <div className="h-4 w-24 animate-pulse bg-muted rounded" />
+                        </TableCell>
+                        <TableCell>
+                          <div className="h-4 w-24 animate-pulse bg-muted rounded" />
+                        </TableCell>
+                        <TableCell>
+                          <div className="h-4 w-24 animate-pulse bg-muted rounded" />
+                        </TableCell>
+                        <TableCell>
+                          <div className="h-4 w-24 animate-pulse bg-muted rounded" />
+                        </TableCell>
+                        <TableCell>
+                          <div className="h-4 w-24 animate-pulse bg-muted rounded" />
+                        </TableCell>
                       </TableRow>
                     ))
                   : latestByTable.map((row, idx) => (
                       <TableRow key={idx}>
                         <TableCell>{row.createdBy ?? "-"}</TableCell>
-                        <TableCell>{row.createdAt ? new Date(row.createdAt).toLocaleDateString(CR_LOCALE, { timeZone: CR_TZ }) : "-"}</TableCell>
+                        <TableCell>
+                          {row.createdAt
+                            ? new Date(row.createdAt).toLocaleDateString(
+                                CR_LOCALE,
+                                { timeZone: CR_TZ }
+                              )
+                            : "-"}
+                        </TableCell>
                         <TableCell>{row.updatedBy ?? "-"}</TableCell>
-                        <TableCell>{row.updatedAt ? new Date(row.updatedAt).toLocaleDateString(CR_LOCALE, { timeZone: CR_TZ }) : "-"}</TableCell>
+                        <TableCell>
+                          {row.updatedAt
+                            ? new Date(row.updatedAt).toLocaleDateString(
+                                CR_LOCALE,
+                                { timeZone: CR_TZ }
+                              )
+                            : "-"}
+                        </TableCell>
                         <TableCell>{row.table ?? "-"}</TableCell>
                       </TableRow>
                     ))}
@@ -344,31 +432,57 @@ export default function AuditoriaClient({ initialBinnacles, initialRecyclings }:
                   {loading
                     ? Array.from({ length: 6 }).map((_, i) => (
                         <TableRow key={i}>
-                          <TableCell><div className="h-4 w-28 animate-pulse bg-muted rounded" /></TableCell>
-                          <TableCell><div className="h-4 w-24 animate-pulse bg-muted rounded" /></TableCell>
-                          <TableCell><div className="h-4 w-16 animate-pulse bg-muted rounded" /></TableCell>
-                          <TableCell><div className="h-4 w-20 animate-pulse bg-muted rounded" /></TableCell>
+                          <TableCell>
+                            <div className="h-4 w-28 animate-pulse bg-muted rounded" />
+                          </TableCell>
+                          <TableCell>
+                            <div className="h-4 w-24 animate-pulse bg-muted rounded" />
+                          </TableCell>
+                          <TableCell>
+                            <div className="h-4 w-16 animate-pulse bg-muted rounded" />
+                          </TableCell>
+                          <TableCell>
+                            <div className="h-4 w-20 animate-pulse bg-muted rounded" />
+                          </TableCell>
                         </TableRow>
                       ))
                     : filteredBinnacles.map((b: BinnacleRow, i) => {
-                        const dateStr = b?.updated_at ?? b?.date ?? b?.created_at;
+                        const dateStr =
+                          b?.updated_at ?? b?.date ?? b?.created_at;
                         const d = dateStr ? new Date(dateStr) : null;
-                        const userName: string = (
-                          b.person_user_name ||
+                        const userName: string = (b.person_user_name ||
                           b.person_full_name ||
                           b.user_full_name ||
                           b.full_name ||
                           b.created_by_display ||
                           b.updated_by_display ||
                           b.user_name ||
-                          "-"
-                        ) as string;
-                        const changeType = (b?.change_type ?? b?.type ?? "").toString();
+                          "-") as string;
+                        const changeType = (
+                          b?.change_type ??
+                          b?.type ??
+                          ""
+                        ).toString();
                         return (
                           <TableRow key={i}>
                             <TableCell>{userName}</TableCell>
-                            <TableCell>{d ? d.toLocaleDateString(CR_LOCALE, { timeZone: CR_TZ }) : "-"}</TableCell>
-                            <TableCell>{d ? new Intl.DateTimeFormat("es-CR", { timeZone: CR_TZ, hour: "2-digit", minute: "2-digit", hour12: false }).format(d) : "-"}</TableCell>
+                            <TableCell>
+                              {d
+                                ? d.toLocaleDateString(CR_LOCALE, {
+                                    timeZone: CR_TZ,
+                                  })
+                                : "-"}
+                            </TableCell>
+                            <TableCell>
+                              {d
+                                ? new Intl.DateTimeFormat("es-CR", {
+                                    timeZone: CR_TZ,
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                    hour12: false,
+                                  }).format(d)
+                                : "-"}
+                            </TableCell>
                             <TableCell>{changeType || "-"}</TableCell>
                           </TableRow>
                         );
@@ -385,26 +499,60 @@ export default function AuditoriaClient({ initialBinnacles, initialRecyclings }:
           <CardContent className="space-y-4 text-sm">
             <div className="flex flex-col gap-2">
               <label className="font-medium">Usuario</label>
-              <input type="text" placeholder="Ingresa el usuario" value={filterUser} onChange={(e) => setFilterUser(e.target.value)} className="border rounded px-2 py-1" />
+              <input
+                type="text"
+                placeholder="Ingresa el usuario"
+                value={filterUser}
+                onChange={(e) => setFilterUser(e.target.value)}
+                className="border rounded px-2 py-1"
+              />
             </div>
             <div className="flex flex-col gap-2">
               <label className="font-medium">Tipo de cambio</label>
-              <select value={filterType} onChange={(e) => setFilterType(e.target.value)} className="border rounded px-2 py-1">
+              <select
+                value={filterType}
+                onChange={(e) => setFilterType(e.target.value)}
+                className="border rounded px-2 py-1"
+              >
                 <option value="">Todos</option>
                 {changeTypes.map((t) => (
-                  <option key={t} value={t.toLowerCase()}>{t}</option>
+                  <option key={t} value={t.toLowerCase()}>
+                    {t}
+                  </option>
                 ))}
               </select>
             </div>
             <div className="flex flex-col gap-2">
               <label className="font-medium">Fecha</label>
-              <input type="date" value={filterDate} onChange={(e) => setFilterDate(e.target.value)} className="border rounded px-2 py-1" />
+              <input
+                type="date"
+                value={filterDate}
+                onChange={(e) => setFilterDate(e.target.value)}
+                className="border rounded px-2 py-1"
+              />
             </div>
             <div className="flex flex-col gap-2">
               <label className="font-medium">Hora (HH:MM)</label>
-              <input type="text" placeholder="Ej: 09:30" value={filterTime} onChange={(e) => setFilterTime(e.target.value)} className="border rounded px-2 py-1" maxLength={5} />
+              <input
+                type="text"
+                placeholder="Ej: 09:30"
+                value={filterTime}
+                onChange={(e) => setFilterTime(e.target.value)}
+                className="border rounded px-2 py-1"
+                maxLength={5}
+              />
             </div>
-            <button onClick={() => { setFilterUser(""); setFilterType(""); setFilterDate(""); setFilterTime(""); }} className="border w-full rounded px-2 py-1 bg-muted">Limpiar filtros</button>
+            <button
+              onClick={() => {
+                setFilterUser("");
+                setFilterType("");
+                setFilterDate("");
+                setFilterTime("");
+              }}
+              className="border w-full rounded px-2 py-1 bg-muted"
+            >
+              Limpiar filtros
+            </button>
           </CardContent>
         </Card>
       </div>
@@ -430,11 +578,21 @@ export default function AuditoriaClient({ initialBinnacles, initialRecyclings }:
                   {loading
                     ? Array.from({ length: 5 }).map((_, i) => (
                         <TableRow key={i}>
-                          <TableCell><div className="h-4 w-28 animate-pulse bg-muted rounded" /></TableCell>
-                          <TableCell><div className="h-4 w-16 animate-pulse bg-muted rounded" /></TableCell>
-                          <TableCell><div className="h-4 w-12 animate-pulse bg-muted rounded" /></TableCell>
-                          <TableCell><div className="h-4 w-40 animate-pulse bg-muted rounded" /></TableCell>
-                          <TableCell><div className="h-4 w-16 animate-pulse bg-muted rounded" /></TableCell>
+                          <TableCell>
+                            <div className="h-4 w-28 animate-pulse bg-muted rounded" />
+                          </TableCell>
+                          <TableCell>
+                            <div className="h-4 w-16 animate-pulse bg-muted rounded" />
+                          </TableCell>
+                          <TableCell>
+                            <div className="h-4 w-12 animate-pulse bg-muted rounded" />
+                          </TableCell>
+                          <TableCell>
+                            <div className="h-4 w-40 animate-pulse bg-muted rounded" />
+                          </TableCell>
+                          <TableCell>
+                            <div className="h-4 w-16 animate-pulse bg-muted rounded" />
+                          </TableCell>
                         </TableRow>
                       ))
                     : topMonthly.map((r: TopEntry, i) => (
@@ -458,21 +616,55 @@ export default function AuditoriaClient({ initialBinnacles, initialRecyclings }:
           <CardContent className="space-y-4 text-sm">
             <div className="flex flex-col gap-2">
               <label className="font-medium">Usuario</label>
-              <input type="text" placeholder="Ingresa el usuario" value={filterUser} onChange={(e) => setFilterUser(e.target.value)} className="border rounded px-2 py-1" />
+              <input
+                type="text"
+                placeholder="Ingresa el usuario"
+                value={filterUser}
+                onChange={(e) => setFilterUser(e.target.value)}
+                className="border rounded px-2 py-1"
+              />
             </div>
             <div className="flex flex-col gap-2">
               <label className="font-medium">Mes</label>
-              <input type="text" placeholder="Ingresa el mes" value={filterMonth} onChange={(e) => setFilterMonth(e.target.value)} className="border rounded px-2 py-1" />
+              <input
+                type="text"
+                placeholder="Ingresa el mes"
+                value={filterMonth}
+                onChange={(e) => setFilterMonth(e.target.value)}
+                className="border rounded px-2 py-1"
+              />
             </div>
             <div className="flex flex-col gap-2">
               <label className="font-medium">Año</label>
-              <input type="text" placeholder="Ingresa el año" value={filterYear} onChange={(e) => setFilterYear(e.target.value)} className="border rounded px-2 py-1" />
+              <input
+                type="text"
+                placeholder="Ingresa el año"
+                value={filterYear}
+                onChange={(e) => setFilterYear(e.target.value)}
+                className="border rounded px-2 py-1"
+              />
             </div>
             <div className="flex flex-col gap-2">
               <label className="font-medium">Centro de Acopio</label>
-              <input type="text" placeholder="Ingresa el centro de acopio" value={filterCenter} onChange={(e) => setFilterCenter(e.target.value)} className="border rounded px-2 py-1" />
+              <input
+                type="text"
+                placeholder="Ingresa el centro de acopio"
+                value={filterCenter}
+                onChange={(e) => setFilterCenter(e.target.value)}
+                className="border rounded px-2 py-1"
+              />
             </div>
-            <button onClick={() => { setFilterMonth(""); setFilterYear(""); setFilterCenter(""); setFilterUser(""); }} className="border w-full rounded px-2 py-1 bg-muted">Limpiar filtros</button>
+            <button
+              onClick={() => {
+                setFilterMonth("");
+                setFilterYear("");
+                setFilterCenter("");
+                setFilterUser("");
+              }}
+              className="border w-full rounded px-2 py-1 bg-muted"
+            >
+              Limpiar filtros
+            </button>
           </CardContent>
         </Card>
       </div>

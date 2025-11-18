@@ -12,7 +12,7 @@ interface ToastProps {
   duration?: number; // Duration in milliseconds
   onClose?: () => void;
   showCloseButton?: boolean;
-  position?: "top" | "bottom";
+  position?: "top" | "bottom" | "top-right" | "top-left" | "bottom-right" | "bottom-left";
   className?: string;
 }
 
@@ -68,12 +68,19 @@ export function Toast({
   return (
     <div
       className={cn(
-        "fixed left-0 right-0 z-50 mx-auto max-w-md px-4 transition-all duration-300 ease-in-out",
-        position === "top" ? "top-4" : "bottom-4",
-        isAnimating 
-          ? "translate-y-0 opacity-100" 
-          : position === "top" 
-            ? "-translate-y-full opacity-0" 
+        "fixed z-50 max-w-md px-4 transition-all duration-300 ease-in-out",
+        // Positioning
+        position === "top" && "left-0 right-0 mx-auto top-4",
+        position === "bottom" && "left-0 right-0 mx-auto bottom-4",
+        position === "top-right" && "top-4 right-4",
+        position === "top-left" && "top-4 left-4",
+        position === "bottom-right" && "bottom-4 right-4",
+        position === "bottom-left" && "bottom-4 left-4",
+        // Animation
+        isAnimating
+          ? "translate-y-0 opacity-100"
+          : position?.startsWith("top")
+            ? "-translate-y-full opacity-0"
             : "translate-y-full opacity-0"
       )}
     >

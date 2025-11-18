@@ -17,10 +17,9 @@ export async function getMaterialConversionRates() {
 // Fetch all materials with their info
 export async function getAllMaterials() {
   const supabase = await createClient();
-  
   const { data, error } = await supabase
     .from('material')
-		.select('material_id, name, equivalent_points, unit_id(unit_id, unit_name)')
+		.select('material_id, name, equivalent_points, unit_id(unit_id, unit_name), updated_by')
 		.order('name', { ascending: true });
   if (error) {
     return { error: error.message, data: null };
