@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getAllCountries } from '@/lib/api/locations';
 
-export async function GET(request: Request) {
+export async function GET() {
   const { data, error } = await getAllCountries();
 
   if (error) {

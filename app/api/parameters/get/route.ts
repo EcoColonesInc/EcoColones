@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getDefaultCurrency } from '@/lib/api/currencies';
 
-export async function GET(request: Request) {
+export async function GET() {
   const { data, error } = await getDefaultCurrency();
 
   if (error) {

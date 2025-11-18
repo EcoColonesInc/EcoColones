@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getUserData } from '@/lib/api/users';
 
-export async function GET(request: Request) {
+export async function GET() {
   const { data, error } = await getUserData();
 
   if (error) {

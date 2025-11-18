@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getAllCurrencies } from '@/lib/api/currencies';
 
-export async function GET(request: Request) {
+export async function GET() {
   const { data, error } = await getAllCurrencies();
 
   if (error) {

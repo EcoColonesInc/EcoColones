@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getUsersWithMostRecycled } from '@/lib/api/users';
 
 // GET - Obtained all users_with_most_recycled with its info
-export async function GET(request: Request) {
+export async function GET() {
   const { data, error } = await getUsersWithMostRecycled();
 
   if (error) {

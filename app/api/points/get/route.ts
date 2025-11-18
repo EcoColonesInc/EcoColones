@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getAllUsersPoints } from '@/lib/api/users';
 
-export async function GET(request: Request) {
+export async function GET() {
   const { data, error } = await getAllUsersPoints();
 
   if (error) {

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getAllAffiliatedBusiness } from '@/lib/api/affiliatedbusiness';
 
-export async function GET(request: Request) {
+export async function GET() {
   const { data, error } = await getAllAffiliatedBusiness();
 
   if (error) {

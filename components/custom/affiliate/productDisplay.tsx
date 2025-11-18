@@ -218,15 +218,17 @@ export const ProductDisplay = ({ product }: ProductDisplayProps) => {
                                     type="button"
                                     onClick={handleDelete}
                                     variant="destructive"
+                                    disabled={isLoading}
                                     className="bg-red-600 hover:bg-red-700 text-white flex-1"
                                 >
-                                    Eliminar
+                                    {isLoading ? "Eliminando..." : "Eliminar"}
                                 </Button>
-                                    <Button
+                                <Button
                                     type="submit"
+                                    disabled={isLoading}
                                     className="bg-green-600 hover:bg-green-700 text-white flex-1"
                                 >
-                                    Guardar
+                                    {isLoading ? "Guardando..." : "Guardar"}
                                 </Button>
                             </div>
                         </div>

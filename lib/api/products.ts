@@ -47,7 +47,7 @@ export async function getAllAffiliatedBusinessesXProducts() {
   
   const { data, error } = await supabase
     .from('affiliatedbusinessxproduct')
-    .select('product_id(product_id, product_name, description, state), affiliated_business_id(affiliated_business_id, affiliated_business_name, description), product_price')
+    .select('affiliated_business_x_prod, product_id(product_id, product_name, description, state), affiliated_business_id(affiliated_business_id, affiliated_business_name, description), product_price')
     .order('affiliated_business_id', { ascending: true });
   if (error) {
     return { error: error.message, data: null };
@@ -60,7 +60,7 @@ export async function getProductsByAffiliatedBusinessId(affiliatedBusinessId: st
   const supabase = await createClient();
     const { data, error } = await supabase
       .from('affiliatedbusinessxproduct')
-      .select('product_id(product_id, product_name, description, state), affiliated_business_id(affiliated_business_name, description), product_price')
+      .select('affiliated_business_x_prod, product_id(product_id, product_name, description, state), affiliated_business_id(affiliated_business_id, affiliated_business_name, description), product_price')
       .order('affiliated_business_id', { ascending: true })
       .eq('affiliated_business_id', affiliatedBusinessId);
     if (error) {

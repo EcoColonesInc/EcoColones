@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getUserCenterTransactions } from '@/lib/api/transactions';
 
-export async function GET(request: Request) {
+export async function GET() {
   const { data, error } = await getUserCenterTransactions();
 
   if (error) {
