@@ -3,9 +3,10 @@ import { Button } from "@/components/ui/button";
 import { redirect } from "next/navigation";
 import { AUTH_ROUTES } from "@/config/routes";
 
-import { getUserData, calculateAge, getProfilePictureUrl, getUserCenterTransactions,
-         getMaterialConversionRates, getDefaultCurrency
-} from "@/lib/api/users";
+import { getUserData, calculateAge, getProfilePictureUrl} from "@/lib/api/users";
+import {getUserCenterTransactions} from "@/lib/api/transactions";
+import {getMaterialConversionRates} from "@/lib/api/materials";
+import {getDefaultCurrency} from "@/lib/api/currencies";
 
 // --- Local types to avoid `any` usage ---
 type UserCenterTransaction = {
@@ -42,7 +43,7 @@ type ConversionRate = {
 };
 
 export default async function UserDashboard() {
-  
+
   // Fetch user data using shared API logic
   const { data, error } = await getUserData();
   if (error || !data || data.length === 0) {
