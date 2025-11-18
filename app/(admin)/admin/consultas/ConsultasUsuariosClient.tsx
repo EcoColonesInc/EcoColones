@@ -13,6 +13,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { Toast, useToast } from "@/components/ui/toast";
 
 interface PersonRow {
   user_id: string;
@@ -59,6 +60,7 @@ interface Props {
   initialProvinces: unknown[];
   initialCities: unknown[];
   initialDistricts: unknown[];
+  initialNoPwdChange: unknown[];
 }
 
 type ProfileGeo = {
@@ -248,6 +250,7 @@ export default function ConsultasUsuariosClient({
   initialProvinces,
   initialCities,
   initialDistricts,
+  initialNoPwdChange,
 }: Props) {
   const persons = initialPersons as PersonRow[];
   const points = initialPoints as PointsRow[];
@@ -255,6 +258,7 @@ export default function ConsultasUsuariosClient({
   const provinces = initialProvinces as Province[];
   const cities = initialCities as City[];
   const districts = initialDistricts as District[];
+  const noPwdChange = initialNoPwdChange as unknown as NoPwdRow[];
   const { role } = useAuth();
   const router = useRouter();
 
@@ -304,6 +308,116 @@ export default function ConsultasUsuariosClient({
   const [fDistrict, setFDistrict] = useState("");
   const [fDateFrom, setFDateFrom] = useState("");
   const [fDateTo, setFDateTo] = useState("");
+
+  // Sección: usuarios sin cambio de contraseña
+  interface NoPwdRow {
+    user_id: string;
+    first_name?: string;
+    last_name?: string;
+    second_last_name?: string;
+    identification?: string | null;
+    telephone_number?: string | null;
+    user_name?: string | null;
+    created_at?: string | null;
+    password_updated_at?: string | null;
+  }
+  const [nfName, setNfName] = useState("");
+  const [nfLast, setNfLast] = useState("");
+  const [nfSecondLast, setNfSecondLast] = useState("");
+  const [nfId, setNfId] = useState("");
+  const [nfUser, setNfUser] = useState("");
+  const [nfDateFrom, setNfDateFrom] = useState("");
+  const [nfDateTo, setNfDateTo] = useState("");
+  const [sending, setSending] = useState(false);
+  const [emailMap, setEmailMap] = useState<Record<string, string | null>>({});
+
+  const usersNoPwdFiltered = useMemo(() => {
+    return noPwdChange.filter((p) => {
+      const name = (p.first_name || "").toLowerCase();
+      const last = (p.last_name || "").toLowerCase();
+      const second = (p.second_last_name || "").toLowerCase();
+      const idc = (p.identification || "").toLowerCase();
+      const uname = (p.user_name || "").toLowerCase();
+      const created = p.created_at ? new Date(p.created_at) : null;
+      const fromOk = !nfDateFrom || (created && created >= new Date(nfDateFrom));
+      const toOk = !nfDateTo || (created && created <= new Date(nfDateTo));
+      return (
+        (!nfName || name.includes(nfName.toLowerCase())) &&
+        (!nfLast || last.includes(nfLast.toLowerCase())) &&
+        (!nfSecondLast || second.includes(nfSecondLast.toLowerCase())) &&
+        (!nfId || idc.includes(nfId.toLowerCase())) &&
+        (!nfUser || uname.includes(nfUser.toLowerCase())) &&
+        (!!fromOk && !!toOk)
+      );
+    });
+  }, [noPwdChange, nfName, nfLast, nfSecondLast, nfId, nfUser, nfDateFrom, nfDateTo]);
+
+  // Cargar emails para los usuarios filtrados (cache local en emailMap)
+  useEffect(() => {
+    const ids = usersNoPwdFiltered.map((u) => u.user_id);
+    const missing = ids.filter((id) => emailMap[id] === undefined).slice(0, 200);
+    if (missing.length === 0) return;
+    let cancelled = false;
+    (async () => {
+      const pairs: Array<[string, string | null]> = [];
+      for (const id of missing) {
+        try {
+          const res = await fetch(`/api/persons/${id}/email/get`);
+          const json = await res.json();
+          const email = json?.data?.email ?? null;
+          pairs.push([id, email]);
+        } catch {
+          pairs.push([id, null]);
+        }
+      }
+      if (cancelled) return;
+      setEmailMap((prev) => {
+        const next = { ...prev };
+        for (const [id, email] of pairs) next[id] = email;
+        return next;
+      });
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [usersNoPwdFiltered, emailMap]);
+
+  const { toast, showToast, hideToast } = useToast();
+
+  const handleSendReminders = useCallback(async () => {
+    try {
+      const ids = usersNoPwdFiltered.map((u) => u.user_id);
+      if (ids.length === 0) {
+        alert("No hay usuarios para notificar.");
+        return;
+      }
+      if (ids.length > 100) {
+        const go = confirm(`Se enviarán ${ids.length} correos. ¿Continuar?`);
+        if (!go) return;
+      }
+      setSending(true);
+      const redirectTo = `${window.location.origin}/user/profile`;
+      const res = await fetch('/api/persons/password-reminders/post', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userIds: ids, redirectTo })
+      });
+      const json = await res.json();
+      const sent = Number(json?.sent ?? 0);
+      const total = ids.length;
+      if (!res.ok || sent !== total) {
+        const firstErr = json?.failures?.[0]?.error || (json?.error ?? 'Fallo al enviar recordatorios');
+        showToast(`Recordatorios enviados: ${sent} / ${total}. ${firstErr}`, 'error', 6000);
+        return;
+      }
+      showToast(`Recordatorios enviados: ${sent} / ${total}`, 'success', 4000);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Error al enviar recordatorios';
+      showToast(msg, 'error', 4000);
+    } finally {
+      setSending(false);
+    }
+  }, [usersNoPwdFiltered, showToast]);
 
   const pointsMap = useMemo(() => {
     const m = new Map<string, number>();
@@ -473,7 +587,8 @@ export default function ConsultasUsuariosClient({
               onChange={(e) => setFSecondLast(e.target.value)}
             />
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col gap-2">
+            <label className="font-medium">Cédula</label>
             <input
               className="border rounded px-2 py-1 flex-1"
               placeholder="Ingresa la cédula"
@@ -554,71 +669,80 @@ export default function ConsultasUsuariosClient({
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="lg:col-span-2 h-full">
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Usuarios que no han cambiado su contraseña</CardTitle>
+            <Button onClick={handleSendReminders} disabled={sending}>
+              {sending ? 'Enviando…' : `Enviar recordatorio (${usersNoPwdFiltered.length})`}
+            </Button>
           </CardHeader>
           <CardContent className="flex flex-col h-[420px]">
-            <p className="text-sm text-muted-foreground mb-3">
-              Reporte placeholder; requiere endpoint futuro.
-            </p>
-            <Table className="mb-1">
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Identificación</TableHead>
-                  <TableHead>Nombre</TableHead>
-                  <TableHead>Teléfono</TableHead>
-                  <TableHead>Último cambio</TableHead>
-                  <TableHead>Acción</TableHead>
-                </TableRow>
-              </TableHeader>
-            </Table>
-            <div className="overflow-y-auto pr-2 flex-1" />
-            <div className="mt-4 text-sm text-muted-foreground">Total: 0</div>
+            <div className="overflow-y-auto pr-2 flex-1">
+              <Table>
+                <TableHeader className="sticky top-0 bg-background z-10">
+                  <TableRow>
+                    <TableHead>Identificación</TableHead>
+                    <TableHead>Nombre</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Último cambio</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {usersNoPwdFiltered.map((p) => {
+                    const name = [p.first_name, p.last_name, p.second_last_name].filter(Boolean).join(' ');
+                    const lastChange = p.password_updated_at ? new Date(p.password_updated_at).toLocaleDateString() : '—';
+                    const email = emailMap[p.user_id] ?? '…';
+                    return (
+                      <TableRow key={p.user_id}>
+                        <TableCell>{p.identification || '-'}</TableCell>
+                        <TableCell>{name || '-'}</TableCell>
+                        <TableCell>{email || '-'}</TableCell>
+                        <TableCell>{lastChange}</TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+            <div className="mt-4 text-sm text-muted-foreground">Total: {usersNoPwdFiltered.length}</div>
           </CardContent>
         </Card>
         <FiltersPanel title="Filtrar (contraseñas)">
           <div className="flex flex-col gap-3">
-            <input className="border rounded px-2 py-1" placeholder="Nombre" />
-            <input
-              className="border rounded px-2 py-1"
-              placeholder="Apellidos"
-            />
-            <input
-              className="border rounded px-2 py-1"
-              placeholder="Identificación"
-            />
-            <input
-              className="border rounded px-2 py-1"
-              placeholder="Username"
-            />
             <div className="flex flex-col gap-2">
-              <label className="font-medium">Rango fechas</label>
+              <label className="font-medium">Nombre</label>
+              <input className="border rounded px-2 py-1" placeholder="Ingresa el nombre" value={nfName} onChange={(e) => setNfName(e.target.value)} />
+            </div>
+            <div className="flex flex-col gap-2">
+              <label className="font-medium">Primer Apellido</label>
+              <input className="border rounded px-2 py-1" placeholder="Ingresa el primer apellido" value={nfLast} onChange={(e) => setNfLast(e.target.value)} />
+            </div>
+            <div className="flex flex-col gap-2">
+              <label className="font-medium">Segundo Apellido</label>
+              <input className="border rounded px-2 py-1" placeholder="Ingresa el segundo apellido" value={nfSecondLast} onChange={(e) => setNfSecondLast(e.target.value)} />
+            </div>
+            <div className="flex flex-col gap-2">
+              <label className="font-medium">Cédula</label>
+              <input className="border rounded px-2 py-1" placeholder="Ingresa la cédula" value={nfId} onChange={(e) => setNfId(e.target.value)} />
+            </div>
+            <div className="flex flex-col gap-2">
+              <label className="font-medium">Username</label>
+              <input className="border rounded px-2 py-1" placeholder="Ingresa el username" value={nfUser} onChange={(e) => setNfUser(e.target.value)} />
+            </div>
+            <div className="flex flex-col gap-2">
+              <label className="font-medium">Rango fechas (creación)</label>
               <div className="grid grid-cols-2 gap-2">
-                <input
-                  type="date"
-                  className="border rounded px-2 py-1"
-                  value={fDateFrom}
-                  onChange={(e) => setFDateFrom(e.target.value)}
-                />
-                <input
-                  type="date"
-                  className="border rounded px-2 py-1"
-                  value={fDateTo}
-                  onChange={(e) => setFDateTo(e.target.value)}
-                />
+                <input type="date" className="border rounded px-2 py-1" value={nfDateFrom} onChange={(e) => setNfDateFrom(e.target.value)} />
+                <input type="date" className="border rounded px-2 py-1" value={nfDateTo} onChange={(e) => setNfDateTo(e.target.value)} />
               </div>
             </div>
-            <button
-              onClick={() => {
-                setFDateFrom("");
-                setFDateTo("");
-              }}
-              className="border w-full rounded px-2 py-1 bg-muted"
-            >
-              Limpiar filtros
-            </button>
+            <div className="flex gap-2">
+              <button onClick={() => { setNfName(''); setNfLast(''); setNfSecondLast(''); setNfId(''); setNfUser(''); setNfDateFrom(''); setNfDateTo(''); }} className="border rounded px-2 py-1 bg-muted w-full">Limpiar filtros</button>
+            </div>
           </div>
         </FiltersPanel>
+        {toast && (
+          <Toast message={toast.message} type={toast.type} duration={toast.duration} onClose={hideToast} position="top-right" />
+        )}
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="lg:col-span-2 h-full">

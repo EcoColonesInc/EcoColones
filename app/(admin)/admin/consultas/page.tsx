@@ -1,5 +1,5 @@
 import ConsultasUsuariosClient from "@/app/(admin)/admin/consultas/ConsultasUsuariosClient";
-import { getAllPersons } from "@/lib/api/persons";
+import { getAllPersons, getPersonsWithoutPasswordChange } from "@/lib/api/persons";
 import { getAllUsersPoints } from "@/lib/api/users";
 import {
   getAllCountries,
@@ -18,6 +18,7 @@ export default async function AdminConsultasPage() {
     provincesRes,
     citiesRes,
     districtsRes,
+    noPwdRes,
   ] = await Promise.all([
     getAllPersons(),
     getAllUsersPoints(),
@@ -25,6 +26,7 @@ export default async function AdminConsultasPage() {
     getAllProvinces(),
     getAllCities(),
     getAllDistricts(),
+    getPersonsWithoutPasswordChange(),
   ]);
   return (
     <ConsultasUsuariosClient
@@ -34,6 +36,7 @@ export default async function AdminConsultasPage() {
       initialProvinces={(provincesRes.data ?? []) as unknown[]}
       initialCities={(citiesRes.data ?? []) as unknown[]}
       initialDistricts={(districtsRes.data ?? []) as unknown[]}
+      initialNoPwdChange={(noPwdRes.data ?? []) as unknown[]}
     />
   );
 }

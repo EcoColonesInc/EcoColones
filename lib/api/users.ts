@@ -109,3 +109,14 @@ export async function getPointsByUserId(userId: string) {
     }
     return { error: null, data };
 }
+
+// Fetch a single user by its ID
+export async function getUserById(userId: string) {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase.rpc('get_profile_info', { p_user_id: userId });
+  if (error) {
+    return { error: error.message, data: null };
+  }
+  return { error: null, data };
+}
