@@ -1,13 +1,10 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { getProductsByAffiliatedBusinessId } from '@/lib/api/products';
 
-export async function GET(_req: Request, { params }: { params: { id: string } }) {
-  const { id } = params;
+// Ajuste de firma para coincidir con tipos generados que esperan params como Promise
+export async function GET(_req: NextRequest, context: { params: Promise<{ id: string }> }) {
+  const { id } = await context.params;
   const { data, error } = await getProductsByAffiliatedBusinessId(id);
-
-  if (error) {
-    return NextResponse.json({ error }, { status: 400 });
-  }
-
+  if (error) return NextResponse.json({ error }, { status: 400 });
   return NextResponse.json({ data });
 }
