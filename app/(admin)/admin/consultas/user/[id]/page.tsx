@@ -1,4 +1,4 @@
-import UserDetailClient from "./UserDetailClient";
+import UserDetailClient from "@/app/(admin)/admin/consultas/user/[id]/UserDetailClient";
 import { getProfileInfoByUserId, getEmailByUserId } from "@/lib/api/persons";
 import { getPointsByUserId } from "@/lib/api/users";
 import { createClient } from "@/utils/supabase/server";

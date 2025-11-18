@@ -1,4 +1,4 @@
-import ConsultasUsuariosClient from "./ConsultasUsuariosClient";
+import ConsultasUsuariosClient from "@/app/(admin)/admin/consultas/ConsultasUsuariosClient";
 import { getAllPersons } from "@/lib/api/persons";
 import { getAllUsersPoints } from "@/lib/api/users";
 import {
