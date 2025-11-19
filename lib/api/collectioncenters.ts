@@ -1,15 +1,31 @@
 import { createClient } from '@/utils/supabase/server';
+import type { SupabaseClient } from '@supabase/supabase-js';
+
+type EmailRow = { id_email: string | number; email: string | null };
+type PersonRef = { first_name?: string | null; last_name?: string | null } | null;
+type DistrictRef = { district_name?: string | null } | null;
+type EmailLike = string | number | { id_email?: string | number; email?: string | null } | null;
+type CollectionCenterRaw = {
+  collectioncenter_id: string | number;
+  person_id?: PersonRef;
+  district_id?: DistrictRef;
+  name: string;
+  phone?: string | null;
+  email: EmailLike;
+  latitude?: number | null;
+  longitude?: number | null;
+};
 
 // Obtiene correos por id (id_email) y devuelve un mapa id->string
-async function fetchEmailsByIds(supabase: any, ids: (string | number)[]) {
+async function fetchEmailsByIds(supabase: SupabaseClient, ids: (string | number)[]) {
   if (!ids.length) return {} as Record<string, string | null>;
   const { data, error } = await supabase
     .from('email')
     .select('id_email, email')
     .in('id_email', ids);
   if (error || !data) return {} as Record<string, string | null>;
-  return data.reduce((acc: Record<string, string | null>, row: any) => {
-    if (row?.id_email) acc[String(row.id_email)] = typeof row.email === 'string' ? row.email : null;
+  return (data as EmailRow[]).reduce((acc: Record<string, string | null>, row: EmailRow) => {
+    if (row?.id_email != null) acc[String(row.id_email)] = typeof row.email === 'string' ? row.email : null;
     return acc;
   }, {});
 }
@@ -34,10 +50,10 @@ export async function getAllCollectionCenters() {
     return { error: error.message, data: null };
   }
   // Recolecta posibles IDs (número/string) para resolver a texto.
-  const rawCenters = data ?? [];
+  const rawCenters = (data ?? []) as CollectionCenterRaw[];
   const possibleIds: (string | number)[] = [];
   for (const c of rawCenters) {
-    const raw = (c as any).email;
+    const raw = c.email as EmailLike;
     if (raw == null) continue;
     if (typeof raw === 'number' || typeof raw === 'string') {
       // Si es string con '@' ya es correo, no agregamos como id.
@@ -51,8 +67,8 @@ export async function getAllCollectionCenters() {
   }
   const uniqueIds = Array.from(new Set(possibleIds));
   const emailMap = await fetchEmailsByIds(supabase, uniqueIds);
-  const normalized = rawCenters.map((c: any) => {
-    const raw = c.email;
+  const normalized = rawCenters.map((c: CollectionCenterRaw) => {
+    const raw = c.email as EmailLike;
     let resolved: string | null = null;
     if (raw == null) {
       resolved = null;
@@ -93,7 +109,8 @@ export async function getCollectionCenterById(collectionCenterId: string) {
     return { error: error.message, data: null };
   }
   if (!data) return { error: null, data: null };
-  const raw = (data as any).email;
+  const row = data as CollectionCenterRaw;
+  const raw = row.email as EmailLike;
   let resolved: string | null = null;
   if (raw == null) {
     resolved = null;
@@ -115,5 +132,5 @@ export async function getCollectionCenterById(collectionCenterId: string) {
       resolved = map[String(raw.id_email)] || null;
     }
   }
-  return { error: null, data: { ...data, email: resolved } };
+  return { error: null, data: { ...row, email: resolved } };
 }
