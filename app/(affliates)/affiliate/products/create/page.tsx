@@ -1,5 +1,6 @@
 "use client"
 import { ProductForm } from "@/components/custom/affiliate/productForm";
+import { Info, ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 interface Product {
@@ -18,28 +19,11 @@ export default function CreateProductPage() {
         console.log('Nuevo producto creado:', newProduct);
         
         // TODO:Llamada a la API para guardar en BD
-        // try {
-        //     const response = await fetch('/api/products', {
-        //         method: 'POST',
-        //         headers: { 'Content-Type': 'application/json' },
-        //         body: JSON.stringify(newProduct)
-        //     });
-        //     
-        //     if (!response.ok) {
-        //         throw new Error('Error al crear producto');
-        //     }
-        //     
-        //     const savedProduct = await response.json();
-        //     console.log('Producto guardado:', savedProduct);
-        // } catch (error) {
-        //     console.error('Error guardando producto:', error);
-        //     return; // No redirigir si hay error
-        // }
         
         // Simular guardado exitoso y redirigir
         setTimeout(() => {
             router.push('/affiliate/products/create');
-        }, 2000); // Dar tiempo para ver el toast de éxito*/
+        }, 2000);
     };
 
     return (
@@ -53,19 +37,7 @@ export default function CreateProductPage() {
                         className="text-green-600 hover:text-green-800 transition-colors"
                         aria-label="Volver atrás"
                     >
-                        <svg 
-                            className="w-6 h-6" 
-                            fill="none" 
-                            stroke="currentColor" 
-                            viewBox="0 0 24 24"
-                        >
-                            <path 
-                                strokeLinecap="round" 
-                                strokeLinejoin="round" 
-                                strokeWidth={2} 
-                                d="M15 19l-7-7 7-7" 
-                            />
-                        </svg>
+                        <ArrowLeft className="w-6 h-6" />
                     </button>
                     
                     <div>
@@ -90,17 +62,7 @@ export default function CreateProductPage() {
             {/* Información adicional o ayuda (opcional) */}
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-8">
                 <div className="flex items-start gap-3">
-                    <svg 
-                        className="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0" 
-                        fill="currentColor" 
-                        viewBox="0 0 20 20"
-                    >
-                        <path 
-                            fillRule="evenodd" 
-                            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" 
-                            clipRule="evenodd" 
-                        />
-                    </svg>
+                    <Info className="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0" />
                     <div>
                         <h3 className="text-sm font-semibold text-blue-800 mb-1">
                             Tips para un buen producto
