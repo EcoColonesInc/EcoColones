@@ -5,19 +5,16 @@ import { Search, SlidersHorizontal } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { useState, useRef, useEffect } from "react";
+import { useAuth } from "@/contexts/AuthProvider";
 
 export default function UserRedeemPage() {
-  const [selectedFilters, setSelectedFilters] = useState<string[]>(["fastfood"]);
+  const [selectedFilters, setSelectedFilters] = useState<string[]>([]); // empty = no filter (show all)
   const [searchTerm, setSearchTerm] = useState("");
   const [showFilterBox, setShowFilterBox] = useState(false);
 
   const filterRef = useRef<HTMLDivElement | null>(null);
 
-  const toggleFilter = (value: string) => {
-    setSelectedFilters((prev) =>
-      prev.includes(value) ? prev.filter((f) => f !== value) : [...prev, value]
-    );
-  };
+  // filter toggling handled via tempSelectedFilters when opening the panel
   useEffect(() => {
     const handler = (event: MouseEvent) => {
       if (
@@ -32,20 +29,122 @@ export default function UserRedeemPage() {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  const stores = [
-    { name: "McDonalds", location: "San Pablo, Heredia, Costa Rica", logo: "/affiliates/mcdonalds.png", type: "fastfood" },
-    { name: "Pops - Coronado", location: "San Antonio, Coronado, Costa Rica", logo: "/affiliates/pops.png", type: "fastfood" },
-    { name: "Taco Bell - Belén", location: "Belén, Heredia, Costa Rica", logo: "/affiliates/tacobell.png", type: "fastfood" },
-    { name: "La Estación - Cartago", location: "Cartago, Cartago, Costa Rica", logo: "/affiliates/laestacion.png", type: "fastfood" },
-    { name: "BurgerKing - Tibas", location: "Tibás, San José, Costa Rica", logo: "/affiliates/burgerking.png", type: "fastfood" },
-    { name: "Taco Bell - Oxígeno", location: "Heredia, Costa Rica", logo: "/affiliates/tacobell.png", type: "fastfood" },
-  ];
+  // Load business types for the filter panel
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const res = await fetch('/api/businesstypes/get');
+        const body = await res.json();
+        if (!res.ok) throw new Error(body?.error ?? 'Error fetching business types');
+        const rows = Array.isArray(body) ? body : (body?.data ?? []);
+        const mapped = (rows || []).map((r: unknown) => {
+          const row = (r && typeof r === 'object') ? (r as Record<string, unknown>) : {};
+          const name = 'name' in row ? String(row['name'] ?? '') : '';
+          const key = name ? name.toLowerCase().replace(/\s+/g, '') : '';
+          return { key, label: name || 'Otro' };
+        }).filter((t: { key: string; label: string }) => t.key);
+        if (mounted) setAvailableTypes(mapped);
+      } catch (err) {
+        console.error('Error loading business types:', err);
+        if (mounted) setAvailableTypes([]);
+      }
+    })();
+    return () => { mounted = false; };
+  }, []);
 
-  const filteredStores = stores.filter((store) => {
-    const matchesType = selectedFilters.includes(store.type);
+  // API-loaded affiliated businesses (no static list)
+  type StoreItem = { name: string; location: string; logo: string; type: string; typeLabel: string; id: string | number | null; raw?: unknown };
+  const [apiStores, setApiStores] = useState<StoreItem[]>([]);
+  const [storesLoading, setStoresLoading] = useState(false);
+  const [availableTypes, setAvailableTypes] = useState<Array<{ key: string; label: string }>>([]);
+  const [tempSelectedFilters, setTempSelectedFilters] = useState<string[]>([]);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      setStoresLoading(true);
+      try {
+        const res = await fetch('/api/affiliatedbusiness/get');
+        const body = await res.json();
+        if (!res.ok) throw new Error(body?.error ?? 'Error fetching affiliated businesses');
+
+        // API route returns data directly (array) — normalize if wrapper exists
+        const rows = Array.isArray(body) ? body : (body?.data ?? []);
+
+        const mapped = (rows || []).map((r: unknown) => {
+          const row = (r && typeof r === 'object') ? (r as Record<string, unknown>) : {};
+          const rawType = row['business_type_id'] && typeof row['business_type_id'] === 'object' ? String((row['business_type_id'] as Record<string, unknown>)['name'] ?? '') : String(row['business_type_id'] ?? '');
+          const typeKey = rawType ? rawType.toString().toLowerCase().replace(/\s+/g, '') : 'other';
+          const district = row['district_id'] && typeof row['district_id'] === 'object' ? String((row['district_id'] as Record<string, unknown>)['district_name'] ?? '') : String(row['district_id'] ?? '');
+          // Try to choose a logo: prefer provided image_url/product image fields; fallback to a placeholder
+          const logo = String(row['logo_url'] ?? row['image_url'] ?? '/affiliates/placeholder.png');
+          return {
+            name: String(row['affiliated_business_name'] ?? 'Negocio afiliado'),
+            location: district ? `${district}` : '',
+            logo,
+            type: typeKey,
+            typeLabel: rawType || 'Otro',
+            id: row['affiliated_business_id'] as string | number | null,
+            raw: row,
+          } as StoreItem;
+        });
+
+        if (mounted) setApiStores(mapped);
+      } catch (err) {
+        console.error('Error loading affiliated businesses:', err);
+      } finally {
+        if (mounted) setStoresLoading(false);
+      }
+    })();
+    return () => { mounted = false; };
+  }, []);
+
+  // Use only API stores (if none, show empty state)
+  const filteredStores = apiStores.filter((store) => {
+    const matchesType = selectedFilters.length === 0 ? true : selectedFilters.includes(store.type);
     const matchesSearch = store.name.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesType && matchesSearch;
   });
+
+  // Recent affiliated-business transactions (show only 2 here)
+  const { user: authUser } = useAuth();
+  type RecentTx = { id: string; product: string; amount: number; date: string; store: string };
+  const [recentTransactions, setRecentTransactions] = useState<RecentTx[]>([]);
+  const [recentLoading, setRecentLoading] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      if (!authUser?.id) return;
+      setRecentLoading(true);
+      try {
+        const res = await fetch(`/api/persons/${authUser.id}/affiliatedbusinesstransactions/get`);
+        const body = await res.json();
+        if (!res.ok) throw new Error(body?.error ?? 'Error fetching user transactions');
+
+        const rows = Array.isArray(body) ? body : (body?.data ?? []);
+
+        const mapped = (rows || []).map((r: unknown, idx: number) => {
+          const row = (r && typeof r === 'object') ? (r as Record<string, unknown>) : {};
+          const txId = String(row['transaction_code'] ?? row['transaction_id'] ?? `T${idx}`);
+          const product = row['product_id'] && typeof row['product_id'] === 'object' ? String((row['product_id'] as Record<string, unknown>)['product_name'] ?? (row['product_name'] ?? row['product'] ?? '—')) : String(row['product_name'] ?? row['product'] ?? '—');
+          const amount = Number(row['total_price'] ?? row['total_points'] ?? row['product_amount'] ?? 0) || 0;
+          const date = row['created_at'] ? new Date(String(row['created_at'])).toLocaleString('es-CR', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—';
+          const store = row['affiliated_business_id'] && typeof row['affiliated_business_id'] === 'object' ? String((row['affiliated_business_id'] as Record<string, unknown>)['affiliated_business_name'] ?? (row['affiliated_business_name'] ?? row['affiliated_business'] ?? '—')) : String(row['affiliated_business_name'] ?? row['affiliated_business'] ?? '—');
+          return { id: txId, product, amount, date, store } as RecentTx;
+        });
+
+        if (mounted) setRecentTransactions(mapped.slice(0, 2));
+      } catch (err) {
+        console.error('Error loading recent affiliated transactions:', err);
+        if (mounted) setRecentTransactions([]);
+      } finally {
+        if (mounted) setRecentLoading(false);
+      }
+    })();
+    return () => { mounted = false; };
+  }, [authUser?.id]);
 
   return (
     <div className="min-h-screen bg-white px-6 md:px-16 py-10 relative">
@@ -69,7 +168,14 @@ export default function UserRedeemPage() {
             <SlidersHorizontal
               className="absolute right-5 top-3.5 text-gray-500 cursor-pointer"
               size={22}
-              onClick={() => setShowFilterBox((v) => !v)}
+              onClick={() => {
+                // when opening the panel, initialize the temporary selection
+                setShowFilterBox((v) => {
+                  const opening = !v;
+                  if (opening) setTempSelectedFilters(selectedFilters.slice());
+                  return opening;
+                });
+              }}
             />
 
             {/* FILTER PANEL */}
@@ -78,46 +184,32 @@ export default function UserRedeemPage() {
                 <h3 className="font-semibold mb-2 text-sm">Filtrar por tipo de comercio</h3>
 
                 <div className="space-y-2 text-sm">
-                  <label className="flex gap-2">
-                    <input
-                      type="checkbox"
-                      checked={selectedFilters.includes("fastfood")}
-                      onChange={() => toggleFilter("fastfood")}
-                    />
-                    Comida rápida
-                  </label>
-
-                  <label className="flex gap-2">
-                    <input
-                      type="checkbox"
-                      checked={selectedFilters.includes("pharmacy")}
-                      onChange={() => toggleFilter("pharmacy")}
-                    />
-                    Farmacias
-                  </label>
-
-                  <label className="flex gap-2">
-                    <input
-                      type="checkbox"
-                      checked={selectedFilters.includes("fashion")}
-                      onChange={() => toggleFilter("fashion")}
-                    />
-                    Moda
-                  </label>
-
-                  <label className="flex gap-2">
-                    <input
-                      type="checkbox"
-                      checked={selectedFilters.includes("pets")}
-                      onChange={() => toggleFilter("pets")}
-                    />
-                    Mascotas
-                  </label>
+                  {availableTypes.length === 0 && (
+                    <p className="text-sm text-gray-500">No hay categorías disponibles</p>
+                  )}
+                  {availableTypes.map((t) => (
+                    <label className="flex gap-2" key={t.key}>
+                      <input
+                        type="checkbox"
+                        checked={tempSelectedFilters.includes(t.key)}
+                        onChange={() => {
+                          setTempSelectedFilters((prev) =>
+                            prev.includes(t.key) ? prev.filter((p) => p !== t.key) : [...prev, t.key]
+                          );
+                        }}
+                      />
+                      {t.label}
+                    </label>
+                  ))}
                 </div>
 
                 <Button
                   className="w-full mt-4 bg-green-600 hover:bg-green-700 text-white"
-                  onClick={() => setShowFilterBox(false)}
+                  onClick={() => {
+                    // apply temp filters to actual filters
+                    setSelectedFilters(tempSelectedFilters.slice());
+                    setShowFilterBox(false);
+                  }}
                 >
                   Aplicar filtros
                 </Button>
@@ -127,9 +219,17 @@ export default function UserRedeemPage() {
 
           {/* Stores Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+            {storesLoading && (
+              <p className="text-sm text-gray-500">Cargando comercios...</p>
+            )}
+
+            {!storesLoading && filteredStores.length === 0 && (
+              <p className="text-sm text-gray-500">No hay comercios afiliados.</p>
+            )}
+
             {filteredStores.map((store) => (
               <div
-                key={store.name}
+                key={store.id ?? store.name}
                 className="bg-white border border-gray-200 rounded-xl shadow-sm p-3 flex flex-col items-center"
               >
                 <Image
@@ -142,7 +242,7 @@ export default function UserRedeemPage() {
                 <p className="font-semibold">{store.name}</p>
                 <p className="text-sm text-gray-600 text-center">{store.location}</p>
 
-                <Link href={`/user/redeem/comercial`}>
+                <Link href={`/user/redeem/comercial?id=${store.id}`}>
                   <Button className="mt-3 bg-green-600 hover:bg-green-700 rounded-md w-full">
                     Ver comercio
                   </Button>
@@ -157,18 +257,36 @@ export default function UserRedeemPage() {
           <h3 className="font-semibold text-lg mb-4">Historial de compras</h3>
 
           <div className="space-y-3 text-sm">
-            <div className="flex justify-between">
-              <span>Big mac</span><span>1400</span><span>29/10/2025 5:30pm</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Cono Vainilla</span><span>800</span><span>28/10/2025 12:53pm</span>
-            </div>
+            {recentLoading && (
+              <p className="text-sm text-gray-500">Cargando historial...</p>
+            )}
+
+            {!recentLoading && recentTransactions.length === 0 && (
+              <p className="text-sm text-gray-500">No has realizado compras recientemente.</p>
+            )}
+
+            {!recentLoading && recentTransactions.length > 0 && (
+              <div className="w-full">
+                <div className="grid grid-cols-3 gap-2 text-xs text-gray-500 mb-1">
+                  <div>Producto</div>
+                  <div className="text-right">Precio</div>
+                  <div className="text-right">Fecha</div>
+                </div>
+                {recentTransactions.map((t) => (
+                  <div key={t.id} className="grid grid-cols-3 gap-2 items-center py-1">
+                    <div className="text-sm text-gray-800 truncate">{t.product}</div>
+                    <div className="text-sm text-right text-gray-700">{String(t.amount)} pts</div>
+                    <div className="text-xs text-right text-gray-500">{t.date}</div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
-            <Link href={`/user/redeem/transactions`}>
-          <Button className="mt-6 bg-green-600 hover:bg-green-700 rounded-md w-full">
-            Ver más...
-          </Button>
+          <Link href={`/user/redeem/transactions`}>
+            <Button className="mt-6 bg-green-600 hover:bg-green-700 rounded-md w-full">
+              Ver más...
+            </Button>
           </Link>
         </div>
       </div>

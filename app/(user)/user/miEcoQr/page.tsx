@@ -20,10 +20,29 @@ export default function MiEcoQR() {
           console.error('Error fetching person', body?.error);
           return;
         }
-        const data = Array.isArray(body?.data) ? body.data[0] ?? null : body?.data ?? null;
+        console.log('Fetched person data:', body);
+        // Normalize API response shapes: some routes return the data directly
+        // (e.g. an array from an RPC) while others wrap it as { data: ... }
+        let data: Record<string, unknown> | null = null;
+        if (Array.isArray(body)) {
+          const first = body[0];
+          if (first && typeof first === 'object') data = first as Record<string, unknown>;
+        } else if (body && typeof body === 'object' && 'data' in body) {
+          const field = (body as { data?: unknown }).data;
+          if (Array.isArray(field)) {
+            const first = field[0];
+            if (first && typeof first === 'object') data = first as Record<string, unknown>;
+          } else if (field && typeof field === 'object') {
+            data = field as Record<string, unknown>;
+          }
+        } else if (body && typeof body === 'object') {
+          data = body as Record<string, unknown>;
+        }
+
         if (!mounted) return;
-        const idValue = data?.identification ?? null;
-        setIdentification(idValue ? String(idValue) : null);
+        const rawId = data && 'identification' in data ? data['identification'] : null;
+        const idValue = (typeof rawId === 'string' || typeof rawId === 'number') ? String(rawId) : null;
+        setIdentification(idValue);
       } catch (err: unknown) {
         console.error('Error loading person identification', err);
       }
@@ -37,7 +56,6 @@ export default function MiEcoQR() {
   const qrValue = useMemo(() => {
     // Prefer the person.identification field; fall back to auth user id
     if (identification) return identification;
-    return "";
   }, [identification]);
 
   return (

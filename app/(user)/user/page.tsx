@@ -77,7 +77,14 @@ export default async function UserDashboard() {
 
   const user = {
     name: userName,
-    gender: personData.gender || "N/A",
+    gender: (function mapGender(g?: string | null) {
+      if (!g) return "N/A";
+      const v = String(g).toLowerCase();
+      if (v === "male") return "Hombre";
+      if (v === "female") return "Mujer";
+      if (v === "other") return "Otro";
+      return g;
+    })(personData.gender),
     age: age,
     identification: personData.identification || "N/A",
     points: personData.acumulated_points,

@@ -28,8 +28,19 @@ export default function CentersFromUser() {
       const res = await fetch("/api/collectioncenters/get");
       const body = await res.json();
       if (!res.ok) throw new Error(body?.error ?? "Error fetching centers");
-      const rows = body?.data ?? [];
-      if (mounted) setCenters(Array.isArray(rows) ? rows : []);
+
+      // Normalize response shape: the route returns the data directly (array)
+      // in some handlers, or { data: [...] } in others. Accept both.
+      let rows: Center[] = [];
+      if (Array.isArray(body)) {
+        rows = body as Center[];
+      } else if (body && typeof body === 'object' && 'data' in body) {
+        rows = Array.isArray((body as { data?: unknown }).data) ? (body as { data?: unknown }).data as Center[] : [];
+      } else {
+        rows = [];
+      }
+
+      if (mounted) setCenters(rows);
     } catch (err: unknown) {
       //const message = err instanceof Error ? err.message : String(err);
       console.error("Error fetching centers:", err);
