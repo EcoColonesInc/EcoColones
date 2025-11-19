@@ -1,4 +1,3 @@
-import Image from "next/image";
 import { redirect } from "next/navigation";
 import { AUTH_ROUTES } from "@/config/routes";
 import { getUserData, getProfilePictureUrl } from "@/lib/api/users";
