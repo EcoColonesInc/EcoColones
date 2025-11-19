@@ -131,6 +131,7 @@ function StoreInner() {
   };
 
   const [insufficientMsg, setInsufficientMsg] = useState<string | null>(null);
+  const [processingPurchase, setProcessingPurchase] = useState(false);
 
   const handleBuyClick = () => {
     if (total <= 0) {
@@ -148,10 +149,162 @@ function StoreInner() {
     }
   };
 
-  const handleConfirm = () => {
-    // Final confirmation — here you would call the purchase API
-    alert("Compra confirmada");
-    setShowModal(false);
+  const performPurchase = async () => {
+    if (!authUser?.id) {
+      setInsufficientMsg("Usuario no autenticado");
+      window.setTimeout(() => setInsufficientMsg(null), 4000);
+      return;
+    }
+
+    setProcessingPurchase(true);
+    try {
+      // 1) Get the latest user points from API
+      const ptsRes = await fetch(`/api/persons/${authUser.id}/points/get`);
+      const ptsBody = await ptsRes.json();
+
+      // normalize response to a numeric points value
+      let pts: number | null = null;
+      if (ptsBody == null) pts = null;
+      else if (typeof ptsBody === "number") pts = ptsBody;
+      else if (Array.isArray(ptsBody)) {
+        if (ptsBody.length === 0) pts = 0;
+        else {
+          const first = ptsBody[0] ?? {};
+          pts = Number(first.point_amount ?? first.points ?? first.total_points ?? first.accumulated_points ?? first.points_available ?? null) || 0;
+        }
+      } else if (typeof ptsBody === "object") {
+        pts = Number(
+          ptsBody.point_amount ??
+          ptsBody.points ??
+          ptsBody.total_points ??
+          ptsBody.accumulated_points ??
+          (ptsBody.data && (
+            ptsBody.data.point_amount ??
+            ptsBody.data.points ??
+            ptsBody.data[0]?.point_amount ??
+            ptsBody.data[0]?.points
+          )) ??
+          null
+        ) || 0;
+      }
+
+      if (pts === null) {
+        throw new Error('No se pudo obtener los puntos del usuario');
+      }
+
+      if (pts < total) {
+        setInsufficientMsg('No tienes puntos suficientes');
+        window.setTimeout(() => setInsufficientMsg(null), 4000);
+        return;
+      }
+
+      const newPoints = Math.max(0, Math.floor(pts - total));
+
+      // 2) Patch the user's points
+      const patchRes = await fetch(`/api/points/${authUser.id}/patch`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ point_amount: newPoints }),
+      });
+      const patchBody = await patchRes.json();
+      if (!patchRes.ok) {
+        throw new Error(patchBody?.error ?? 'Error actualizando puntos');
+      }
+
+      // 3) Get person full name
+      const personRes = await fetch(`/api/persons/${authUser.id}/get`);
+      const personBody = await personRes.json();
+      const personObj = Array.isArray(personBody) ? personBody[0] : (personBody?.data ?? personBody);
+      const firstName = personObj?.first_name ?? personObj?.firstName ?? '';
+      const lastName = personObj?.last_name ?? personObj?.lastName ?? '';
+      const secondLast = personObj?.second_last_name ?? personObj?.secondLastName ?? '';
+      const personName = `${(firstName || '').trim()} ${(lastName || '').trim()}${secondLast ? ' ' + (secondLast || '').trim() : ''}`.trim();
+
+      // 4) Get default currency
+      const curRes = await fetch('/api/parameters/get');
+      const curBody = await curRes.json();
+      const cur = Array.isArray(curBody) ? curBody[0] : curBody;
+      const currencyName = cur?.name ?? cur?.parameter ?? cur?.currency_name ?? cur?.currency ?? 'CRC';
+
+      // 5) Insert a transaction per product in the cart.
+      // Use a temporary code for insertion, then update the record's
+      // `transaction_code` using the inserted `created_at` value so the
+      // final code follows: id: t.created_at ? `TXN${new Date(t.created_at).getTime()}` : `TXN_FALLBACK_${idx}`
+      const entries = Object.entries(cart);
+      for (let idx = 0; idx < entries.length; idx++) {
+        const [prodName, qty] = entries[idx];
+        if (!qty || qty <= 0) continue;
+
+        const tempCode = `TMP_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+
+        const txRes = await fetch('/api/affiliatedbusinesstransactions/post', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            person_name: personName,
+            affiliated_business_name: storeName,
+            currency_name: currencyName,
+            product_name: prodName,
+            product_amount: qty,
+            transaction_code: tempCode,
+          }),
+        });
+
+        const txBody = await txRes.json();
+        if (!txRes.ok) {
+          throw new Error(txBody?.error ?? 'Error creando transacción');
+        }
+
+        // txBody.data should contain the inserted row (or array with the row)
+        const inserted = txBody?.data && Array.isArray(txBody.data) ? txBody.data[0] : txBody?.data ?? null;
+        const abId = inserted?.ab_transaction_id ?? inserted?.abTransactionId ?? null;
+        const createdAt = inserted?.created_at ?? inserted?.createdAt ?? null;
+
+        // Build a simpler code: three-letter prefix + several digits from timestamp
+        const prefix = (storeName && typeof storeName === 'string')
+          ? storeName.replace(/[^A-Za-z]/g, '').slice(0, 3).toUpperCase()
+          : 'ECO';
+        const timePart = createdAt
+          ? String(new Date(createdAt).getTime()).slice(-7)
+          : String(Date.now()).slice(-7);
+        const finalCode = `${prefix}${timePart}`;
+
+        // If we can, patch the transaction to set the final transaction_code
+        if (abId) {
+          try {
+            await fetch(`/api/affiliatedbusinesstransactions/${abId}/patch`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ transaction_code: finalCode }),
+            });
+          } catch (patchErr) {
+            // non-fatal: log and continue
+            console.warn('No se pudo actualizar transaction_code para', abId, patchErr);
+          }
+        }
+      }
+
+      // 6) Success — clear cart, update local points and close modal
+      setCart({});
+      setUserPoints(newPoints);
+      setShowModal(false);
+      alert('Compra realizada con éxito. Revisa tu correo para la transacción.');
+    } catch (err: unknown) {
+      console.error('Purchase error:', err);
+      if (err instanceof Error) {
+        setInsufficientMsg(err.message);
+        window.setTimeout(() => setInsufficientMsg(null), 6000);
+      } else {
+        setInsufficientMsg('Error realizando la compra');
+        window.setTimeout(() => setInsufficientMsg(null), 6000);
+      }
+    } finally {
+      setProcessingPurchase(false);
+    }
+  };
+
+  const handleConfirm = async () => {
+    await performPurchase();
   };
 
   const displayPoints = userPoints ?? 0;
@@ -250,8 +403,20 @@ function StoreInner() {
             </p>
 
             <div className="flex justify-end gap-3">
-              <Button className="bg-red-500 hover:bg-red-600 text-white" onClick={() => setShowModal(false)}>Cancelar</Button>
-              <Button className="bg-green-600 hover:bg-green-700 text-white" onClick={handleConfirm}>Confirmar</Button>
+              <Button
+                className="bg-red-500 hover:bg-red-600 text-white"
+                onClick={() => setShowModal(false)}
+                disabled={processingPurchase}
+              >
+                Cancelar
+              </Button>
+              <Button
+                className="bg-green-600 hover:bg-green-700 text-white"
+                onClick={handleConfirm}
+                disabled={processingPurchase}
+              >
+                {processingPurchase ? 'Procesando...' : 'Confirmar'}
+              </Button>
             </div>
           </div>
         </div>

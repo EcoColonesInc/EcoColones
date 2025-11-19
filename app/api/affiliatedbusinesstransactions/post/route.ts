@@ -242,7 +242,6 @@ export async function POST(request: Request) {
             }, { status: 400 });
         }
 
-        console.log("AffiliatedBusinessTransaction created successfully:", data);
         return NextResponse.json({ 
             message: "Transacción creada exitosamente.",
             data
