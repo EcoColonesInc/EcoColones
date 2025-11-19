@@ -53,7 +53,7 @@ export const ProductSearch = ({ products }: ProductSearchProps) => {
                 className="max-w-md mx-auto bg-green-100 border-green-500 rounded-full "
             />
             </div>
-            {/* Grid de productos */}
+            { /* Grid de productos */ }
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-h-250 overflow-y-auto">
                 {filteredProducts.map((product) => (
                     
@@ -64,6 +64,7 @@ export const ProductSearch = ({ products }: ProductSearchProps) => {
                                 <Image
                                     src={product.imagen}
                                     alt={product.titulo}
+                                    sizes="192"
                                     fill
                                     className="object-cover"
                                 />
@@ -85,7 +86,7 @@ export const ProductSearch = ({ products }: ProductSearchProps) => {
                                 {product.state === false ? (
                                     <Button 
                                         onClick={() => handleState(product.id)}
-                                        className="flex-1 bg-green-300 hover:bg-green-700"
+                                        className="flex-1 bg-green-500 hover:bg-green-700"
                                     >
                                         Activar
                                     </Button>
@@ -93,14 +94,14 @@ export const ProductSearch = ({ products }: ProductSearchProps) => {
                                 ) : (<>
                                     <Button 
                                         onClick={() => handleState(product.id)}
-                                        className="flex-1 bg-yellow-300 hover:bg-yellow-700"
+                                        className="flex-1 bg-yellow-500 hover:bg-yellow-300"
                                     >
                                         Desactivar
                                     </Button>
                                         
                                     <Button 
                                         onClick={() => router.push(`/affiliate/products/${product.id}/edit`)}
-                                        className="flex-1 bg-green-300 hover:bg-green-700"
+                                        className="flex-1 bg-green-500 hover:bg-green-700"
                                     >
                                         Editar
                                     </Button>
