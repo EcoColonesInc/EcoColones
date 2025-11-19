@@ -1,27 +1,52 @@
 "use client";
 
 import { Search } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useAuth } from "@/contexts/AuthProvider";
 
 export default function UserTransactionsPage() {
   const [search, setSearch] = useState("");
+  const { user: authUser } = useAuth();
 
-  const transactions = [
-    {
-      id: "ASD123",
-      product: "Big mac",
-      amount: 1400,
-      date: "29/10/2025 5:30pm",
-      store: "McDonalds",
-    },
-    {
-      id: "CMV731",
-      product: "Cono Vainilla",
-      amount: 800,
-      date: "28/10/2025 14:23pm",
-      store: "Pops",
-    },
-  ];
+  type Tx = { id: string; product: string; amount: number; date: string; store: string };
+  const [transactions, setTransactions] = useState<Tx[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      if (!authUser?.id) return;
+      setLoading(true);
+      try {
+        const res = await fetch(`/api/persons/${authUser.id}/affiliatedbusinesstransactions/get`);
+        const body = await res.json();
+        if (!res.ok) throw new Error(body?.error ?? 'Error fetching transactions');
+
+        const rows = Array.isArray(body) ? body : (body?.data ?? []);
+
+        const mapped = (rows || []).map((r: unknown, idx: number) => {
+          const row = (r && typeof r === 'object') ? (r as Record<string, unknown>) : {};
+          const id = String(row['transaction_code'] ?? row['transaction_id'] ?? `T${idx}`);
+          const product = row['product_id'] && typeof row['product_id'] === 'object' ? String(((row['product_id'] as Record<string, unknown>)['product_name'] ?? row['product_name'] ?? row['product'] ?? '—')) : String(row['product_name'] ?? row['product'] ?? '—');
+          const amount = Number(row['total_price'] ?? row['total_points'] ?? row['product_amount'] ?? 0) || 0;
+          const date = row['created_at'] ? new Date(String(row['created_at'])).toLocaleString('es-CR', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—';
+          const store = row['affiliated_business_id'] && typeof row['affiliated_business_id'] === 'object' ? String(((row['affiliated_business_id'] as Record<string, unknown>)['affiliated_business_name'] ?? row['affiliated_business_name'] ?? row['affiliated_business'] ?? '—')) : String(row['affiliated_business_name'] ?? row['affiliated_business'] ?? '—');
+          return { id, product, amount, date, store } as Tx;
+        });
+
+        if (mounted) setTransactions(mapped);
+      } catch (err) {
+        console.error('Error loading user affiliated transactions', err);
+        if (mounted) setTransactions([]);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+    return () => { mounted = false; };
+  }, [authUser?.id]);
+
+  // prevent `loading` unused variable lint warning while keeping the state
+  void loading;
 
   const filtered = transactions.filter((t) =>
     t.id.toLowerCase().includes(search.toLowerCase())
