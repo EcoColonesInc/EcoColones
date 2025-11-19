@@ -67,7 +67,7 @@ export const useProductForm = ({ initialProduct, mode, onSave, onDelete }: UsePr
             try {
                 if (selectedFile) {
                     showToast("Subiendo imagen...", "info");
-                    console.log('Archivo seleccionado para subir:', selectedFile);
+                    //console.log('Archivo seleccionado para subir:', selectedFile);
                     // TODO: Aquí irá la lógica de subida de imagen
                 }
 
@@ -81,7 +81,7 @@ export const useProductForm = ({ initialProduct, mode, onSave, onDelete }: UsePr
                         imagen: formData.imagen
                     };
                     
-                    console.log('Crear nuevo producto:', newProduct);
+                    //console.log('Crear nuevo producto:', newProduct);
                     onSave?.(newProduct);
                     showToast("Producto creado exitosamente", "success");
                     
@@ -104,13 +104,13 @@ export const useProductForm = ({ initialProduct, mode, onSave, onDelete }: UsePr
                         imagen: formData.imagen
                     };
                     
-                    console.log('Actualizar producto:', updatedProduct);
+                    //console.log('Actualizar producto:', updatedProduct);
                     onSave?.(updatedProduct);
                     showToast("Producto actualizado exitosamente", "success");
                 }
 
             } catch (error) {
-                console.error('Error al guardar:', error);
+                //console.error('Error al guardar:', error);
                 showToast(`Error al ${mode === 'create' ? 'crear' : 'actualizar'} el producto`, "error");
             } finally {
                 setIsLoading(false);
@@ -130,12 +130,12 @@ export const useProductForm = ({ initialProduct, mode, onSave, onDelete }: UsePr
         if (window.confirm('¿Estás seguro de que quieres eliminar este producto? Esta acción no se puede deshacer.')) {
             setIsLoading(true);
             try {
-                console.log('Eliminar producto con ID:', initialProduct.id);
+                //console.log('Eliminar producto con ID:', initialProduct.id);
                 onDelete?.(initialProduct.id);
                 showToast("Producto eliminado exitosamente", "success");
                 
             } catch (error) {
-                console.error('Error al eliminar:', error);
+                //console.error('Error al eliminar:', error);
                 showToast("Error al eliminar el producto", "error");
             } finally {
                 setIsLoading(false);

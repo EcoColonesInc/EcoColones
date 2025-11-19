@@ -16,7 +16,7 @@ export default function CreateProductPage() {
 
     const handleProductSave = async (newProduct: Product) => {
 
-        console.log('Nuevo producto creado:', newProduct);
+        //console.log('Nuevo producto creado:', newProduct);
         
         // TODO:Llamada a la API para guardar en BD
         

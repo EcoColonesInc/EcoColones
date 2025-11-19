@@ -33,11 +33,11 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                     mode="edit"
                     onSave={(updatedProduct) => {
                         // Logica para guardar el producto actualizado
-                        console.log("Producto actualizado:", updatedProduct);
+                        
                     }}
                     onDelete={(productId) => {
                         // Logica para eliminar el producto
-                        console.log("Producto eliminado con ID:", productId);
+                        
                     }}
                 />
             </div>   
