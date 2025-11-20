@@ -143,7 +143,8 @@ export async function getCollectionCenterById(collectionCenterId: string) {
       const map = await fetchEmailsByIds(supabase, [raw.id_email]);
       resolved = map[String(raw.id_email)] || null;
     }
-    return { error: null, data };
+  }
+  return { error: null, data: { ...row, email: resolved } };
 }
 
 // Fetch the collection center of the authenticated user
