@@ -39,6 +39,10 @@ export default function LoginPage() {
         const { data: roleData, error: roleErr } = await supabase.rpc("get_user_role", { p_user_id: userId });
         const role = (roleData as Role) ?? null;
         if (roleErr) throw roleErr;
+        
+        // Refresh the page before redirecting
+        router.refresh();
+        
         switch (role) {
           case Role.ADMIN:
             router.push(ADMIN_ROUTES.OVERVIEW);
@@ -58,9 +62,11 @@ export default function LoginPage() {
         }
       }
       // Si no hay userId todavía, usar flujo estándar
+      router.refresh();
       router.push(AUTH_ROUTES.AUTHORIZED);
     } catch {
       // Fallback seguro a /authorized para que middleware decida
+      router.refresh();
       router.push(AUTH_ROUTES.AUTHORIZED);
     }
   }
