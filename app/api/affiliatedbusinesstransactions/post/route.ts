@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
+import { createClient as createServiceClient } from '@supabase/supabase-js';
 
 // POST - Insertar una transacción de negocio afiliado
 export async function POST(request: Request) {
@@ -10,23 +11,54 @@ export async function POST(request: Request) {
         const personName = body.person_name || body.personName;
         const affiliatedBusinessName = body.affiliated_business_name || body.affiliatedBusinessName;
         const currencyName = body.currency_name || body.currencyName;
+        // Support either a single product or an array of items
         const productName = body.product_name || body.productName;
         const productAmount = body.product_amount || body.productAmount;
+        const items = Array.isArray(body.items) ? body.items : undefined;
         const transactionCode = body.transaction_code || body.transactionCode;
 
         // Validar campos requeridos
-        if (!personName || !affiliatedBusinessName || !currencyName || !productName || 
-            productAmount === undefined || productAmount === null || !transactionCode) {
+        // Accept either a single product (productName + productAmount) or `items: [{ product_name, product_amount }, ...]`
+        const hasSingle = !!(productName && (productAmount !== undefined && productAmount !== null));
+        const hasItems = Array.isArray(items) && items.length > 0;
+
+        if (!personName || !affiliatedBusinessName || !currencyName || !(hasSingle || hasItems) || !transactionCode) {
             return NextResponse.json({ 
                 error: "Los campos person_name, affiliated_business_name, currency_name, product_name, product_amount y transaction_code son requeridos" 
             }, { status: 400 });
         }
 
-        // Validar product_amount
-        if (isNaN(productAmount) || productAmount <= 0) {
-            return NextResponse.json({ 
-                error: "El product_amount debe ser un número mayor a 0" 
-            }, { status: 400 });
+        // Normalize items array
+        type ItemBody = {
+            product_name?: string;
+            productName?: string;
+            product_amount?: number | string;
+            productAmount?: number | string;
+            product_id?: string;
+            productId?: string;
+            product_price?: number | string;
+            productPrice?: number | string;
+        };
+
+        const normalizedItems: Array<{ product_name: string; product_amount: number }> = [];
+        if (hasItems) {
+            const typedItems = items as ItemBody[];
+            for (const it of typedItems) {
+                const name = it.product_name ?? it.productName ?? '';
+                const amt = Number(it.product_amount ?? it.productAmount ?? 0) || 0;
+                if (!name || amt <= 0) {
+                    return NextResponse.json({ error: 'Cada ítem debe tener product_name y product_amount > 0' }, { status: 400 });
+                }
+                normalizedItems.push({ product_name: String(name), product_amount: amt });
+            }
+        } else {
+            const amt = Number(productAmount) || 0;
+            if (amt <= 0) {
+                return NextResponse.json({ 
+                    error: "El product_amount debe ser un número mayor a 0" 
+                }, { status: 400 });
+            }
+            normalizedItems.push({ product_name: String(productName), product_amount: amt });
         }
 
         // Validar transaction_code
@@ -112,60 +144,67 @@ export async function POST(request: Request) {
             }, { status: 404 });
         }
 
-        // Obtener el ID del producto por su nombre
-        const { data: productData, error: productError } = await supabase
-            .from('product')
-            .select('product_id, product_name, state')
-            .ilike('product_name', productName.trim())
-            .single();
-
-        if (productError || !productData) {
-            console.error("Product error:", productError);
-            return NextResponse.json({ 
-                error: `El producto "${productName.trim()}" no existe` 
-            }, { status: 404 });
-        }
-
-        // Validar que el producto esté activo
-        if (productData.state === 'inactive') {
-            return NextResponse.json({ 
-                error: `El producto "${productName}" no está disponible (inactivo)` 
-            }, { status: 400 });
-        }
-
+        // Resolve person/business/currency IDs and compute total price by summing item prices
         const personId = personData.user_id;
         const affiliatedBusinessId = businessData.affiliated_business_id;
         const currencyId = currencyData.currency_id;
-        const productId = productData.product_id;
 
-        // Obtener el precio del producto en el negocio afiliado
-        const { data: productPriceData, error: productPriceError } = await supabase
-            .from('affiliatedbusinessxproduct')
-            .select('product_price')
-            .eq('affiliated_business_id', affiliatedBusinessId)
-            .eq('product_id', productId)
-            .single();
+        let totalPrice = 0;
+        // We'll collect resolved product IDs and validate availability
+        const resolvedItems: Array<{ product_id: string; product_name: string; product_amount: number; product_price: number }> = [];
 
-        if (productPriceError || !productPriceData) {
-            console.error("Product price error:", productPriceError);
-            return NextResponse.json({ 
-                error: `El producto "${productName}" no está disponible en el negocio "${affiliatedBusinessName}"` 
-            }, { status: 404 });
+        for (const it of normalizedItems) {
+            const { product_name: pName, product_amount: pAmt } = it;
+            const { data: productData, error: productError } = await supabase
+                .from('product')
+                .select('product_id, product_name, state')
+                .ilike('product_name', pName.trim())
+                .single();
+
+            if (productError || !productData) {
+                console.error('Product error:', productError);
+                return NextResponse.json({ error: `El producto "${pName.trim()}" no existe` }, { status: 404 });
+            }
+            if (productData.state === 'inactive') {
+                return NextResponse.json({ error: `El producto "${pName}" no está disponible (inactivo)` }, { status: 400 });
+            }
+
+            const productId = productData.product_id;
+            const { data: productPriceData, error: productPriceError } = await supabase
+                .from('affiliatedbusinessxproduct')
+                .select('product_price')
+                .eq('affiliated_business_id', affiliatedBusinessId)
+                .eq('product_id', productId)
+                .single();
+
+            if (productPriceError || !productPriceData) {
+                console.error('Product price error:', productPriceError);
+                return NextResponse.json({ error: `El producto "${pName}" no está disponible en el negocio "${affiliatedBusinessName}"` }, { status: 404 });
+            }
+
+            const productPrice = Number(productPriceData.product_price) || 0;
+            if (productPrice <= 0) {
+                return NextResponse.json({ error: `Precio inválido para el producto "${pName}"` }, { status: 400 });
+            }
+
+            totalPrice += Math.floor(pAmt * productPrice);
+            resolvedItems.push({ product_id: productId, product_name: pName, product_amount: pAmt, product_price: productPrice });
         }
-
-        const productPrice = productPriceData.product_price;
-
-        // Calcular total_price
-        const totalPrice = Math.floor(productAmount * productPrice);
 
         if (totalPrice <= 0) {
-            return NextResponse.json({ 
-                error: "El total_price debe ser mayor a 0. Verifica el producto y la cantidad." 
-            }, { status: 400 });
+            return NextResponse.json({ error: 'El total_price debe ser mayor a 0. Verifica los productos y las cantidades.' }, { status: 400 });
         }
 
-        // Verificar si el código de transacción ya existe
-        const { data: existingTransaction, error: checkError } = await supabase
+        // Use service role client for privileged writes/uniqueness checks to avoid RLS
+        const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+        const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+        let adminSupabase = supabase;
+        if (url && serviceKey) {
+            adminSupabase = createServiceClient(url, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
+        }
+
+        // Verificar si el código de transacción ya existe (using adminSupabase to bypass RLS if available)
+        const { data: existingTransaction, error: checkError } = await adminSupabase
             .from('affiliatedbusinesstransaction')
             .select('ab_transaction_id')
             .eq('transaction_code', transactionCode.trim())
@@ -184,68 +223,51 @@ export async function POST(request: Request) {
             }, { status: 409 });
         }
 
-        // Insertar la transacción con estado 'active'
-        const { data, error } = await supabase
+        // Insert main transaction (without product fields)
+        const { data: txData, error: txError } = await supabase
             .from('affiliatedbusinesstransaction')
             .insert([{
                 person_id: personId,
                 affiliated_business_id: affiliatedBusinessId,
                 currency_id: currencyId,
-                product_id: productId,
                 total_price: totalPrice,
-                product_amount: productAmount,
                 transaction_code: transactionCode.trim(),
                 state: 'active',
                 created_by: user.id,
                 updated_by: user.id
             }])
-            .select(`
-                ab_transaction_id,
-                person_id,
-                affiliated_business_id,
-                currency_id,
-                product_id,
-                total_price,
-                product_amount,
-                transaction_code,
-                state,
-                created_by,
-                created_at,
-                updated_by,
-                updated_at,
-                person:person_id (
-                    user_id,
-                    first_name,
-                    last_name,
-                    second_last_name
-                ),
-                affiliatedbusiness:affiliated_business_id (
-                    affiliated_business_id,
-                    affiliated_business_name
-                ),
-                currency:currency_id (
-                    currency_id,
-                    currency_name,
-                    currency_exchange
-                ),
-                product:product_id (
-                    product_id,
-                    product_name,
-                    state
-                )
-            `);
+            .select('ab_transaction_id, person_id, affiliated_business_id, currency_id, total_price, transaction_code, state, created_by, created_at, updated_by, updated_at')
+            .single();
 
-        if (error) {
-            console.error("Insert error:", error);
-            return NextResponse.json({ 
-                error: `Error al crear la transacción: ${error.message}` 
-            }, { status: 400 });
+        if (txError || !txData) {
+            console.error('Insert transaction error:', txError);
+            return NextResponse.json({ error: `Error al crear la transacción: ${txError?.message ?? 'unknown'}` }, { status: 400 });
         }
 
-        return NextResponse.json({ 
-            message: "Transacción creada exitosamente.",
-            data
-        }, { status: 201 });
+        // Insert items into affiliatedbusinesstransactionitem
+        const itemsToInsert = resolvedItems.map((ri) => ({
+            ab_transaction_id: txData.ab_transaction_id,
+            product_id: ri.product_id,
+            product_amount: ri.product_amount
+        }));
+
+        const { data: insertedItems, error: itemsError } = await supabase
+            .from('affiliatedbusinesstransactionitem')
+            .insert(itemsToInsert)
+            .select('item_id, ab_transaction_id, product_id, product_amount');
+
+        if (itemsError) {
+            console.error('Insert items error:', itemsError);
+            // Non-fatal: attempt to delete the created transaction to avoid orphan
+            try {
+                await supabase.from('affiliatedbusinesstransaction').delete().eq('ab_transaction_id', txData.ab_transaction_id);
+            } catch (delErr) {
+                console.error('Failed to rollback transaction after items insert error:', delErr);
+            }
+            return NextResponse.json({ error: `Error al crear los ítems de la transacción: ${itemsError.message}` }, { status: 400 });
+        }
+
+        return NextResponse.json({ message: 'Transacción creada exitosamente.', data: { transaction: txData, items: insertedItems } }, { status: 201 });
 
     } catch (err: unknown) {
         console.error("Insert affiliatedbusinesstransaction error:", err);
