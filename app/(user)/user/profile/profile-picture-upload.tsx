@@ -3,6 +3,7 @@
 
 import { useState, useRef } from "react";
 import Image from "next/image";
+import { useToast, Toast } from "@/components/ui/toast";
 
 type ProfilePictureUploadProps = {
   currentAvatar: string;
@@ -14,6 +15,7 @@ export function ProfilePictureUpload({username }: ProfilePictureUploadProps) {
   const [uploading, setUploading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { toast, showToast, hideToast } = useToast();
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -53,6 +55,9 @@ export function ProfilePictureUpload({username }: ProfilePictureUploadProps) {
 
       // Update the profile picture URL to reflect the new upload
       setPfpUrl(result.photoUrl);
+      
+      // Show success toast
+      showToast("Foto cambiada con éxito, este cambio puede demorar un tiempo en reflejarse", "success", 5000);
 
     } catch (err) {
       console.error("Upload error:", err);
@@ -64,8 +69,18 @@ export function ProfilePictureUpload({username }: ProfilePictureUploadProps) {
   };
 
   return (
-    <div className="flex flex-col items-center mt-8">
-      <div className="w-40 h-40 rounded-md overflow-hidden border-2 border-gray-200 relative">
+    <>
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          duration={toast.duration}
+          onClose={hideToast}
+          position="top"
+        />
+      )}
+      <div className="flex flex-col items-center mt-8">
+        <div className="w-40 h-40 rounded-md overflow-hidden border-2 border-gray-200 relative">
         <Image
           src={pfpUrl}
           alt="Foto de perfil"
@@ -103,5 +118,6 @@ export function ProfilePictureUpload({username }: ProfilePictureUploadProps) {
       
       {error && <p className="text-xs text-red-600 mt-2 text-center">{error}</p>}
     </div>
+    </>
   );
 }
