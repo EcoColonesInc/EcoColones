@@ -217,7 +217,7 @@ export default function CentersClient({
           </CardContent>
         </Card>
 
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-6 min-w-[340px]">
          
 
           <FiltersPanel>
@@ -280,11 +280,11 @@ export default function CentersClient({
             <CardHeader>
               <CardTitle>Top 5 de materiales más reciclados</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="overflow-x-auto">
               {topError && (
                 <p className="text-sm text-red-600 mb-2">{topError}</p>
               )}
-              <Table>
+              <Table className="min-w-[280px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead className="text-center">Puesto</TableHead>
