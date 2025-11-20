@@ -11,8 +11,6 @@ import type { AffiliateTransaction } from "@/types/transactions";
 interface TransactionTableProps {
     transactions: AffiliateTransaction[];
     loading?: boolean;
-    totalCount?: number;
-    filteredCount?: number;
 }
 
 function formatDate(dateString: string) {
@@ -60,9 +58,7 @@ function getStatusStyles(status: string) {
 }
 export const TransactionTable =({ 
     transactions, 
-    loading = false, 
-    totalCount = 0, 
-    filteredCount = 0 
+    loading = false,
 }: TransactionTableProps) => {
 
     if (loading) {

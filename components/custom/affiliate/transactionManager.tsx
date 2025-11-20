@@ -103,8 +103,6 @@ export const TransactionManager = ({ initialTransactions, errMsg }: TransactionM
                         <TransactionTable 
                             transactions={filteredTransactions}
                             loading={false}
-                            totalCount={initialTransactions.length}
-                            filteredCount={filteredTransactions.length}
                         />
                         
                         {/* Total transacciones*/}
