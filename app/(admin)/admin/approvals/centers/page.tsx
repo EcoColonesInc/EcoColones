@@ -63,9 +63,9 @@ El objetivo principal de esta solicitud es contribuir activamente a la economía
     window.location.href = "centers/form";
   };
 
-  const handleReject = () => {
+  /*const handleReject = () => {
     setModalOpen(false);
-  };
+  };*/
 
   return (
     <div className="min-h-screen bg-white px-6 md:px-16 py-10">
