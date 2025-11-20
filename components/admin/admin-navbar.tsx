@@ -18,7 +18,7 @@ export default function AdminNavbar() {
 
 	const items: Array<{ label: string; href: string; isPill?: boolean; hasMenu?: boolean }> = [
 		{ label: "Auditoría", href: ADMIN_ROUTES.AUDIT, isPill: true },
-		{ label: "Configuraciones", href: ADMIN_ROUTES.SETTINGS },
+		{ label: "Configuraciones", href: ADMIN_ROUTES.SETTINGS, hasMenu: true },
 		{ label: "Solicitudes", href: "#" },
 		{ label: "Consultas", href: ADMIN_ROUTES.CONSULTAS, hasMenu: true },
 		{ label: "Estadísticas", href: ADMIN_ROUTES.REPORTS },
@@ -74,9 +74,13 @@ export default function AdminNavbar() {
 						}
 
 						// Item with dropdown menu (hover)
-						if (it.hasMenu && it.href === ADMIN_ROUTES.CONSULTAS) {
-							// Only open when hovering the button, not the dropdown box itself
-							return <ConsultasMenu key={it.label} active={active} base={base} />;
+						if (it.hasMenu) {
+							if (it.href === ADMIN_ROUTES.CONSULTAS) {
+								return <ConsultasMenu key={it.label} active={active} base={base} />;
+							}
+							if (it.href === ADMIN_ROUTES.SETTINGS) {
+								return <SettingsMenu key={it.label} active={active} base={base} />;
+							}
 						}
 
 						// Default link item
@@ -124,6 +128,55 @@ export default function AdminNavbar() {
 				</div>
 			</div>
 		</nav>
+	);
+}
+
+// Settings dropdown (Materiales, Monedas)
+function SettingsMenu({ active, base }: { active: boolean; base: string }) {
+	const [open, setOpen] = useState(false);
+
+	return (
+		<div
+			className="relative"
+			onMouseLeave={() => setOpen(false)}
+		>
+			<button
+				type="button"
+				className={`${
+					active
+						? "rounded-full px-3 py-1 bg-muted text-foreground hover:text-white hover:bg-[#12D452]"
+						: `${base} text-foreground/80 hover:text-white hover:bg-[#12D452] rounded-full px-3 py-1`
+				} appearance-none cursor-pointer`}
+				onMouseEnter={() => setOpen(true)}
+				aria-haspopup="menu"
+				aria-expanded={open}
+			>
+				Configuraciones
+			</button>
+			{open && (
+				<div className="absolute left-0 top-full z-50 mt-0 pt-2 min-w-56">
+					<div className="rounded-md border bg-white p-2 shadow-md">
+						<div
+							className="flex flex-col gap-1"
+							onMouseEnter={() => setOpen(true)}
+						>
+							<Link
+								href={`/admin/settings/materiales`}
+								className={"rounded px-3 py-2 text-sm hover:bg-muted"}
+							>
+								Materiales
+							</Link>
+							<Link
+								href={`/admin/settings/currencies`}
+								className={"rounded px-3 py-2 text-sm hover:bg-muted"}
+							>
+								Monedas
+							</Link>
+						</div>
+					</div>
+				</div>
+			)}
+		</div>
 	);
 }
 
