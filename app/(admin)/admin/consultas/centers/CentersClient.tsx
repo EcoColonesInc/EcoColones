@@ -135,33 +135,23 @@ export default function CentersClient({
         </h1>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-2 h-full">
+      <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
+        <Card className="xl:col-span-3 h-full">
           <CardHeader>
             <CardTitle>Listado de centros de acopio</CardTitle>
           </CardHeader>
-          <CardContent className="flex flex-col h-[520px]">
+          <CardContent className="flex flex-col h-[600px]">
             {error && <p className="text-sm text-red-600 mb-2">{error}</p>}
             <div className="mb-2 text-sm text-muted-foreground">
               Total de centros: {centers.length}
             </div>
-            <div className="overflow-y-auto overflow-x-hidden pr-2 flex-1 max-h-[460px] md:max-h-[480px]">
-              <Table
-                className="w-full"
-                containerClassName="overflow-x-hidden px-2"
-              >
-                <colgroup>
-                  <col className="w-[28%]" />
-                  <col className="w-[28%]" />
-                  <col className="w-[16%]" />
-                  <col className="w-[18%]" />
-                  <col className="w-[128px]" />
-                </colgroup>
+            <div className="overflow-y-auto pr-2 flex-1 max-h-[540px] md:max-h-[560px]">
+              <Table className="w-full">
                 <TableHeader className="sticky top-0 z-10 bg-background">
                   <TableRow>
                     <TableHead className="text-center">Nombre</TableHead>
                     <TableHead className="text-center">
-                      Nombre de Gerente
+                      Gerente
                     </TableHead>
                     <TableHead className="text-center">Teléfono</TableHead>
                     <TableHead className="text-center">Correo</TableHead>
@@ -209,6 +199,7 @@ export default function CentersClient({
                             <Button
                               size="sm"
                               variant="default"
+                              className="w-full"
                               onClick={() =>
                                 router.push(
                                   `/admin/consultas/centers/${c.collectioncenter_id}`
