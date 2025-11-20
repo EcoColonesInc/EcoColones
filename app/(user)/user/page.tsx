@@ -14,9 +14,10 @@ type UserCenterTransaction = {
   first_name?: string;
   last_name?: string;
   collection_center_name?: string;
-  material_name?: string;
+  material_names?: string; // comma-separated list when aggregated by RPC
   total_points?: number;
-  material_amount?: number;
+  total_material_amount?: number; // aggregated amount
+  transaction_code?: string;
   created_at?: string;
 };
 
@@ -98,11 +99,13 @@ export default async function UserDashboard() {
 
   const transactions: TransactionRow[] = (_rawTransactions && _rawTransactions.length > 0)
     ? _rawTransactions.map((t: UserCenterTransaction, idx: number) => ({
-        // Create a stable-ish id from timestamp + index when no id provided by API
-        id: t.created_at ? `TXN${new Date(t.created_at).getTime()}` : `TXN_FALLBACK_${idx}`,
+        // Prefer using the `transaction_code` returned by the RPC for a stable ID
+        id: t.transaction_code ?? (t.created_at ? `TXN${new Date(t.created_at).getTime()}` : `TXN_FALLBACK_${idx}`),
         center: t.collection_center_name || "N/A",
-        material: t.material_name || "N/A",
-        qty: t.material_amount != null ? `${t.material_amount} kg` : "N/A",
+        // RPC returns aggregated `material_names` (comma-separated) when multiple items
+        material: t.material_names || "N/A",
+        // Use aggregated total material amount when available
+        qty: t.total_material_amount != null ? `${t.total_material_amount} kg` : "N/A",
         date: t.created_at
           ? new Date(t.created_at).toLocaleDateString("es-CR", { year: "numeric", month: "2-digit", day: "2-digit" })
           : "N/A",
