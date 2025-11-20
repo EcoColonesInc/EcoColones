@@ -5,8 +5,8 @@ import { getUserBusinessTransactions } from "@/lib/api/transactions";
 
 export default async function transactions() {
 
-    const allTranstactions = await getUserBusinessTransactions();
-    console.log('All Transactions:', allTranstactions);
+    //const allTranstactions = await getUserBusinessTransactions();
+    //console.log('All Transactions:', allTranstactions);
 
     const mockTransactions = [
         {
