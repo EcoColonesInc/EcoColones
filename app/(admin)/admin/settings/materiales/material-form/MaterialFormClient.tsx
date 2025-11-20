@@ -44,7 +44,7 @@ export default function MaterialFormClient({ mode, initialMaterial, units }: Pro
         const slug = materialName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
         candidates.push(slug);
       }
-      const exts = ["png", "jpg", "jpeg", "webp", "jfif", "gif", "bmp", "svg"];
+      const exts = ["png", "jpg", "jpeg", "webp"];
       for (const base of candidates) {
         for (const ext of exts) {
           const path = `${base}.${ext}`;
