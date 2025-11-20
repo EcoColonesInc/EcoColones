@@ -4,6 +4,13 @@ import { getUserData, getProfilePictureUrl } from "@/lib/api/users";
 import { ProfileForm } from "@/app/(user)/user/profile/profile-form";
 import { ProfilePictureUpload } from "@/app/(user)/user/profile/profile-picture-upload";
 
+// Gender translation utilities
+const GENDER_OPTIONS = [
+  { value: "male", label: "Hombre" },
+  { value: "female", label: "Mujer" },
+  { value: "other", label: "Otro" },
+];
+
 export default async function UserProfile() {
   // Fetch user data using shared API logic
   const { data, error } = await getUserData();
@@ -30,9 +37,6 @@ export default async function UserProfile() {
     avatar: avatarUrl,
   };
 
-  // Gender options
-  const genderOptions = ["Hombre", "Mujer", "Otro"];
-
   return (
     <div className="min-h-screen bg-[#F7FCFA] py-12 px-8">
       <div className="max-w-6xl mx-auto">
@@ -45,7 +49,7 @@ export default async function UserProfile() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* --- Left column: user info form --- */}
           <div className="md:col-span-2 bg-white rounded-xl p-8 shadow-sm border border-gray-100">
-            <ProfileForm user={user} genderOptions={genderOptions} />
+            <ProfileForm user={user} genderOptions={GENDER_OPTIONS} />
           </div>
 
           {/* --- Right column: stats + photo --- */}

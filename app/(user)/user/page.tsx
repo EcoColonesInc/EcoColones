@@ -1,7 +1,8 @@
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { redirect } from "next/navigation";
-import { AUTH_ROUTES } from "@/config/routes";
+import { AUTH_ROUTES, USER_ROUTES } from "@/config/routes";
+import Link from "next/link";
 
 import { getUserData, calculateAge, getProfilePictureUrl} from "@/lib/api/users";
 import {getUserCenterTransactions} from "@/lib/api/transactions";
@@ -163,12 +164,16 @@ export default async function UserDashboard() {
             </div>
 
             <div className="flex flex-col gap-3 mt-6">
+              <Link href={USER_ROUTES.REDEEM}>
               <Button className="bg-green-600 hover:bg-green-700 text-white font-medium rounded-md py-2">
                 Canjear
               </Button>
+              </Link>
+              <Link href={USER_ROUTES.CALCULATOR}>
               <Button className="bg-green-100 hover:bg-green-200 text-green-700 font-medium rounded-md py-2">
                 Calculadora de puntos
               </Button>
+              </Link>
             </div>
           </div>
         </div>

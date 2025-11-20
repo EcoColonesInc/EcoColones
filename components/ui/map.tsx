@@ -74,12 +74,15 @@ export default function CustomMap({ centers, focusId }: { centers: Center[]; foc
               console.error('Error fetching center detail', body?.error);
               return;
             }
-            const data = body?.data ?? null;
+            // API returns data directly, not wrapped in { data: ... }
+            const data = body;
+            const responsibleName = `${data?.person_id?.first_name ?? ""} ${data?.person_id?.last_name ?? ""}`.trim() || "—";
             const content = `
-              <div style="min-width:180px">
-                <div style="font-weight:600;margin-bottom:6px">${(data?.name) ?? 'Centro'}</div>
-                <div style="font-size:13px;color:#333;margin-bottom:4px">Distrito: ${data?.district_id?.district_name ?? '—'}</div>
-                <div style="font-size:13px;color:#333">Tel: ${data?.phone ?? '—'}</div>
+              <div style="min-width:200px;padding:4px">
+                <div style="font-weight:600;font-size:16px;margin-bottom:8px">${data?.name ?? 'Centro sin nombre'}</div>
+                <div style="font-size:13px;color:#374151;margin-bottom:4px"><strong>Ubicación:</strong> ${data?.district_id?.district_name ?? '—'}</div>
+                <div style="font-size:13px;color:#374151;margin-bottom:4px"><strong>Número:</strong> ${data?.phone ?? '—'}</div>
+                <div style="font-size:13px;color:#374151"><strong>Responsable:</strong> ${responsibleName}</div>
               </div>
             `;
 
@@ -108,18 +111,46 @@ export default function CustomMap({ centers, focusId }: { centers: Center[]; foc
     // load script if not present
     const existing = (window as any).google && (window as any).google.maps;
     if (!existing) {
-      const script = document.createElement("script");
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY}`;
-      script.async = true;
-      script.defer = true;
-      document.head.appendChild(script);
-      script.onload = () => {
-        if (!mounted) return;
-        initMap();
-      };
-      script.onerror = () => {
-        console.error("Google Maps script failed to load");
-      };
+      // Check if script is already being loaded or already exists in the DOM
+      const existingScript = document.querySelector('script[src*="maps.googleapis.com"]');
+      
+      if (!existingScript) {
+        const script = document.createElement("script");
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY}`;
+        script.async = true;
+        script.defer = true;
+        script.id = "google-maps-script"; // Add ID to identify the script
+        document.head.appendChild(script);
+        script.onload = () => {
+          if (!mounted) return;
+          initMap();
+        };
+        script.onerror = () => {
+          console.error("Google Maps script failed to load");
+        };
+      } else {
+        // Script exists but API not loaded yet, wait for it
+        const checkInterval = setInterval(() => {
+          if ((window as any).google && (window as any).google.maps) {
+            clearInterval(checkInterval);
+            if (mounted) {
+              initMap();
+            }
+          }
+        }, 100);
+        
+        return () => {
+          clearInterval(checkInterval);
+          mounted = false;
+          markersRef.current.forEach(({ marker }) => {
+            try {
+              (window as any).google.maps.event.clearListeners(marker, 'click');
+            } catch {}
+            marker.setMap(null);
+          });
+          markersRef.current = [];
+        };
+      }
 
       return () => {
         mounted = false;
@@ -164,12 +195,15 @@ export default function CustomMap({ centers, focusId }: { centers: Center[]; foc
         const res = await fetch(`/api/collectioncenters/${entry.id}/get`);
         const body = await res.json();
         if (!res.ok) return;
-        const data = body?.data ?? null;
+        // API returns data directly, not wrapped in { data: ... }
+        const data = body;
+        const responsibleName = `${data?.person_id?.first_name ?? ""} ${data?.person_id?.last_name ?? ""}`.trim() || "—";
         const content = `
-          <div style="min-width:180px">
-            <div style="font-weight:600;margin-bottom:6px">${(data?.name) ?? 'Centro'}</div>
-            <div style="font-size:13px;color:#333;margin-bottom:4px">Distrito: ${data?.district_id?.district_name ?? '—'}</div>
-            <div style="font-size:13px;color:#333">Tel: ${data?.phone ?? '—'}</div>
+          <div style="min-width:200px;padding:4px">
+            <div style="font-weight:600;font-size:16px;margin-bottom:8px">${data?.name ?? 'Centro sin nombre'}</div>
+            <div style="font-size:13px;color:#374151;margin-bottom:4px"><strong>Ubicación:</strong> ${data?.district_id?.district_name ?? '—'}</div>
+            <div style="font-size:13px;color:#374151;margin-bottom:4px"><strong>Número:</strong> ${data?.phone ?? '—'}</div>
+            <div style="font-size:13px;color:#374151"><strong>Responsable:</strong> ${responsibleName}</div>
           </div>
         `;
 
