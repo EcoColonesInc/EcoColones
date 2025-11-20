@@ -193,24 +193,6 @@ export default function CenterDetalleClient({ id, initialCenter, initialCenterMa
     }
   }
 
-  async function performDeactivate() {
-    if (!center) return;
-    try {
-      setSaving(true);
-      setError(null);
-      setSuccess(null);
-      const res = await fetch(`/api/collectioncenters/${center.collectioncenter_id}/deactivate`, { method: "POST" });
-      const j = await res.json();
-      if (!res.ok) throw new Error(j?.error || "Error al desactivar (verifique columna state)");
-      setSuccess("Centro desactivado");
-      await refresh();
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Error al desactivar");
-    } finally {
-      setSaving(false);
-    }
-  }
-
   async function performDelete() {
     if (!center) return;
     try {
@@ -253,33 +235,61 @@ export default function CenterDetalleClient({ id, initialCenter, initialCenterMa
       {success && <p className="text-sm text-green-600">{success}</p>}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         <Card className="lg:col-span-3">
-          <CardHeader><CardTitle>Información del centro</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle>Información del centro</CardTitle>
+          </CardHeader>
           <CardContent className="space-y-4">
             {loading && <p className="text-sm">Cargando...</p>}
             {!loading && center && (
               <>
                 <div className="flex flex-col gap-1">
-                  <label className="text-sm font-medium">Nombre del centro</label>
-                  <input className="border rounded px-3 py-2" value={name} onChange={(e) => setName(e.target.value)} />
+                  <label className="text-sm font-medium">
+                    Nombre del centro
+                  </label>
+                  <input
+                    className="border rounded px-3 py-2"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                  />
                 </div>
                 <div className="flex flex-col gap-1">
-                  <label className="text-sm font-medium">Nombre del gerente</label>
-                  <input className="border rounded px-3 py-2 bg-muted" value={managerName || "-"} readOnly />
+                  <label className="text-sm font-medium">
+                    Nombre del gerente
+                  </label>
+                  <input
+                    className="border rounded px-3 py-2 bg-muted"
+                    value={managerName || "-"}
+                    readOnly
+                  />
                 </div>
                 <div className="flex flex-col gap-1">
                   <label className="text-sm font-medium">Teléfono</label>
-                  <input className="border rounded px-3 py-2" value={phone} onChange={(e) => setPhone(e.target.value)} />
+                  <input
+                    className="border rounded px-3 py-2"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                  />
                 </div>
                 <div className="flex flex-col gap-1">
                   <label className="text-sm font-medium">Correo</label>
-                  <input className="border rounded px-3 py-2 bg-muted" value={center.email || "-"} readOnly />
+                  <input
+                    className="border rounded px-3 py-2 bg-muted"
+                    value={center.email || "-"}
+                    readOnly
+                  />
                 </div>
                 <div className="flex flex-col gap-1">
                   <label className="text-sm font-medium">Dirección</label>
-                  <input className="border rounded px-3 py-2 bg-muted" value={address || "-"} readOnly />
+                  <input
+                    className="border rounded px-3 py-2 bg-muted"
+                    value={address || "-"}
+                    readOnly
+                  />
                 </div>
                 <div className="flex flex-col gap-2">
-                  <label className="text-sm font-medium">Tipos de Materiales</label>
+                  <label className="text-sm font-medium">
+                    Tipos de Materiales
+                  </label>
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                     {allMaterials.map((m, i) => {
                       const ex = extractMaterial(m);
@@ -291,7 +301,11 @@ export default function CenterDetalleClient({ id, initialCenter, initialCenterMa
                           key={matId + i}
                           role="button"
                           onClick={() => toggleMaterial(matId)}
-                          className={`cursor-pointer border rounded px-3 py-3 text-sm flex items-center gap-2 transition select-none ${selected ? "bg-green-50 border-green-600" : "bg-muted/40 hover:bg-muted"}`}
+                          className={`cursor-pointer border rounded px-3 py-3 text-sm flex items-center gap-2 transition select-none ${
+                            selected
+                              ? "bg-green-50 border-green-600"
+                              : "bg-muted/40 hover:bg-muted"
+                          }`}
                           aria-pressed={selected}
                         >
                           <input
@@ -311,23 +325,72 @@ export default function CenterDetalleClient({ id, initialCenter, initialCenterMa
           </CardContent>
         </Card>
         <Card>
-          <CardHeader><CardTitle>Opciones</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle>Opciones</CardTitle>
+          </CardHeader>
           <CardContent className="space-y-3">
-            <Button className="w-full rounded-xl bg-blue-600 hover:bg-blue-700 text-white" onClick={() => router.push(`/admin/consultas/centers/${id}/stats`)} disabled={saving || loading}>Ver estadísticas</Button>
-            <Button variant="default" className="w-full rounded-xl" onClick={() => setShowSaveModal(true)} disabled={saving || loading}>{saving && showSaveModal ? "Guardando..." : "Guardar cambios"}</Button>
-            <Button variant="warning" className="w-full rounded-xl" onClick={() => setShowDeactivateModal(true)} disabled={saving || loading}>Desactivar</Button>
-            <Button variant="destructive" className="w-full rounded-xl" onClick={() => setShowDeleteModal(true)} disabled={saving || loading}>Eliminar</Button>
+            <Button
+              className="w-full rounded-xl bg-blue-600 hover:bg-blue-700 text-white"
+              onClick={() =>
+                router.push(`/admin/consultas/centers/${id}/stats`)
+              }
+              disabled={saving || loading}
+            >
+              Ver estadísticas
+            </Button>
+            <Button
+              variant="default"
+              className="w-full rounded-xl"
+              onClick={() => setShowSaveModal(true)}
+              disabled={saving || loading}
+            >
+              {saving && showSaveModal ? "Guardando..." : "Guardar cambios"}
+            </Button>
+            <Button
+              variant="destructive"
+              className="w-full rounded-xl"
+              onClick={() => setShowDeleteModal(true)}
+              disabled={saving || loading}
+            >
+              Eliminar
+            </Button>
           </CardContent>
         </Card>
       </div>
-      <Modal open={showSaveModal} title="¿Seguro de tus cambios?" onCancel={() => { if (!saving) setShowSaveModal(false); }} onConfirm={async () => { await performSave(); setShowSaveModal(false); }} loading={saving}>
-        <p className="text-sm">Se guardarán los cambios del centro <strong>{name || center?.name}</strong>. ¿Continuar?</p>
+      <Modal
+        open={showSaveModal}
+        title="¿Seguro de tus cambios?"
+        onCancel={() => {
+          if (!saving) setShowSaveModal(false);
+        }}
+        onConfirm={async () => {
+          await performSave();
+          setShowSaveModal(false);
+        }}
+        loading={saving}
+      >
+        <p className="text-sm">
+          Se guardarán los cambios del centro{" "}
+          <strong>{name || center?.name}</strong>. ¿Continuar?
+        </p>
       </Modal>
-      <Modal open={showDeactivateModal} title="¡Atención!" onCancel={() => { if (!saving) setShowDeactivateModal(false); }} onConfirm={async () => { await performDeactivate(); setShowDeactivateModal(false); }} loading={saving}>
-        <p className="text-sm">Vas a desactivar el centro <strong>{name || center?.name}</strong>. Requiere columna state en la tabla.</p>
-      </Modal>
-      <Modal open={showDeleteModal} title="¡Cuidado!" dangerNote="¡Esta acción no se puede deshacer!" onCancel={() => { if (!saving) setShowDeleteModal(false); }} onConfirm={async () => { await performDelete(); setShowDeleteModal(false); }} loading={saving}>
-        <p className="text-sm">Eliminarás el centro <strong>{name || center?.name}</strong>. ¿Estás seguro?</p>
+      <Modal
+        open={showDeleteModal}
+        title="¡Cuidado!"
+        dangerNote="¡Esta acción no se puede deshacer!"
+        onCancel={() => {
+          if (!saving) setShowDeleteModal(false);
+        }}
+        onConfirm={async () => {
+          await performDelete();
+          setShowDeleteModal(false);
+        }}
+        loading={saving}
+      >
+        <p className="text-sm">
+          Eliminarás el centro <strong>{name || center?.name}</strong>. ¿Estás
+          seguro?
+        </p>
       </Modal>
     </div>
   );

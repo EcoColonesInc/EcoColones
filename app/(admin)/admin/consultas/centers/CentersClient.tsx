@@ -218,8 +218,6 @@ export default function CentersClient({
         </Card>
 
         <div className="flex flex-col gap-6 min-w-[340px]">
-         
-
           <FiltersPanel>
             <div className="flex flex-col gap-1">
               <label className="font-medium">Nombre</label>
@@ -275,7 +273,6 @@ export default function CentersClient({
               Limpiar filtros
             </button>
           </FiltersPanel>
-
            <Card>
             <CardHeader>
               <CardTitle>Top 5 de materiales más reciclados</CardTitle>
@@ -337,7 +334,6 @@ export default function CentersClient({
               </Table>
             </CardContent>
           </Card>
-
         </div>
       </div>
     </div>

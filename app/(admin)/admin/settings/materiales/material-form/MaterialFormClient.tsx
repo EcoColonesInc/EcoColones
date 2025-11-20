@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -31,6 +31,7 @@ export default function MaterialFormClient({ mode, initialMaterial, units }: Pro
   const [imgUrl, setImgUrl] = useState<string | null>(null);
   const [localPreview, setLocalPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const previewUrlRef = useRef<string | null>(null);
 
   // Resolve existing image when editing
   async function resolveImage(id?: string, materialName?: string) {
@@ -43,17 +44,16 @@ export default function MaterialFormClient({ mode, initialMaterial, units }: Pro
         const slug = materialName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
         candidates.push(slug);
       }
-      const exts = ["png", "jpg", "jpeg", "webp"];
+      const exts = ["png", "jpg", "jpeg", "webp", "jfif", "gif", "bmp", "svg"];
       for (const base of candidates) {
         for (const ext of exts) {
           const path = `${base}.${ext}`;
           const { data } = supabase.storage.from("material_logo").getPublicUrl(path);
-          if (!data?.publicUrl) continue;
-          const head = await fetch(data.publicUrl, { method: "HEAD" });
-          if (head.ok) {
-            setImgUrl(data.publicUrl);
-            return;
-          }
+          const url = data?.publicUrl;
+          if (!url) continue;
+          // Directly set the public URL. If the file exists it will load; if not, the image element will show nothing.
+          setImgUrl(url);
+          return;
         }
       }
     } catch {
@@ -61,10 +61,23 @@ export default function MaterialFormClient({ mode, initialMaterial, units }: Pro
     }
   }
 
-  // On mount for edit mode
-  if (mode === "edit" && material && !imgUrl) {
-    void resolveImage(material.material_id, material.name);
-  }
+  // On mount for edit mode: run inside useEffect to avoid side-effects during render
+  useEffect(() => {
+    if (mode === "edit" && material && !imgUrl) {
+      void resolveImage(material.material_id, material.name);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode, material?.material_id, material?.name]);
+
+  // Revoke preview object URL on unmount
+  useEffect(() => {
+    return () => {
+      if (previewUrlRef.current) {
+        URL.revokeObjectURL(previewUrlRef.current);
+        previewUrlRef.current = null;
+      }
+    };
+  }, []);
 
   function validate(): boolean {
     if (!name.trim()) { setError("El nombre es requerido"); return false; }
@@ -101,7 +114,7 @@ export default function MaterialFormClient({ mode, initialMaterial, units }: Pro
       }
 
       // Redirect after short delay
-      setTimeout(() => { router.push("/admin/settings"); }, 800);
+      setTimeout(() => { router.push("/admin/settings/materiales"); }, 800);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Error al guardar");
     } finally {
@@ -194,6 +207,11 @@ export default function MaterialFormClient({ mode, initialMaterial, units }: Pro
                   const f = e.target.files?.[0];
                   if (!f) return;
                   const url = URL.createObjectURL(f);
+                  // revoke previous preview if any
+                  if (previewUrlRef.current) {
+                    URL.revokeObjectURL(previewUrlRef.current);
+                  }
+                  previewUrlRef.current = url;
                   setLocalPreview(url);
                 }}
               />
@@ -218,7 +236,7 @@ export default function MaterialFormClient({ mode, initialMaterial, units }: Pro
           </div>
           <div className="flex gap-4">
             <Button variant="success" disabled={saving} onClick={handleSubmit}>{saving ? "Guardando..." : (mode === "create" ? "Guardar" : "Actualizar")}</Button>
-            <Button variant="destructive" onClick={() => router.push("/admin/settings")}>Cancelar</Button>
+            <Button variant="destructive" onClick={() => router.push("/admin/settings/materiales")}>Cancelar</Button>
           </div>
         </CardContent>
       </Card>

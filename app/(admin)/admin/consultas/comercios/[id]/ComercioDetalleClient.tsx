@@ -142,27 +142,6 @@ export default function ComercioDetalleClient({
       setSaving(false);
     }
   }
-
-  async function performDeactivate() {
-    if (!business) return;
-    try {
-      setSaving(true);
-      setError(null);
-      setSuccess(null);
-      const res = await fetch(
-        `/api/affiliatedbusiness/${business.affiliated_business_id}/deactivate`,
-        { method: "POST" }
-      );
-      const j = await res.json();
-      if (!res.ok) throw new Error(j?.error || "Error al desactivar");
-      setSuccess("Comercio desactivado");
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Error al desactivar");
-    } finally {
-      setSaving(false);
-    }
-  }
-
   async function performDelete() {
     if (!business) return;
     try {
@@ -322,14 +301,6 @@ export default function ComercioDetalleClient({
               {saving && showSaveModal ? "Guardando..." : "Guardar cambios"}
             </Button>
             <Button
-              variant="warning"
-              className="w-full rounded-xl"
-              onClick={() => setShowDeactivateModal(true)}
-              disabled={saving || loading}
-            >
-              Desactivar
-            </Button>
-            <Button
               variant="destructive"
               className="w-full rounded-xl"
               onClick={() => setShowDeleteModal(true)}
@@ -354,24 +325,6 @@ export default function ComercioDetalleClient({
       >
         <p className="text-sm">
           Has cambiado la información del comercio{" "}
-          <strong>{name || business?.affiliated_business_name}</strong>. ¿Estás
-          seguro?
-        </p>
-      </Modal>
-      <Modal
-        open={showDeactivateModal}
-        title="¡Atención!"
-        onCancel={() => {
-          if (!saving) setShowDeactivateModal(false);
-        }}
-        onConfirm={async () => {
-          await performDeactivate();
-          setShowDeactivateModal(false);
-        }}
-        loading={saving}
-      >
-        <p className="text-sm">
-          Vas a desactivar este comercio{" "}
           <strong>{name || business?.affiliated_business_name}</strong>. ¿Estás
           seguro?
         </p>
