@@ -3,14 +3,6 @@ import { ProductForm } from "@/components/custom/affiliate/productForm";
 import { Info, ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-interface Product {
-    id: number;
-    imagen: string;
-    titulo: string;
-    descripcion: string;
-    costo: number;
-}
-
 export default function CreateProductPage() {
     const router = useRouter();
 
