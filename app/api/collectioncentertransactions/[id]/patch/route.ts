@@ -9,5 +9,6 @@ export const PATCH = buildPatchHandler({
     "material_id",
     "total_points",
     "material_amount",
+    "transaction_code",
   ],
 });
