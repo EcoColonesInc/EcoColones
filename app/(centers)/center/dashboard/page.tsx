@@ -7,9 +7,9 @@ type Transaction = {
     first_name: string;
     last_name: string;
     collection_center_name: string;
-    string_agg: string;
-    sum: number;
-    max: number;
+    material_names: string;
+    total_material_amount: number;
+    total_points: number;
     transaction_code: string;
     created_at: string;
 };
@@ -46,6 +46,7 @@ export default function Page() {
                 }
                 const transactionsData = await transactionsResponse.json();
                 
+                console.log('Transactions data:', transactionsData);
                 setTransactions(transactionsData || []);
             } catch (err) {
                 setError(err instanceof Error ? err.message : 'Error desconocido');
@@ -104,9 +105,13 @@ export default function Page() {
                                             <td className="py-4 px-4 text-sm">
                                                 {transaction.user_name || `${transaction.first_name || ''} ${transaction.last_name || ''}`.trim() || 'N/A'}
                                             </td>
-                                            <td className="py-4 px-4 text-sm">{transaction.string_agg}</td>
-                                            <td className="py-4 px-4 text-sm">{transaction.sum} kg</td>
-                                            <td className="py-4 px-4 text-sm">{transaction.max} pts</td>
+                                            <td className="py-4 px-4 text-sm">{transaction.material_names || 'N/A'}</td>
+                                            <td className="py-4 px-4 text-sm">
+                                                {transaction.total_material_amount != null ? Number(transaction.total_material_amount).toFixed(2) : '0.00'} kg
+                                            </td>
+                                            <td className="py-4 px-4 text-sm">
+                                                {transaction.total_points != null ? Number(transaction.total_points) : 0} pts
+                                            </td>
                                             <td className="py-4 px-4 text-sm">{formatDate(transaction.created_at)}</td>
                                             <td className="py-4 px-4">
                                                 <span className="inline-block px-3 py-1 text-xs font-medium text-green-700 bg-green-100 rounded-full">
