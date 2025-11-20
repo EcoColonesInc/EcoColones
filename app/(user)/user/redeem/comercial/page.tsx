@@ -5,6 +5,7 @@ import { Suspense, useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthProvider";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { createClient } from "@/utils/supabase/client";
 
 interface Product {
   id?: string | number;
@@ -26,6 +27,7 @@ function StoreInner() {
   const [storeName, setStoreName] = useState<string>("Comercio");
   const { user: authUser } = useAuth();
   const [userPoints, setUserPoints] = useState<number | null>(null);
+  const supabase = createClient();
 
   useEffect(() => {
     let mounted = true;
@@ -39,16 +41,39 @@ function StoreInner() {
 
         const rows = Array.isArray(body) ? body : (body?.data ?? []);
 
-        const mapped = (rows || []).map((r: unknown, idx: number) => {
+        const mapped = await Promise.all((rows || []).map(async (r: unknown, idx: number) => {
           const row = (r && typeof r === 'object') ? (r as Record<string, unknown>) : {};
           const productIdField = row['product_id'];
           const id = (productIdField && typeof productIdField === 'object') ? ((productIdField as Record<string, unknown>)['product_id'] as string | number) ?? ((productIdField as Record<string, unknown>)['product_id'] as string | number) : (row['product_id'] as string | number) ?? idx;
           const name = ((productIdField && typeof productIdField === 'object') ? ((productIdField as Record<string, unknown>)['product_name'] as string | undefined) : undefined) ?? (row['product_name'] as string) ?? `Producto ${idx + 1}`;
           const description = ((productIdField && typeof productIdField === 'object') ? ((productIdField as Record<string, unknown>)['description'] as string | undefined) : undefined) ?? (row['description'] as string) ?? "";
           const price = Number(row['product_price'] ?? row['product_price'] ?? 0) || 0;
-          const image = ((productIdField && typeof productIdField === 'object') ? ((productIdField as Record<string, unknown>)['image_url'] as string | undefined) : undefined) ?? '/productos/placeholder.png';
+          
+          // Get image from Supabase storage using product_id
+          // Try multiple extensions since we don't know which one is used
+          let image = 'placeholder.png';
+          if (id) {
+            const extensions = ['png', 'jpg', 'jpeg', 'webp'];
+            for (const ext of extensions) {
+              const path = `${id}.${ext}`;
+              const { data } = supabase.storage.from("product_logo").getPublicUrl(path);
+              if (data?.publicUrl) {
+                // Check if the file actually exists by trying to fetch it
+                try {
+                  const response = await fetch(data.publicUrl, { method: 'HEAD' });
+                  if (response.ok) {
+                    image = data.publicUrl;
+                    break;
+                  }
+                } catch {
+                  // Continue to next extension
+                }
+              }
+            }
+          }
+          
           return { id, name, description, price, image };
-        });
+        }));
 
         // try to set store name from the first row if available
         if (rows && rows.length > 0) {
@@ -323,7 +348,9 @@ function StoreInner() {
 
           {products.map((p) => (
             <div key={String(p.id)} className="border border-gray-200 rounded-xl p-5 shadow-sm">
-              <Image src={p.image ?? '/productos/placeholder.png'} alt={p.name} width={130} height={130} className="mx-auto mb-3" />
+              <div className="w-[130px] h-[130px] mx-auto mb-3 relative">
+                <Image src={p.image ?? '/productos/placeholder.png'} alt={p.name} fill className="object-contain" />
+              </div>
               <h3 className="font-semibold text-lg">{p.name}</h3>
               <p className="text-sm text-gray-700 mb-4">{p.description}</p>
 
@@ -388,8 +415,8 @@ function StoreInner() {
 
       {/* CONFIRMATION MODAL */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-8 shadow-lg w-[400px]">
+        <div className="fixed inset-0 backdrop-blur-sm bg-white/30 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-8 shadow-xl w-[400px] border border-gray-200">
             <h3 className="text-blue-600 font-semibold mb-3">Confirmacion Compra</h3>
 
             <p className="mb-6 text-gray-700">

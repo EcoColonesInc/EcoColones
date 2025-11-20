@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthProvider";
+import { createClient } from "@/utils/supabase/client";
 
 export default function UserRedeemPage() {
   const [selectedFilters, setSelectedFilters] = useState<string[]>([]); // empty = no filter (show all)
@@ -59,6 +60,7 @@ export default function UserRedeemPage() {
   const [storesLoading, setStoresLoading] = useState(false);
   const [availableTypes, setAvailableTypes] = useState<Array<{ key: string; label: string }>>([]);
   const [tempSelectedFilters, setTempSelectedFilters] = useState<string[]>([]);
+  const supabase = createClient();
 
   useEffect(() => {
     let mounted = true;
@@ -72,13 +74,34 @@ export default function UserRedeemPage() {
         // API route returns data directly (array) — normalize if wrapper exists
         const rows = Array.isArray(body) ? body : (body?.data ?? []);
 
-        const mapped = (rows || []).map((r: unknown) => {
+        const mapped = await Promise.all((rows || []).map(async (r: unknown) => {
           const row = (r && typeof r === 'object') ? (r as Record<string, unknown>) : {};
           const rawType = row['business_type_id'] && typeof row['business_type_id'] === 'object' ? String((row['business_type_id'] as Record<string, unknown>)['name'] ?? '') : String(row['business_type_id'] ?? '');
           const typeKey = rawType ? rawType.toString().toLowerCase().replace(/\s+/g, '') : 'other';
           const district = row['district_id'] && typeof row['district_id'] === 'object' ? String((row['district_id'] as Record<string, unknown>)['district_name'] ?? '') : String(row['district_id'] ?? '');
-          // Try to choose a logo: prefer provided image_url/product image fields; fallback to a placeholder
-          const logo = String(row['logo_url'] ?? row['image_url'] ?? '/affiliates/placeholder.png');
+          
+          // Get logo from Supabase storage using affiliated_business_id
+          const businessId = row['affiliated_business_id'] as string | number | null;
+          let logo = 'placeholder.png';
+          if (businessId) {
+            const extensions = ['png', 'jpg', 'jpeg', 'webp'];
+            for (const ext of extensions) {
+              const path = `${businessId}.${ext}`;
+              const { data } = supabase.storage.from("business_logo").getPublicUrl(path);
+              if (data?.publicUrl) {
+                try {
+                  const response = await fetch(data.publicUrl, { method: 'HEAD' });
+                  if (response.ok) {
+                    logo = data.publicUrl;
+                    break;
+                  }
+                } catch {
+                  // Continue to next extension
+                }
+              }
+            }
+          }
+          
           return {
             name: String(row['affiliated_business_name'] ?? 'Negocio afiliado'),
             location: district ? `${district}` : '',
@@ -88,7 +111,7 @@ export default function UserRedeemPage() {
             id: row['affiliated_business_id'] as string | number | null,
             raw: row,
           } as StoreItem;
-        });
+        }));
 
         if (mounted) setApiStores(mapped);
       } catch (err) {
@@ -233,13 +256,14 @@ export default function UserRedeemPage() {
                 key={store.id ?? store.name}
                 className="bg-white border border-gray-200 rounded-xl shadow-sm p-3 flex flex-col items-center"
               >
-                <Image
-                  src={store.logo}
-                  alt={store.name}
-                  width={110}
-                  height={110}
-                  className="mb-3"
-                />
+                <div className="w-[110px] h-[110px] relative mb-3">
+                  <Image
+                    src={store.logo}
+                    alt={store.name}
+                    fill
+                    className="object-contain"
+                  />
+                </div>
                 <p className="font-semibold">{store.name}</p>
                 <p className="text-sm text-gray-600 text-center">{store.location}</p>
 
