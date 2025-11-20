@@ -33,11 +33,9 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                     mode="edit"
                     onSave={() => {
                         // Logica para guardar el producto actualizado
-                        
                     }}
                     onDelete={() => {
                         // Logica para eliminar el producto
-                        
                     }}
                 />
             </div>   
