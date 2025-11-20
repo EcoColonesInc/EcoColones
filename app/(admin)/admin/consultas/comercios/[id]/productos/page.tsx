@@ -26,9 +26,9 @@ interface RelationRow {
 export default async function ProductosComercioPage({
   params,
 }: {
-  params: PageParams;
+  params: PageParams | Promise<PageParams>;
 }) {
-  const id = params.id;
+  const { id } = await params;
   const [productsRes, businessRes] = await Promise.all([
     getProductsByAffiliatedBusinessId(id),
     getAffiliatedBusinessById(id),

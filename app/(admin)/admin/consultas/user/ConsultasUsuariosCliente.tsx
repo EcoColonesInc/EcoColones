@@ -425,6 +425,47 @@ export default function ConsultasUsuariosClient({
     return m;
   }, [points]);
 
+  // Points summary fetched from statistics endpoint (supports optional start/end)
+  type PointsSummaryItem = {
+    first_name?: string | number;
+    last_name?: string | number;
+    total_points?: number | string;
+    total?: number | string;
+    acumulated_points?: number | string;
+    acumulated?: number | string;
+    spent_points?: number | string;
+    redeemed?: number | string;
+    difference?: number | string;
+  };
+  const [pointsSummary, setPointsSummary] = useState<PointsSummaryItem[]>([]);
+  const [, setPointsLoading] = useState(false);
+
+  const fetchPointsSummary = useCallback(async (start?: string, end?: string) => {
+    setPointsLoading(true);
+    try {
+      let url = 'http://localhost:3000/api/statistics/bypointssummary/get';
+      if (start || end) {
+        const params = new URLSearchParams();
+        if (start) params.set('start', start);
+        if (end) params.set('end', end);
+        url = `${url}?${params.toString()}`;
+      }
+      const res = await fetch(url);
+      const json = await res.json();
+      const data = json?.data ?? json;
+      setPointsSummary(Array.isArray(data) ? data : []);
+    } catch {
+      setPointsSummary([]);
+    } finally {
+      setPointsLoading(false);
+    }
+  }, []);
+
+  // Auto-fetch summary when date filters change
+  useEffect(() => {
+    fetchPointsSummary(fDateFrom, fDateTo);
+  }, [fDateFrom, fDateTo, fetchPointsSummary]);
+
   const personsFiltered = useMemo(() => {
     return persons.filter((p) => {
       const geoInfo = profiles[p.user_id];
@@ -468,25 +509,38 @@ export default function ConsultasUsuariosClient({
 
   const pointsReport = useMemo(() => {
     const rows = personsFiltered.map((p) => {
-      const total = pointsMap.get(p.user_id) ?? 0;
-      return {
-        user: [p.first_name, p.last_name].filter(Boolean).join(" "),
-        total,
-        accumulated: total,
-        redeemed: 0,
-      };
+      const fullName = [p.first_name, p.last_name].filter(Boolean).join(' ');
+      // Try to find a matching entry from the statistics summary by name
+      const match = pointsSummary.find((s) => {
+        const sFirst = (s.first_name || '').toString().toLowerCase();
+        const sLast = (s.last_name || '').toString().toLowerCase();
+        return (
+          sFirst === (p.first_name || '').toLowerCase() &&
+          sLast === (p.last_name || '').toLowerCase()
+        );
+      });
+      if (match) {
+        const total = Number(match.total_points ?? match.total ?? 0);
+        const accumulated = Number(match.acumulated_points ?? match.acumulated ?? total);
+        const redeemed = Number(match.spent_points ?? match.redeemed ?? 0);
+        const difference = Number(match.difference ?? (accumulated - redeemed));
+        return { user: fullName || '-', total, accumulated, redeemed, difference };
+      }
+      const totalFallback = pointsMap.get(p.user_id) ?? 0;
+      return { user: fullName || '-', total: totalFallback, accumulated: totalFallback, redeemed: 0, difference: totalFallback };
     });
     const totals = rows.reduce(
       (acc, r) => {
-        acc.total += r.total;
-        acc.accumulated += r.accumulated;
-        acc.redeemed += r.redeemed;
+        acc.total += Number(r.total || 0);
+        acc.accumulated += Number(r.accumulated || 0);
+        acc.redeemed += Number(r.redeemed || 0);
+        acc.difference += Number(r.difference || 0);
         return acc;
       },
-      { user: "Totales", total: 0, accumulated: 0, redeemed: 0 }
+      { user: 'Totales', total: 0, accumulated: 0, redeemed: 0, difference: 0 }
     );
     return { rows, totals };
-  }, [personsFiltered, pointsMap]);
+  }, [personsFiltered, pointsMap, pointsSummary]);
 
   if (role && role !== Role.ADMIN) {
     return (
@@ -759,6 +813,7 @@ export default function ConsultasUsuariosClient({
                   <TableHead>Total</TableHead>
                   <TableHead>Acumulados</TableHead>
                   <TableHead>Canjeados</TableHead>
+                  <TableHead>Diferencia</TableHead>
                 </TableRow>
               </TableHeader>
             </Table>
@@ -771,6 +826,7 @@ export default function ConsultasUsuariosClient({
                       <TableCell>{r.total}</TableCell>
                       <TableCell>{r.accumulated}</TableCell>
                       <TableCell>{r.redeemed}</TableCell>
+                      <TableCell>{r.difference}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -791,6 +847,9 @@ export default function ConsultasUsuariosClient({
                     </TableCell>
                     <TableCell className="font-medium">
                       {pointsReport.totals.redeemed}
+                    </TableCell>
+                    <TableCell className="font-medium">
+                      {pointsReport.totals.difference}
                     </TableCell>
                   </TableRow>
                 </TableBody>
@@ -815,9 +874,6 @@ export default function ConsultasUsuariosClient({
                 onChange={(e) => setFDateTo(e.target.value)}
               />
             </div>
-            <small className="text-muted-foreground">
-              Endpoint no soporta rango todavía.
-            </small>
           </div>
         </FiltersPanel>
       </div>

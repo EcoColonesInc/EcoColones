@@ -15,14 +15,18 @@ interface Profile {
   document_type?: string | null;
   gender?: string | null;
   telephone_number?: string | null;
+  email?: string | null;
+  acumulated_points?: number | null;
+  material_recycled?: number | null;
+  district_name?: string | null;
+  city_name?: string | null;
+  province_name?: string | null;
+  country_name?: string | null;
 }
 
 interface UserDetailClientProps {
   userId: string;
   initialProfile: Profile | null;
-  initialPoints: number;
-  initialMaterialKg: number;
-  initialEmail: string;
 }
 
 function formatDate(input?: string | null) {
@@ -36,17 +40,12 @@ function formatDate(input?: string | null) {
   });
 }
 
-export default function UserDetailClient({
-  initialProfile,
-  initialPoints,
-  initialMaterialKg,
-  initialEmail,
-}: UserDetailClientProps) {
+export default function UserDetailClient({ initialProfile }: UserDetailClientProps) {
   const router = useRouter();
   const [profile] = useState<Profile | null>(initialProfile);
-  const [points] = useState<number>(initialPoints);
-  const [materialKg] = useState<number>(initialMaterialKg);
-  const [email] = useState<string>(initialEmail);
+  const points = profile?.acumulated_points ?? 0;
+  const materialKg = profile?.material_recycled ?? 0;
+  const email = profile?.email ?? "";
   const [avatarUrl, setAvatarUrl] = useState<string>("/logo.png");
   const [loading] = useState<boolean>(false);
   const [error] = useState<string | null>(null);
@@ -94,7 +93,7 @@ export default function UserDetailClient({
         <div className="flex gap-2">
           <Button
             variant="secondary"
-            onClick={() => router.push("/admin/consultas")}
+            onClick={() => router.push("/admin/consultas/user")}
           >
             Volver
           </Button>
