@@ -39,11 +39,8 @@ export async function getUserCenterTransactions() {
 // Fetch all affiliated business with their transactions
 export async function getAllAffiliatedBusinessTransactions() {
   const supabase = await createClient();
-  
-  const { data, error } = await supabase
-    .from('affiliatedbusinesstransaction')
-    .select('person_id(user_name, first_name, last_name), affiliated_business_id(affiliated_business_name), currency(currency_name, currency_exchange), product_id(product_name), total_price, product_amount, transaction_code, state, created_at')
-    .order('affiliated_business_id', { ascending: true });
+  // Use the RPC function implemented in the database for aggregated results
+  const { data, error } = await supabase.rpc('get_all_affiliated_business_transactions');
   if (error) {
     return { error: error.message, data: null };
   }
@@ -67,11 +64,8 @@ export async function getAllCollectionCentersTransactions() {
 // Fetch the transactions of a specific affiliated business by its ID
 export async function getTransactionsByAffiliatedBusinessId(affiliatedBusinessId: string) {
   const supabase = await createClient();
-    const { data, error } = await supabase
-      .from('affiliatedbusinesstransaction')
-      .select('person_id(user_name, first_name, last_name), affiliated_business_id(affiliated_business_name), currency(currency_name, currency_exchange), product_id(product_name), total_price, product_amount, transaction_code, state, created_at')
-      .eq('affiliated_business_id', affiliatedBusinessId)
-      .order('created_at', { ascending: true });
+    // Use RPC function with parameter
+    const { data, error } = await supabase.rpc('get_transactions_by_affiliated_business_id', { p_affiliated_business_id: affiliatedBusinessId });
     if (error) {
       return { error: error.message, data: null };
     }

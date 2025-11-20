@@ -6,9 +6,14 @@ import { Toast, useToast } from "@/components/ui/toast";
 import { USER_ROUTES } from "@/config/routes";
 import type { UserProfile } from "@/types/user";
 
+type GenderOption = {
+  value: string;
+  label: string;
+};
+
 type ProfileFormProps = {
   user: UserProfile;
-  genderOptions: string[];
+  genderOptions: GenderOption[];
 };
 
 export function ProfileForm({ user, genderOptions }: ProfileFormProps) {
@@ -147,8 +152,8 @@ export function ProfileForm({ user, genderOptions }: ProfileFormProps) {
             className="w-full bg-[#E6F2EA] rounded-md px-3 py-2"
           >
             {genderOptions.map((opt) => (
-              <option key={opt} value={opt}>
-                {opt}
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
               </option>
             ))}
           </select>
