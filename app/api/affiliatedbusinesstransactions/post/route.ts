@@ -29,9 +29,21 @@ export async function POST(request: Request) {
         }
 
         // Normalize items array
+        type ItemBody = {
+            product_name?: string;
+            productName?: string;
+            product_amount?: number | string;
+            productAmount?: number | string;
+            product_id?: string;
+            productId?: string;
+            product_price?: number | string;
+            productPrice?: number | string;
+        };
+
         const normalizedItems: Array<{ product_name: string; product_amount: number }> = [];
         if (hasItems) {
-            for (const it of items as any[]) {
+            const typedItems = items as ItemBody[];
+            for (const it of typedItems) {
                 const name = it.product_name ?? it.productName ?? '';
                 const amt = Number(it.product_amount ?? it.productAmount ?? 0) || 0;
                 if (!name || amt <= 0) {
