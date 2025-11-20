@@ -3,21 +3,10 @@ import { ProductForm } from "@/components/custom/affiliate/productForm";
 import { Info, ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-interface Product {
-    id: number;
-    imagen: string;
-    titulo: string;
-    descripcion: string;
-    costo: number;
-}
-
 export default function CreateProductPage() {
     const router = useRouter();
 
-    const handleProductSave = async (newProduct: Product) => {
-
-        //console.log('Nuevo producto creado:', newProduct);
-        
+    const handleProductSave = async () => {
         // TODO:Llamada a la API para guardar en BD
         
         // Simular guardado exitoso y redirigir

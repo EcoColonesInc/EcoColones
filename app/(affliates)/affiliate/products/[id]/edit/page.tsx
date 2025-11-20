@@ -31,11 +31,11 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                 <ProductForm 
                     product={currentProduct} 
                     mode="edit"
-                    onSave={(updatedProduct) => {
+                    onSave={() => {
                         // Logica para guardar el producto actualizado
                         
                     }}
-                    onDelete={(productId) => {
+                    onDelete={() => {
                         // Logica para eliminar el producto
                         
                     }}

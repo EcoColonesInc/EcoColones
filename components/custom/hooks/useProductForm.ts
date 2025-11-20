@@ -109,8 +109,7 @@ export const useProductForm = ({ initialProduct, mode, onSave, onDelete }: UsePr
                     showToast("Producto actualizado exitosamente", "success");
                 }
 
-            } catch (error) {
-                //console.error('Error al guardar:', error);
+            } catch {
                 showToast(`Error al ${mode === 'create' ? 'crear' : 'actualizar'} el producto`, "error");
             } finally {
                 setIsLoading(false);
@@ -134,8 +133,7 @@ export const useProductForm = ({ initialProduct, mode, onSave, onDelete }: UsePr
                 onDelete?.(initialProduct.id);
                 showToast("Producto eliminado exitosamente", "success");
                 
-            } catch (error) {
-                //console.error('Error al eliminar:', error);
+            } catch {
                 showToast("Error al eliminar el producto", "error");
             } finally {
                 setIsLoading(false);
