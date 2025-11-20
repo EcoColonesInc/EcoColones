@@ -19,7 +19,7 @@ export default function AdminNavbar() {
 	const items: Array<{ label: string; href: string; isPill?: boolean; hasMenu?: boolean }> = [
 		{ label: "Auditoría", href: ADMIN_ROUTES.AUDIT, isPill: true },
 		{ label: "Configuraciones", href: ADMIN_ROUTES.SETTINGS, hasMenu: true },
-		{ label: "Solicitudes", href: "#" },
+		{ label: "Solicitudes", href: ADMIN_ROUTES.APPROVALS, hasMenu: true },
 		{ label: "Consultas", href: ADMIN_ROUTES.CONSULTAS, hasMenu: true },
 		{ label: "Estadísticas", href: ADMIN_ROUTES.REPORTS },
 	];
@@ -80,6 +80,9 @@ export default function AdminNavbar() {
 							}
 							if (it.href === ADMIN_ROUTES.SETTINGS) {
 								return <SettingsMenu key={it.label} active={active} base={base} />;
+							}
+							if (it.href === ADMIN_ROUTES.APPROVALS) {
+								return <ApprovalsMenu key={it.label} active={active} base={base} />;
 							}
 						}
 
@@ -236,3 +239,51 @@ function ConsultasMenu({ active, base }: { active: boolean; base: string }) {
 	);
 }
 
+// Separate component to manage precise hover behavior for Approvals dropdown
+function ApprovalsMenu({ active, base }: { active: boolean; base: string }) {
+	const [open, setOpen] = useState(false);
+
+	return (
+		<div
+			className="relative"
+			onMouseLeave={() => setOpen(false)}
+		>
+			<button
+				type="button"
+				className={`${
+					active
+						? "rounded-full px-3 py-1 bg-muted text-foreground hover:text-white hover:bg-[#12D452]"
+						: `${base} text-foreground/80 hover:text-white hover:bg-[#12D452] rounded-full px-3 py-1`
+				} appearance-none cursor-pointer`}
+				onMouseEnter={() => setOpen(true)}
+				aria-haspopup="menu"
+				aria-expanded={open}
+			>
+				Solicitudes
+			</button>
+			{open && (
+				<div className="absolute left-0 top-full z-50 mt-0 pt-2 min-w-56">
+					<div className="rounded-md border bg-white p-2 shadow-md">
+						<div
+							className="flex flex-col gap-1"
+							onMouseEnter={() => setOpen(true)}
+						>
+							<Link
+								href={`/admin/approvals/centers`}
+								className={"rounded px-3 py-2 text-sm hover:bg-muted"}
+							>
+								Centros de Acopio
+							</Link>
+							<Link
+								href={`/admin/approvals/affiliates`}
+								className={"rounded px-3 py-2 text-sm hover:bg-muted"}
+							>
+								Comercios Afiliados
+							</Link>
+						</div>
+					</div>
+				</div>
+			)}
+		</div>
+	);
+}
