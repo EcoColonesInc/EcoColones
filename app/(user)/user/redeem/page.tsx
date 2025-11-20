@@ -124,12 +124,13 @@ export default function UserRedeemPage() {
         if (!res.ok) throw new Error(body?.error ?? 'Error fetching user transactions');
 
         const rows = Array.isArray(body) ? body : (body?.data ?? []);
-
+        
         const mapped = (rows || []).map((r: unknown, idx: number) => {
           const row = (r && typeof r === 'object') ? (r as Record<string, unknown>) : {};
+          // Prefer the aggregated/normalized fields returned by the RPC
           const txId = String(row['transaction_code'] ?? row['transaction_id'] ?? `T${idx}`);
-          const product = row['product_id'] && typeof row['product_id'] === 'object' ? String((row['product_id'] as Record<string, unknown>)['product_name'] ?? (row['product_name'] ?? row['product'] ?? '—')) : String(row['product_name'] ?? row['product'] ?? '—');
-          const amount = Number(row['total_price'] ?? row['total_points'] ?? row['product_amount'] ?? 0) || 0;
+            const product = String(row['product_names'] ?? row['product_name'] ?? row['product'] ?? '—');
+            const amount = Number(row['total_price'] ?? row['total_points'] ?? row['total_product_amount'] ?? 0) || 0;
           const date = row['created_at'] ? new Date(String(row['created_at'])).toLocaleString('es-CR', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—';
           const store = row['affiliated_business_id'] && typeof row['affiliated_business_id'] === 'object' ? String((row['affiliated_business_id'] as Record<string, unknown>)['affiliated_business_name'] ?? (row['affiliated_business_name'] ?? row['affiliated_business'] ?? '—')) : String(row['affiliated_business_name'] ?? row['affiliated_business'] ?? '—');
           return { id: txId, product, amount, date, store } as RecentTx;

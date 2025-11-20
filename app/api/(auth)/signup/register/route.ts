@@ -19,10 +19,11 @@ export async function POST(request: Request) {
         const phone = formData.get("phone") as string;
         const photo = formData.get("photo") as File;
         const user_id = formData.get("user_id") as string;
+        const district_id = formData.get("district_id") as string;
 
         // Validate required fields
         if (!firstName || !lastName1 || !username || 
-            !idType || !idNumber || !birthDate || !gender || !phone || !photo) {
+            !idType || !idNumber || !birthDate || !gender || !phone || !photo || !district_id) {
             return NextResponse.json({ error: "Todos los campos son requeridos" }, { status: 400 });
         }
 
@@ -55,6 +56,7 @@ export async function POST(request: Request) {
             gender: gender,
             role: Role.USER,
             user_name: username,
+            district_id: district_id,
             created_by: user_id,
             updated_by: user_id
         }]);

@@ -1,7 +1,8 @@
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { redirect } from "next/navigation";
-import { AUTH_ROUTES } from "@/config/routes";
+import { AUTH_ROUTES, USER_ROUTES } from "@/config/routes";
+import Link from "next/link";
 
 import { getUserData, calculateAge, getProfilePictureUrl} from "@/lib/api/users";
 import {getUserCenterTransactions} from "@/lib/api/transactions";
@@ -14,9 +15,10 @@ type UserCenterTransaction = {
   first_name?: string;
   last_name?: string;
   collection_center_name?: string;
-  material_name?: string;
+  material_names?: string; // comma-separated list when aggregated by RPC
   total_points?: number;
-  material_amount?: number;
+  total_material_amount?: number; // aggregated amount
+  transaction_code?: string;
   created_at?: string;
 };
 
@@ -98,11 +100,13 @@ export default async function UserDashboard() {
 
   const transactions: TransactionRow[] = (_rawTransactions && _rawTransactions.length > 0)
     ? _rawTransactions.map((t: UserCenterTransaction, idx: number) => ({
-        // Create a stable-ish id from timestamp + index when no id provided by API
-        id: t.created_at ? `TXN${new Date(t.created_at).getTime()}` : `TXN_FALLBACK_${idx}`,
+        // Prefer using the `transaction_code` returned by the RPC for a stable ID
+        id: t.transaction_code ?? (t.created_at ? `TXN${new Date(t.created_at).getTime()}` : `TXN_FALLBACK_${idx}`),
         center: t.collection_center_name || "N/A",
-        material: t.material_name || "N/A",
-        qty: t.material_amount != null ? `${t.material_amount} kg` : "N/A",
+        // RPC returns aggregated `material_names` (comma-separated) when multiple items
+        material: t.material_names || "N/A",
+        // Use aggregated total material amount when available
+        qty: t.total_material_amount != null ? `${t.total_material_amount} kg` : "N/A",
         date: t.created_at
           ? new Date(t.created_at).toLocaleDateString("es-CR", { year: "numeric", month: "2-digit", day: "2-digit" })
           : "N/A",
@@ -160,12 +164,16 @@ export default async function UserDashboard() {
             </div>
 
             <div className="flex flex-col gap-3 mt-6">
+              <Link href={USER_ROUTES.REDEEM}>
               <Button className="bg-green-600 hover:bg-green-700 text-white font-medium rounded-md py-2">
                 Canjear
               </Button>
+              </Link>
+              <Link href={USER_ROUTES.CALCULATOR}>
               <Button className="bg-green-100 hover:bg-green-200 text-green-700 font-medium rounded-md py-2">
                 Calculadora de puntos
               </Button>
+              </Link>
             </div>
           </div>
         </div>

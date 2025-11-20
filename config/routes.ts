@@ -29,6 +29,7 @@ export const USER_ROUTES = {
     MIECOQR: "/user/miEcoQr",
     CENTERS: "/user/centers",
     REDEEM: "/user/redeem",
+    CALCULATOR: "/user/calculator",
 };
 
 /* Admin side dashboard routes */
@@ -39,7 +40,7 @@ export const ADMIN_ROUTES = {
     AUDIT: "/admin/auditoria",
     CONSULTAS: "/admin/consultas",
     // Usuarios apunta al listado principal de consultas (usuarios)
-    CONSULTAS_USERS: "/admin/consultas",
+    CONSULTAS_USERS: "/admin/consultas/user",
     CONSULTAS_CENTERS: "/admin/consultas/centers",
     CONSULTAS_BUSINESSES: "/admin/consultas/comercios",
 };
