@@ -18,7 +18,6 @@ export default function Page() {
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [collectionCenterId, setCollectionCenterId] = useState<string | null>(null);
 
     useEffect(() => {
         async function fetchData() {
@@ -37,7 +36,6 @@ export default function Page() {
                 }
                 
                 const centerId = centerData.collectioncenter_id;
-                setCollectionCenterId(centerId);
                 
                 // Now fetch transactions for this collection center
                 const transactionsResponse = await fetch(`/api/collectioncenters/${centerId}/collectioncentertransactions/get`);
