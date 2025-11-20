@@ -89,35 +89,29 @@ export default function Page() {
                             <table className="w-full">
                                 <thead>
                                     <tr className="text-gray-600 text-sm">
-                                        <th className="text-left py-3 px-4 font-medium">Transacción</th>
-                                        <th className="text-left py-3 px-4 font-medium">Usuario</th>
-                                        <th className="text-left py-3 px-4 font-medium">Material</th>
-                                        <th className="text-left py-3 px-4 font-medium">Cantidad (kg)</th>
-                                        <th className="text-left py-3 px-4 font-medium">Puntos</th>
-                                        <th className="text-left py-3 px-4 font-medium">Fecha</th>
-                                        <th className="text-left py-3 px-4 font-medium">Estatus</th>
+                                        <th className="text-center py-3 px-4 font-medium">Transacción</th>
+                                        <th className="text-center py-3 px-4 font-medium">Usuario</th>
+                                        <th className="text-center py-3 px-4 font-medium">Material</th>
+                                        <th className="text-center py-3 px-4 font-medium">Cantidad (kg)</th>
+                                        <th className="text-center py-3 px-4 font-medium">Puntos</th>
+                                        <th className="text-center py-3 px-4 font-medium">Fecha</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {transactions.map((transaction, index) => (
                                         <tr key={index} className="border-t border-gray-100 hover:bg-gray-50">
-                                            <td className="py-4 px-4 text-sm">{transaction.transaction_code}</td>
-                                            <td className="py-4 px-4 text-sm">
+                                            <td className="py-4 px-4 text-sm text-center">{transaction.transaction_code}</td>
+                                            <td className="py-4 px-4 text-sm text-center">
                                                 {transaction.user_name || `${transaction.first_name || ''} ${transaction.last_name || ''}`.trim() || 'N/A'}
                                             </td>
-                                            <td className="py-4 px-4 text-sm">{transaction.material_names || 'N/A'}</td>
-                                            <td className="py-4 px-4 text-sm">
+                                            <td className="py-4 px-4 text-sm text-center">{transaction.material_names || 'N/A'}</td>
+                                            <td className="py-4 px-4 text-sm text-center">
                                                 {transaction.total_material_amount != null ? Number(transaction.total_material_amount).toFixed(2) : '0.00'} kg
                                             </td>
-                                            <td className="py-4 px-4 text-sm">
+                                            <td className="py-4 px-4 text-sm text-center">
                                                 {transaction.total_points != null ? Number(transaction.total_points) : 0} pts
                                             </td>
-                                            <td className="py-4 px-4 text-sm">{formatDate(transaction.created_at)}</td>
-                                            <td className="py-4 px-4">
-                                                <span className="inline-block px-3 py-1 text-xs font-medium text-green-700 bg-green-100 rounded-full">
-                                                    Completado
-                                                </span>
-                                            </td>
+                                            <td className="py-4 px-4 text-sm text-center">{formatDate(transaction.created_at)}</td>
                                         </tr>
                                     ))}
                                 </tbody>
