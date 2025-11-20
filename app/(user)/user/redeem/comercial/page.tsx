@@ -226,62 +226,56 @@ function StoreInner() {
       const cur = Array.isArray(curBody) ? curBody[0] : curBody;
       const currencyName = cur?.name ?? cur?.parameter ?? cur?.currency_name ?? cur?.currency ?? 'CRC';
 
-      // 5) Insert a transaction per product in the cart.
-      // Use a temporary code for insertion, then update the record's
-      // `transaction_code` using the inserted `created_at` value so the
-      // final code follows: id: t.created_at ? `TXN${new Date(t.created_at).getTime()}` : `TXN_FALLBACK_${idx}`
-      const entries = Object.entries(cart);
-      for (let idx = 0; idx < entries.length; idx++) {
-        const [prodName, qty] = entries[idx];
-        if (!qty || qty <= 0) continue;
+      // 5) Create a single transaction for all items in the cart
+      // Build items payload: prefer product_id when available, include product_price to avoid extra lookups
+      const entries = Object.entries(cart).filter(([, qty]) => qty > 0);
+      if (entries.length === 0) {
+        throw new Error('No hay ítems en el carrito para procesar');
+      }
 
-        const tempCode = `TMP_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+      const itemsPayload = entries.map(([prodName, qty]) => {
+        const prod = products.find((p) => p.name === prodName);
+        return {
+          product_id: prod?.id ?? undefined,
+          product_name: prod?.name ?? prodName,
+          product_amount: qty,
+          product_price: prod?.price ?? 0,
+        };
+      });
 
-        const txRes = await fetch('/api/affiliatedbusinesstransactions/post', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            person_name: personName,
-            affiliated_business_name: storeName,
-            currency_name: currencyName,
-            product_name: prodName,
-            product_amount: qty,
-            transaction_code: tempCode,
-          }),
-        });
+      // Generate a client-side transaction code (server will check uniqueness)
+      const prefix = (storeName && typeof storeName === 'string')
+        ? storeName.replace(/[^A-Za-z]/g, '').slice(0, 3).toUpperCase()
+        : 'ECO';
+      const timePart = String(Date.now()).slice(-10);
+      const transactionCode = `${prefix}${timePart}${Math.random().toString(36).slice(2,6)}`;
 
-        const txBody = await txRes.json();
-        if (!txRes.ok) {
-          throw new Error(txBody?.error ?? 'Error creando transacción');
-        }
+      const txRes = await fetch('/api/affiliatedbusinesstransactions/post', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          person_name: personName,
+          affiliated_business_name: storeName,
+          currency_name: currencyName,
+          items: itemsPayload,
+          transaction_code: transactionCode,
+        }),
+      });
 
-        // txBody.data should contain the inserted row (or array with the row)
-        const inserted = txBody?.data && Array.isArray(txBody.data) ? txBody.data[0] : txBody?.data ?? null;
-        const abId = inserted?.ab_transaction_id ?? inserted?.abTransactionId ?? null;
-        const createdAt = inserted?.created_at ?? inserted?.createdAt ?? null;
+      const txBody = await txRes.json();
+      if (!txRes.ok) {
+        throw new Error(txBody?.error ?? 'Error creando transacción');
+      }
 
-        // Build a simpler code: three-letter prefix + several digits from timestamp
-        const prefix = (storeName && typeof storeName === 'string')
-          ? storeName.replace(/[^A-Za-z]/g, '').slice(0, 3).toUpperCase()
-          : 'ECO';
-        const timePart = createdAt
-          ? String(new Date(createdAt).getTime()).slice(-7)
-          : String(Date.now()).slice(-7);
-        const finalCode = `${prefix}${timePart}`;
+      // Expect response shape: { message, data: { transaction, items } }
+      const createdTransaction = txBody?.data?.transaction ?? txBody?.data ?? null;
+      const generatedCode = createdTransaction?.transaction_code ?? createdTransaction?.transactionCode ?? null;
 
-        // If we can, patch the transaction to set the final transaction_code
-        if (abId) {
-          try {
-            await fetch(`/api/affiliatedbusinesstransactions/${abId}/patch`, {
-              method: 'PATCH',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ transaction_code: finalCode }),
-            });
-          } catch (patchErr) {
-            // non-fatal: log and continue
-            console.warn('No se pudo actualizar transaction_code para', abId, patchErr);
-          }
-        }
+      // Optionally show transaction code to user
+      if (generatedCode) {
+        alert(`Compra realizada con éxito. Código de transacción: ${generatedCode}`);
+      } else {
+        alert('Compra realizada con éxito.');
       }
 
       // 6) Success — clear cart, update local points and close modal

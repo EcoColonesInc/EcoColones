@@ -39,11 +39,8 @@ export async function getUserCenterTransactions() {
 // Fetch all affiliated business with their transactions
 export async function getAllAffiliatedBusinessTransactions() {
   const supabase = await createClient();
-  
-  const { data, error } = await supabase
-    .from('affiliatedbusinesstransaction')
-    .select('person_id(user_name, first_name, last_name), affiliated_business_id(affiliated_business_name), currency(currency_name, currency_exchange), product_id(product_name), total_price, product_amount, transaction_code, state, created_at')
-    .order('affiliated_business_id', { ascending: true });
+  // Use the RPC function implemented in the database for aggregated results
+  const { data, error } = await supabase.rpc('get_all_affiliated_business_transactions');
   if (error) {
     return { error: error.message, data: null };
   }
@@ -53,11 +50,8 @@ export async function getAllAffiliatedBusinessTransactions() {
 // Fetch all collection centers with their transactions
 export async function getAllCollectionCentersTransactions() {
   const supabase = await createClient();
-  
-  const { data, error } = await supabase
-    .from('collectioncentertransaction')
-    .select('person_id(user_name, first_name, last_name), collection_center_id(name), material_id(name, equivalent_points), total_points, material_amount, created_at')
-    .order('collection_center_id', { ascending: true });
+  // Use RPC to retrieve aggregated collection center transactions
+  const { data, error } = await supabase.rpc('get_all_collection_center_transactions');
   if (error) {
     return { error: error.message, data: null };
   }
@@ -67,11 +61,8 @@ export async function getAllCollectionCentersTransactions() {
 // Fetch the transactions of a specific affiliated business by its ID
 export async function getTransactionsByAffiliatedBusinessId(affiliatedBusinessId: string) {
   const supabase = await createClient();
-    const { data, error } = await supabase
-      .from('affiliatedbusinesstransaction')
-      .select('person_id(user_name, first_name, last_name), affiliated_business_id(affiliated_business_name), currency(currency_name, currency_exchange), product_id(product_name), total_price, product_amount, transaction_code, state, created_at')
-      .eq('affiliated_business_id', affiliatedBusinessId)
-      .order('created_at', { ascending: true });
+    // Use RPC function with parameter
+    const { data, error } = await supabase.rpc('get_transactions_by_affiliated_business_id', { p_affiliated_business_id: affiliatedBusinessId });
     if (error) {
       return { error: error.message, data: null };
     }
@@ -88,11 +79,8 @@ export type AffiliatedTransactionsFilters = {
 // Fetch the transactions of a collection center by its ID
 export async function getTransactionsByCollectionCenterId(collectionCenterId: string) {
   const supabase = await createClient();
-    const { data, error } = await supabase
-      .from('collectioncentertransaction')
-      .select('person_id(user_name, first_name, last_name), collection_center_id(name), material_id(name, equivalent_points), total_points, material_amount, created_at')
-      .eq('collection_center_id', collectionCenterId)
-      .order('created_at', { ascending: true });
+    // Use RPC function with parameter
+    const { data, error } = await supabase.rpc('get_transactions_by_collection_center_id', { p_collection_center_id: collectionCenterId });
     if (error) {
       return { error: error.message, data: null };
     }
