@@ -91,78 +91,28 @@ export default function ComerciosClient({
   initialTopProducts,
 }: ComerciosClientProps) {
   const router = useRouter();
-  const [businesses, setBusinesses] = useState<AffiliatedBusiness[]>(
+  const [businesses] = useState<AffiliatedBusiness[]>(
     initialBusinesses as AffiliatedBusiness[]
   );
-  const [types, setTypes] = useState<BusinessType[]>(
+  const [types] = useState<BusinessType[]>(
     initialTypes as BusinessType[]
   );
-  const [topProducts, setTopProducts] = useState<TopProduct[]>(
+  const [topProducts] = useState<TopProduct[]>(
     initialTopProducts as TopProduct[]
   );
-  const [loading, setLoading] = useState(false);
-  const [topLoading, setTopLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [topError, setTopError] = useState<string | null>(null);
+  const [loading] = useState(false);
+  const [topLoading] = useState(false);
+  const [error] = useState<string | null>(null);
+  const [topError] = useState<string | null>(null);
 
   // filters
   const [fName, setFName] = useState("");
   const [fManager, setFManager] = useState("");
   const [fType, setFType] = useState<string>("");
 
-  async function refreshBusinesses() {
-    try {
-      setLoading(true);
-      const res = await fetch("/api/affiliatedbusiness/get", {
-        cache: "no-store",
-      });
-      const j = await res.json();
-      if (!res.ok) throw new Error(j?.error || "Error cargando comercios");
-      setBusinesses((j.data ?? []) as AffiliatedBusiness[]);
-      setError(null);
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Error cargando comercios");
-    } finally {
-      setLoading(false);
-    }
-  }
+  // Funciones de refresco eliminadas según requerimiento; se pueden reintroducir si se necesitan nuevamente.
 
-  async function refreshTypes() {
-    try {
-      const res = await fetch("/api/businesstypes/get", { cache: "no-store" });
-      const j = await res.json();
-      if (!res.ok) throw new Error(j?.error || "Error tipos");
-      setTypes((j.data ?? []) as BusinessType[]);
-    } catch {
-      /* silencioso */
-    }
-  }
-
-  async function refreshTopProducts() {
-    try {
-      setTopLoading(true);
-      const res = await fetch("/api/products/get", { cache: "no-store" });
-      const j = await res.json();
-      if (!res.ok) throw new Error(j?.error || "Error top productos");
-      setTopProducts((j.data ?? []) as TopProduct[]);
-      setTopError(null);
-    } catch (err: unknown) {
-      setTopError(
-        err instanceof Error ? err.message : "Error cargando top de productos"
-      );
-    } finally {
-      setTopLoading(false);
-    }
-  }
-
-  // Opcional: refresco conjunto (botón)
-  async function fullRefresh() {
-    await Promise.all([
-      refreshBusinesses(),
-      refreshTypes(),
-      refreshTopProducts(),
-    ]);
-  }
+  // Si se requiere refrescar todo en conjunto, se puede reintroducir una función dedicada.
 
   const filtered = useMemo(() => {
     const nameQ = fName.trim().toLowerCase();
@@ -193,14 +143,6 @@ export default function ComerciosClient({
         <h1 className="text-2xl md:text-3xl font-bold">
           Comercios afiliados - consultas
         </h1>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={fullRefresh}
-          disabled={loading || topLoading}
-        >
-          {loading || topLoading ? "Actualizando..." : "Refrescar"}
-        </Button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

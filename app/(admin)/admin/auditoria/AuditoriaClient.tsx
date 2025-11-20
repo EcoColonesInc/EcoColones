@@ -66,39 +66,18 @@ export default function AuditoriaClient({
   initialRecyclings,
 }: AuditoriaClientProps) {
   const { role } = useAuth();
-  const [loading, setLoading] = useState(false);
-  const [binnacles, setBinnacles] = useState<BinnacleRow[]>(
+  const [loading] = useState(false);
+  const [binnacles] = useState<BinnacleRow[]>(
     initialBinnacles as BinnacleRow[]
   );
-  const [recyclings, setRecyclings] = useState<UserRecyclingRow[]>(
+  const [recyclings] = useState<UserRecyclingRow[]>(
     initialRecyclings as UserRecyclingRow[]
   );
-  const [error, setError] = useState<string | null>(null);
+  const [error] = useState<string | null>(null);
   const CR_TZ = "America/Costa_Rica";
   const CR_LOCALE = "es-CR";
 
-  // Permite refrescar manualmente usando las funciones directas (evitando endpoints /api)
-  async function refresh() {
-    try {
-      setLoading(true);
-      const [bRes, rRes] = await Promise.all([
-        fetch("/api/binnacles/get", { cache: "no-store" }),
-        fetch("/api/userrecyclings/get", { cache: "no-store" }),
-      ]);
-      const bJson = await bRes.json();
-      const rJson = await rRes.json();
-      if (!bRes.ok) throw new Error(bJson?.error || "Error cargando bitácoras");
-      if (!rRes.ok)
-        throw new Error(rJson?.error || "Error cargando reciclajes");
-      setBinnacles((bJson.data ?? []) as BinnacleRow[]);
-      setRecyclings((rJson.data ?? []) as UserRecyclingRow[]);
-      setError(null);
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Error al refrescar");
-    } finally {
-      setLoading(false);
-    }
-  }
+  // Si se requiere refrescar manualmente, se puede reintroducir una función dedicada.
 
   // Helpers para normalizar fechas/horas a la zona horaria de Costa Rica
   const formatDateYMDInTZ = (date: Date, tz = CR_TZ): string => {
@@ -334,13 +313,6 @@ export default function AuditoriaClient({
     <div className="min-h-screen px-4 md:px-8 lg:px-12 py-6 space-y-8">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl md:text-3xl font-bold">Auditoría</h1>
-        <button
-          onClick={refresh}
-          className="text-sm border rounded px-3 py-1 bg-muted hover:bg-muted/70"
-          disabled={loading}
-        >
-          {loading ? "Actualizando..." : "Refrescar"}
-        </button>
       </div>
 
       <Card>

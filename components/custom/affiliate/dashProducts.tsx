@@ -34,6 +34,7 @@ export const DashProducts: React.FC<DashProductsProps> = ({ products }) => {
                                     src={product.imagen} 
                                     alt={product.titulo}
                                     fill
+                                    sizes="125"
                                     className="object-cover"
                                 />
                             </div>

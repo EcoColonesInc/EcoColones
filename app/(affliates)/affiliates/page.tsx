@@ -3,27 +3,74 @@
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 interface Product {
+  id?: string | number;
   name: string;
   image: string;
-  price: number;
+  price?: number;
 }
 
 export default function ComerciosAfiliadosLanding() {
-  // Sample products (could later come from Supabase)
-  const products: Product[] = [
-    { name: "McDonald's Big Mac", image: "/products/bigmac.png", price: 1200 },
-    { name: "McDonald's Papas Fritas", image: "/products/fries.png", price: 1000 },
-    { name: "Taco Bell Chalupa", image: "/products/chalupa.png", price: 300 },
-    { name: "Taco Bell Wrap", image: "/products/wrap.png", price: 500 },
-  ];
-
+  // Products loaded from API
+  const [products, setProducts] = useState<Product[]>([]);
   const [index, setIndex] = useState(0);
+  const [loading, setLoading] = useState(false);
 
   const next = () => setIndex((i) => (i + 1) % products.length);
   const prev = () => setIndex((i) => (i - 1 + products.length) % products.length);
+
+  useEffect(() => {
+    let mounted = true;
+    async function load() {
+      setLoading(true);
+      try {
+        const res = await fetch('/api/products/most-popular/get');
+        const body = await res.json();
+
+        // Normalize response shape: { data: [...] } or direct array
+        const rows = Array.isArray(body) ? body : (body?.data ?? []);
+
+        // Map incoming rows to Product interface with safe fallbacks
+        const mapped: Product[] = (rows || []).map((r: unknown, i: number) => {
+          const row = (r && typeof r === 'object') ? (r as Record<string, unknown>) : {};
+          const id = (row['product_id'] as string | number) ?? (row['id'] as string | number) ?? i;
+          const name = (row['product_name'] as string) ?? (row['name'] as string) ?? `Producto ${i + 1}`;
+          const image = (row['image_url'] as string) ?? (row['product_image'] as string) ?? (row['image'] as string) ?? `/products/placeholder.png`;
+          const price = Number(row['product_price'] ?? row['price'] ?? 0) || 0;
+          return { id, name, image, price };
+        });
+
+        if (mounted) {
+          // If no rows returned, keep a small set of default products for the UI
+          if (mapped.length === 0) {
+            setProducts([
+              { id: 'demo-1', name: "Producto Demo A", image: '/products/placeholder.png', price: 0 },
+              { id: 'demo-2', name: "Producto Demo B", image: '/products/placeholder.png', price: 0 },
+            ]);
+          } else {
+            setProducts(mapped);
+          }
+        }
+      } catch (err) {
+        console.error('Error loading most popular products', err);
+        if (mounted) {
+          setProducts([
+            { id: 'demo-1', name: "Producto Demo A", image: '/products/placeholder.png', price: 0 },
+            { id: 'demo-2', name: "Producto Demo B", image: '/products/placeholder.png', price: 0 },
+          ]);
+        }
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    }
+    load();
+    return () => { mounted = false; };
+  }, []);
+
+  // prevent `loading` unused variable lint warning while keeping the state
+  void loading;
 
   return (
     <div className="min-h-screen bg-white py-10 px-6 md:px-16">
