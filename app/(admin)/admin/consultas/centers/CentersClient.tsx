@@ -12,31 +12,24 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-// Evitamos importar funciones server (usan next/headers). Usamos endpoints /api para refrescar.
 
-type BusinessType = { business_type_id: string | number; name: string };
-
-type AffiliatedBusiness = {
-  affiliated_business_id: string | number;
-  affiliated_business_name: string;
-  description?: string | null;
+type CollectionCenter = {
+  collectioncenter_id: string | number;
+  name: string;
   phone?: string | null;
+  // Ahora normalizado a string desde la API
   email?: string | null;
-  manager_id?: {
+  person_id?: {
     first_name?: string | null;
     last_name?: string | null;
-    second_last_name?: string | null;
   } | null;
-  business_type_id?: { name?: string | null } | null;
   district_id?: { district_name?: string | null } | null;
 };
 
-type TopProduct = {
-  product_name: string;
-  product_price?: number | null;
-  affiliated_business_name?: string | null;
-  total_quantity_sold?: number | null;
-  times_purchased: number;
+type TopMaterial = {
+  material_name: string;
+  total_amount: number;
+  times_recycled: number;
 };
 
 function FilterTag({
@@ -79,26 +72,21 @@ function FiltersPanel({
   );
 }
 
-interface ComerciosClientProps {
-  initialBusinesses: unknown[];
-  initialTypes: unknown[];
-  initialTopProducts: unknown[];
+interface CentersClientProps {
+  initialCenters: unknown[];
+  initialTopMaterials: unknown[];
 }
 
-export default function ComerciosClient({
-  initialBusinesses,
-  initialTypes,
-  initialTopProducts,
-}: ComerciosClientProps) {
+export default function CentersClient({
+  initialCenters,
+  initialTopMaterials,
+}: CentersClientProps) {
   const router = useRouter();
-  const [businesses] = useState<AffiliatedBusiness[]>(
-    initialBusinesses as AffiliatedBusiness[]
+  const [centers] = useState<CollectionCenter[]>(
+    initialCenters as CollectionCenter[]
   );
-  const [types] = useState<BusinessType[]>(
-    initialTypes as BusinessType[]
-  );
-  const [topProducts] = useState<TopProduct[]>(
-    initialTopProducts as TopProduct[]
+  const [topMaterials] = useState<TopMaterial[]>(
+    initialTopMaterials as TopMaterial[]
   );
   const [loading] = useState(false);
   const [topLoading] = useState(false);
@@ -108,52 +96,54 @@ export default function ComerciosClient({
   // filters
   const [fName, setFName] = useState("");
   const [fManager, setFManager] = useState("");
-  const [fType, setFType] = useState<string>("");
+  const [fPhone, setFPhone] = useState("");
+  const [fEmail, setFEmail] = useState("");
 
-  // Funciones de refresco eliminadas según requerimiento; se pueden reintroducir si se necesitan nuevamente.
-
-  // Si se requiere refrescar todo en conjunto, se puede reintroducir una función dedicada.
+  // Si en el futuro se requiere refrescar datos desde API, se pueden reintroducir utilidades dedicadas.
 
   const filtered = useMemo(() => {
     const nameQ = fName.trim().toLowerCase();
     const managerQ = fManager.trim().toLowerCase();
-    const typeQ = fType.trim().toLowerCase();
-    return businesses.filter((b) => {
-      const inName =
-        !nameQ ||
-        (b.affiliated_business_name ?? "").toLowerCase().includes(nameQ);
+    const phoneQ = fPhone.trim().toLowerCase();
+    const emailQ = fEmail.trim().toLowerCase();
+    
+    return centers.filter((c) => {
+      const inName = !nameQ || (c.name ?? "").toLowerCase().includes(nameQ);
+      
       const managerFullName = [
-        b.manager_id?.first_name,
-        b.manager_id?.last_name,
-        b.manager_id?.second_last_name,
+        c.person_id?.first_name,
+        c.person_id?.last_name,
       ]
         .filter(Boolean)
         .join(" ");
       const inManager =
         !managerQ || managerFullName.toLowerCase().includes(managerQ);
-      const typeName = b.business_type_id?.name ?? "";
-      const inType = !typeQ || typeName.toLowerCase() === typeQ;
-      return inName && inManager && inType;
+      
+      const inPhone = !phoneQ || (c.phone ?? "").toLowerCase().includes(phoneQ);
+      const emailValue = c.email ?? "";
+      const inEmail = !emailQ || emailValue.toLowerCase().includes(emailQ);
+      
+      return inName && inManager && inPhone && inEmail;
     });
-  }, [businesses, fName, fManager, fType]);
+  }, [centers, fName, fManager, fPhone, fEmail]);
 
   return (
     <div className="min-h-screen px-4 md:px-6 lg:px-8 py-6 space-y-8 max-w-7xl mx-auto">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl md:text-3xl font-bold">
-          Comercios afiliados - consultas
+          Centros de acopio - consultas
         </h1>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="lg:col-span-2 h-full">
           <CardHeader>
-            <CardTitle>Listado de comercios</CardTitle>
+            <CardTitle>Listado de centros de acopio</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col h-[520px]">
             {error && <p className="text-sm text-red-600 mb-2">{error}</p>}
             <div className="mb-2 text-sm text-muted-foreground">
-              Total de comercios: {businesses.length}
+              Total de centros: {centers.length}
             </div>
             <div className="overflow-y-auto overflow-x-hidden pr-2 flex-1 max-h-[460px] md:max-h-[480px]">
               <Table
@@ -174,9 +164,7 @@ export default function ComerciosClient({
                       Nombre de Gerente
                     </TableHead>
                     <TableHead className="text-center">Teléfono</TableHead>
-                    <TableHead className="text-center">
-                      Tipo de comercio
-                    </TableHead>
+                    <TableHead className="text-center">Correo</TableHead>
                     <TableHead className="text-center">Selección</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -201,25 +189,21 @@ export default function ComerciosClient({
                           </TableCell>
                         </TableRow>
                       ))
-                    : filtered.map((b) => (
-                        <TableRow key={b.affiliated_business_id}>
+                    : filtered.map((c) => (
+                        <TableRow key={c.collectioncenter_id}>
                           <TableCell className="text-center">
-                            {b.affiliated_business_name}
+                            {c.name}
                           </TableCell>
                           <TableCell className="text-center">
-                            {[
-                              b.manager_id?.first_name,
-                              b.manager_id?.last_name,
-                              b.manager_id?.second_last_name,
-                            ]
+                            {[c.person_id?.first_name, c.person_id?.last_name]
                               .filter(Boolean)
                               .join(" ") || "-"}
                           </TableCell>
                           <TableCell className="text-center">
-                            {b.phone ?? "-"}
+                            {c.phone ?? "-"}
                           </TableCell>
                           <TableCell className="text-center">
-                            {b.business_type_id?.name ?? "-"}
+                            {c.email ?? "-"}
                           </TableCell>
                           <TableCell className="text-center">
                             <Button
@@ -227,7 +211,7 @@ export default function ComerciosClient({
                               variant="default"
                               onClick={() =>
                                 router.push(
-                                  `/admin/consultas/comercios/${b.affiliated_business_id}`
+                                  `/admin/consultas/centers/${c.collectioncenter_id}`
                                 )
                               }
                             >
@@ -243,9 +227,67 @@ export default function ComerciosClient({
         </Card>
 
         <div className="flex flex-col gap-6">
-          <Card>
+         
+
+          <FiltersPanel>
+            <div className="flex flex-col gap-1">
+              <label className="font-medium">Nombre</label>
+              <div className="flex items-center gap-2">
+                <input
+                  className="border rounded px-2 py-1 flex-1"
+                  placeholder="Ingresa el nombre"
+                  value={fName}
+                  onChange={(e) => setFName(e.target.value)}
+                />
+                {fName && (
+                  <FilterTag label="Nombre" onClear={() => setFName("")} />
+                )}
+              </div>
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="font-medium">Gerente</label>
+              <div className="flex items-center gap-2">
+                <input
+                  className="border rounded px-2 py-1 flex-1"
+                  placeholder="Ingresa el nombre"
+                  value={fManager}
+                  onChange={(e) => setFManager(e.target.value)}
+                />
+                {fManager && (
+                  <FilterTag label="Gerente" onClear={() => setFManager("")} />
+                )}
+              </div>
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="font-medium">Correo</label>
+              <div className="flex items-center gap-2">
+                <input
+                  className="border rounded px-2 py-1 flex-1"
+                  placeholder="Ingresa el correo"
+                  value={fEmail}
+                  onChange={(e) => setFEmail(e.target.value)}
+                />
+                {fEmail && (
+                  <FilterTag label="Correo" onClear={() => setFEmail("")} />
+                )}
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                setFName("");
+                setFManager("");
+                setFPhone("");
+                setFEmail("");
+              }}
+              className="border w-full rounded px-2 py-1 bg-muted"
+            >
+              Limpiar filtros
+            </button>
+          </FiltersPanel>
+
+           <Card>
             <CardHeader>
-              <CardTitle>Top 5 de productos más canjeados</CardTitle>
+              <CardTitle>Top 5 de materiales más reciclados</CardTitle>
             </CardHeader>
             <CardContent>
               {topError && (
@@ -255,8 +297,8 @@ export default function ComerciosClient({
                 <TableHeader>
                   <TableRow>
                     <TableHead className="text-center">Puesto</TableHead>
-                    <TableHead className="text-center">Nombre</TableHead>
-                    <TableHead className="text-right">Veces Canjeado</TableHead>
+                    <TableHead className="text-center">Material</TableHead>
+                    <TableHead className="text-right">Peso/Cantidad</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -274,7 +316,7 @@ export default function ComerciosClient({
                           </TableCell>
                         </TableRow>
                       ))
-                    : topProducts.slice(0, 5).map((p, idx) => {
+                    : topMaterials.map((m, idx) => {
                         const rank = idx + 1;
                         const medal =
                           rank === 1
@@ -285,14 +327,14 @@ export default function ComerciosClient({
                             ? "🥉"
                             : "";
                         return (
-                          <TableRow key={`${p.product_name}-${idx}`}>
+                          <TableRow key={`${m.material_name}-${idx}`}>
                             <TableCell className="whitespace-nowrap flex items-center gap-2">
                               <span aria-hidden>{medal}</span>
                               <span>{rank}</span>
                             </TableCell>
-                            <TableCell>{p.product_name}</TableCell>
+                            <TableCell>{m.material_name}</TableCell>
                             <TableCell className="text-right">
-                              {p.times_purchased}
+                              {m.total_amount} kg
                             </TableCell>
                           </TableRow>
                         );
@@ -302,67 +344,6 @@ export default function ComerciosClient({
             </CardContent>
           </Card>
 
-          <FiltersPanel>
-            <div className="flex flex-col gap-1">
-              <label className="font-medium">Nombre del comercio</label>
-              <div className="flex items-center gap-2">
-                <input
-                  className="border rounded px-2 py-1 flex-1"
-                  placeholder="Ingresa el nombre"
-                  value={fName}
-                  onChange={(e) => setFName(e.target.value)}
-                />
-                {fName && (
-                  <FilterTag
-                    label="Nombre del comercio"
-                    onClear={() => setFName("")}
-                  />
-                )}
-              </div>
-            </div>
-            <div className="flex flex-col gap-1">
-              <label className="font-medium">Nombre del gerente</label>
-              <div className="flex items-center gap-2">
-                <input
-                  className="border rounded px-2 py-1 flex-1"
-                  placeholder="Ingresa el nombre del gerente"
-                  value={fManager}
-                  onChange={(e) => setFManager(e.target.value)}
-                />
-                {fManager && (
-                  <FilterTag
-                    label="Nombre del gerente"
-                    onClear={() => setFManager("")}
-                  />
-                )}
-              </div>
-            </div>
-            <div className="flex flex-col gap-2">
-              <label className="font-medium">Tipo de comercio</label>
-              <select
-                className="border rounded px-2 py-1"
-                value={fType}
-                onChange={(e) => setFType(e.target.value)}
-              >
-                <option value="">Todos</option>
-                {types.map((t) => (
-                  <option key={String(t.business_type_id)} value={t.name}>
-                    {t.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <button
-              onClick={() => {
-                setFName("");
-                setFManager("");
-                setFType("");
-              }}
-              className="border w-full rounded px-2 py-1 bg-muted"
-            >
-              Limpiar filtros
-            </button>
-          </FiltersPanel>
         </div>
       </div>
     </div>

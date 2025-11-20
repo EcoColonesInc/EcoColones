@@ -56,7 +56,7 @@ export async function getAllCollectionCentersTransactions() {
   
   const { data, error } = await supabase
     .from('collectioncentertransaction')
-    .select('person_id(user_name, first_name, last_name), collection_center_id(name), material_id(name), total_points, material_amount, created_at')
+    .select('person_id(user_name, first_name, last_name), collection_center_id(name), material_id(name, equivalent_points), total_points, material_amount, created_at')
     .order('collection_center_id', { ascending: true });
   if (error) {
     return { error: error.message, data: null };
@@ -90,7 +90,7 @@ export async function getTransactionsByCollectionCenterId(collectionCenterId: st
   const supabase = await createClient();
     const { data, error } = await supabase
       .from('collectioncentertransaction')
-      .select('person_id(user_name, first_name, last_name), collection_center_id(name), material_id(name), total_points, material_amount, created_at')
+      .select('person_id(user_name, first_name, last_name), collection_center_id(name), material_id(name, equivalent_points), total_points, material_amount, created_at')
       .eq('collection_center_id', collectionCenterId)
       .order('created_at', { ascending: true });
     if (error) {

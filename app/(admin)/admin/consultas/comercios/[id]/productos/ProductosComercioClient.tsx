@@ -42,7 +42,6 @@ export default function ProductosComercioClient({
   const [relations, setRelations] = useState<RelationRow[]>(initialRelations);
   const [search, setSearch] = useState("");
   const [businessName, setBusinessName] = useState(initialBusinessName);
-  const [refreshTick, setRefreshTick] = useState(0);
 
   const load = useCallback(async () => {
     try {
@@ -68,7 +67,7 @@ export default function ProductosComercioClient({
 
   useEffect(() => {
     load();
-  }, [load, refreshTick]);
+  }, [load]);
 
   const displayed: AffiliatedBusinessProduct[] = relations
     .filter((r) =>
@@ -112,12 +111,6 @@ export default function ProductosComercioClient({
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
-            <Button
-              variant="outline"
-              onClick={() => setRefreshTick((x) => x + 1)}
-            >
-              Refrescar
-            </Button>
           </div>
           {loading && <p className="text-sm">Cargando productos...</p>}
           {!loading && relations.length === 0 && (

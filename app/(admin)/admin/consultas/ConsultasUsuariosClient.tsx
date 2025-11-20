@@ -499,7 +499,9 @@ export default function ConsultasUsuariosClient({
 
   return (
     <div className="min-h-screen px-4 md:px-8 lg:px-12 py-6 space-y-8">
-      <h1 className="text-2xl md:text-3xl font-bold">Consultas Usuarios</h1>
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <h1 className="text-2xl md:text-3xl font-bold">Consultas Usuarios</h1>
+      </div>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="lg:col-span-2 h-full">
           <CardHeader>

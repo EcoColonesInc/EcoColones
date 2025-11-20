@@ -37,20 +37,19 @@ function formatDate(input?: string | null) {
 }
 
 export default function UserDetailClient({
-  userId,
   initialProfile,
   initialPoints,
   initialMaterialKg,
   initialEmail,
 }: UserDetailClientProps) {
   const router = useRouter();
-  const [profile, setProfile] = useState<Profile | null>(initialProfile);
-  const [points, setPoints] = useState<number>(initialPoints);
-  const [materialKg, setMaterialKg] = useState<number>(initialMaterialKg);
-  const [email, setEmail] = useState<string>(initialEmail);
+  const [profile] = useState<Profile | null>(initialProfile);
+  const [points] = useState<number>(initialPoints);
+  const [materialKg] = useState<number>(initialMaterialKg);
+  const [email] = useState<string>(initialEmail);
   const [avatarUrl, setAvatarUrl] = useState<string>("/logo.png");
-  const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
+  const [loading] = useState<boolean>(false);
+  const [error] = useState<string | null>(null);
 
   // Resolve avatar from storage
   useEffect(() => {
@@ -77,56 +76,7 @@ export default function UserDetailClient({
     })();
   }, [profile]);
 
-  // Optional manual refresh (could be triggered by a button in future)
-  async function refresh() {
-    setLoading(true);
-    setError(null);
-    try {
-      const [pRes, ptsRes, txRes, emailRes] = await Promise.all([
-        fetch(`/api/persons/${userId}/get`, { cache: "no-store" }),
-        fetch(`/api/persons/${userId}/points/get`, { cache: "no-store" }),
-        fetch(`/api/persons/${userId}/collectioncentertransactions/get`, {
-          cache: "no-store",
-        }),
-        fetch(`/api/persons/${userId}/email/get`, { cache: "no-store" }),
-      ]);
-      const [pJ, ptsJ, txJ, eJ] = await Promise.all([
-        pRes.json(),
-        ptsRes.json(),
-        txRes.json(),
-        emailRes.json(),
-      ]);
-      if (!pRes.ok) throw new Error(pJ?.error || "Error cargando perfil");
-      if (!ptsRes.ok) throw new Error(ptsJ?.error || "Error cargando puntos");
-      if (!txRes.ok)
-        throw new Error(txJ?.error || "Error cargando transacciones");
-      if (!emailRes.ok) throw new Error(eJ?.error || "Error cargando correo");
-      const profRaw = Array.isArray(pJ?.data) ? pJ.data[0] : pJ?.data;
-      setProfile(profRaw as Profile);
-      const ptsData = Array.isArray(ptsJ?.data) ? ptsJ.data[0] : ptsJ?.data;
-      const pAmount = ptsData?.point_amount;
-      setPoints(
-        typeof pAmount === "string" ? Number(pAmount) : Number(pAmount || 0)
-      );
-      const txs = (txJ?.data ?? []) as Array<{
-        material_amount?: number | string | null;
-      }>;
-      const sum = txs.reduce(
-        (acc, row) =>
-          acc +
-          (typeof row.material_amount === "string"
-            ? Number(row.material_amount)
-            : Number(row.material_amount || 0)),
-        0
-      );
-      setMaterialKg(sum);
-      setEmail(eJ?.data?.email ?? "-");
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Error inesperado");
-    } finally {
-      setLoading(false);
-    }
-  }
+  // Si en el futuro se quiere refrescar manualmente, se puede reintroducir una función dedicada.
 
   const fullName = useMemo(() => {
     if (!profile) return "-";
@@ -148,9 +98,7 @@ export default function UserDetailClient({
           >
             Volver
           </Button>
-          <Button variant="outline" disabled={loading} onClick={refresh}>
-            Refrescar
-          </Button>
+               {/* Botón de refrescar eliminado según requerimiento */}
         </div>
       </div>
       <Card>
