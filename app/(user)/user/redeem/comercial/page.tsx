@@ -307,7 +307,7 @@ function StoreInner() {
       setCart({});
       setUserPoints(newPoints);
       setShowModal(false);
-      alert('Compra realizada con éxito. Revisa tu correo para la transacción.');
+      alert('Compra realizada con éxito. Puedes verificar el codigo de transaccion en tu historial de compras.');
     } catch (err: unknown) {
       console.error('Purchase error:', err);
       if (err instanceof Error) {
@@ -420,7 +420,7 @@ function StoreInner() {
             <h3 className="text-blue-600 font-semibold mb-3">Confirmacion Compra</h3>
 
             <p className="mb-6 text-gray-700">
-              Estás realizando una compra <br />Seguro que deseas utilizar <strong>{total} puntos</strong> por la compra en el comercio de <strong>{storeName}</strong>? <br />Una vez confirmado, se te enviará un correo de la transacción realizada, el cual deberás presentar en el comercio.
+              Estás realizando una compra <br />Seguro que deseas utilizar <strong>{total} puntos</strong> por la compra en el comercio de <strong>{storeName}</strong>? <br />Una vez confirmado, podrás verificar el código de la transacción realizada en tu historial de compras, el cual deberás presentar en el comercio.
             </p>
 
             <div className="flex justify-end gap-3">
