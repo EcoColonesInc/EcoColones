@@ -50,6 +50,21 @@ export async function getAllProvinces() {
   return { error: null, data };
 }
 
+// Fetch provinces by country ID
+export async function getProvincesByCountryId(countryId: string) {
+  const supabase = await createClient();
+  
+  const { data, error } = await supabase
+    .from('province')
+    .select('province_id, province_name, country(country_id, country_name)')
+    .eq('country_id', countryId)
+    .order('province_name', { ascending: true });
+  if (error) {
+    return { error: error.message, data: null };
+  }
+  return { error: null, data };
+}
+
 // Fetch a single province by its ID
 export async function getProvinceById(provinceId: string) {
   const supabase = await createClient();
@@ -82,6 +97,21 @@ export async function getAllCities() {
   return { error: null, data };
 }
 
+// Fetch cities by province ID
+export async function getCitiesByProvinceId(provinceId: string) {
+  const supabase = await createClient();
+  
+  const { data, error } = await supabase
+    .from('city')
+    .select('city_id, city_name, province_id(province_id, province_name)')
+    .eq('province_id', provinceId)
+    .order('city_name', { ascending: true });
+  if (error) {
+    return { error: error.message, data: null };
+  }
+  return { error: null, data };
+}
+
 // Fetch a single city by its ID
 export async function getCityById(cityId: string) {
   const supabase = await createClient();
@@ -108,6 +138,21 @@ export async function getAllDistricts() {
     .from('district')
 		.select('district_id, district_name, city_id(city_id, city_name)')
 		.order('district_name', { ascending: true });
+  if (error) {
+    return { error: error.message, data: null };
+  }
+  return { error: null, data };
+}
+
+// Fetch districts by city ID
+export async function getDistrictsByCityId(cityId: string) {
+  const supabase = await createClient();
+  
+  const { data, error } = await supabase
+    .from('district')
+    .select('district_id, district_name, city_id(city_id, city_name)')
+    .eq('city_id', cityId)
+    .order('district_name', { ascending: true });
   if (error) {
     return { error: error.message, data: null };
   }
