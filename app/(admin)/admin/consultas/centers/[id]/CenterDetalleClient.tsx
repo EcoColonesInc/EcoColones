@@ -313,6 +313,7 @@ export default function CenterDetalleClient({ id, initialCenter, initialCenterMa
         <Card>
           <CardHeader><CardTitle>Opciones</CardTitle></CardHeader>
           <CardContent className="space-y-3">
+            <Button className="w-full rounded-xl bg-blue-600 hover:bg-blue-700 text-white" onClick={() => router.push(`/admin/consultas/centers/${id}/stats`)} disabled={saving || loading}>Ver estadísticas</Button>
             <Button variant="default" className="w-full rounded-xl" onClick={() => setShowSaveModal(true)} disabled={saving || loading}>{saving && showSaveModal ? "Guardando..." : "Guardar cambios"}</Button>
             <Button variant="warning" className="w-full rounded-xl" onClick={() => setShowDeactivateModal(true)} disabled={saving || loading}>Desactivar</Button>
             <Button variant="destructive" className="w-full rounded-xl" onClick={() => setShowDeleteModal(true)} disabled={saving || loading}>Eliminar</Button>
