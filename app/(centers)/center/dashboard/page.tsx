@@ -14,10 +14,22 @@ type Transaction = {
     created_at: string;
 };
 
+type CollectionCenterMaterial = {
+    collection_center_x_product_id: string;
+    material_name: string;
+    collection_center_name: string;
+    unit_name: string;
+    unit_exchange: number;
+    full_name: string;
+    updated_at: string;
+};
+
 export default function Page() {
     const [transactions, setTransactions] = useState<Transaction[]>([]);
+    const [materials, setMaterials] = useState<CollectionCenterMaterial[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [collectionCenterId, setCollectionCenterId] = useState<string | null>(null);
 
     useEffect(() => {
         async function fetchData() {
@@ -36,6 +48,7 @@ export default function Page() {
                 }
                 
                 const centerId = centerData.collectioncenter_id;
+                setCollectionCenterId(centerId);
                 
                 // Now fetch transactions for this collection center
                 const transactionsResponse = await fetch(`/api/collectioncenters/${centerId}/collectioncentertransactions/get`);
@@ -46,6 +59,16 @@ export default function Page() {
                 
                 console.log('Transactions data:', transactionsData);
                 setTransactions(transactionsData || []);
+                
+                // Fetch materials for this collection center
+                const materialsResponse = await fetch(`/api/collectioncenters/${centerId}/collectioncenterxmaterials/get`);
+                if (!materialsResponse.ok) {
+                    throw new Error('Error al obtener los materiales');
+                }
+                const materialsData = await materialsResponse.json();
+                
+                console.log('Materials data:', materialsData);
+                setMaterials(materialsData || []);
             } catch (err) {
                 setError(err instanceof Error ? err.message : 'Error desconocido');
             } finally {
@@ -127,7 +150,15 @@ export default function Page() {
                             <div>
                                 <label className="block text-sm text-gray-600 mb-2">Tipo de material</label>
                                 <select className="w-full p-3 bg-gray-100 rounded-lg border-0 text-sm">
-                                    <option>Seleccionar material</option>
+                                    <option value="">Seleccionar material</option>
+                                    {materials.map((material) => (
+                                        <option 
+                                            key={material.collection_center_x_product_id} 
+                                            value={material.collection_center_x_product_id}
+                                        >
+                                            {material.material_name}
+                                        </option>
+                                    ))}
                                 </select>
                             </div>
                             <div>
