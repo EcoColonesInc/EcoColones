@@ -129,7 +129,6 @@ export async function POST(request: Request) {
                 material_id,
                 total_points,
                 material_amount,
-                transaction_code,
                 created_by,
                 created_at,
                 updated_by,
