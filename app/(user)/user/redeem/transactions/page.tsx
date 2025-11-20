@@ -1,8 +1,10 @@
 "use client";
 
-import { Search } from "lucide-react";
+import { Search, QrCode } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthProvider";
+import { Button } from "@/components/ui/button";
+import QRCode from "react-qr-code";
 
 export default function UserTransactionsPage() {
   const [search, setSearch] = useState("");
@@ -11,6 +13,8 @@ export default function UserTransactionsPage() {
   type Tx = { id: string; product: string; amount: number; date: string; store: string };
   const [transactions, setTransactions] = useState<Tx[]>([]);
   const [loading, setLoading] = useState(false);
+  const [showQrModal, setShowQrModal] = useState(false);
+  const [selectedTx, setSelectedTx] = useState<Tx | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -53,6 +57,11 @@ export default function UserTransactionsPage() {
     t.id.toLowerCase().includes(search.toLowerCase())
   );
 
+  const handleShowQr = (tx: Tx) => {
+    setSelectedTx(tx);
+    setShowQrModal(true);
+  };
+
   return (
     <div className="min-h-screen bg-white px-6 md:px-16 py-10">
       <div className="max-w-7xl mx-auto">
@@ -85,6 +94,7 @@ export default function UserTransactionsPage() {
                 <th className="pb-3">Monto (puntos)</th>
                 <th className="pb-3">Día y Hora</th>
                 <th className="pb-3">Comercio</th>
+                <th className="pb-3">QR</th>
               </tr>
             </thead>
 
@@ -104,6 +114,15 @@ export default function UserTransactionsPage() {
                   <td>{t.amount}</td>
                   <td>{t.date}</td>
                   <td>{t.store}</td>
+                  <td>
+                    <button
+                      onClick={() => handleShowQr(t)}
+                      className="text-green-600 hover:text-green-700"
+                      title="Ver QR"
+                    >
+                      <QrCode size={20} />
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -111,6 +130,51 @@ export default function UserTransactionsPage() {
         </div>
 
       </div>
+
+      {/* QR Modal */}
+      {showQrModal && selectedTx && (
+        <div className="fixed inset-0 backdrop-blur-sm bg-white/30 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-8 shadow-xl w-[450px] border border-gray-200">
+            <h3 className="text-green-600 font-semibold mb-4 text-center text-xl">
+              Código QR de Transacción
+            </h3>
+
+            <div className="flex flex-col items-center mb-6">
+              <div className="bg-white p-4 rounded-lg mb-4">
+                <QRCode
+                  value={selectedTx.id}
+                  size={256}
+                  level="M"
+                />
+              </div>
+              
+              <div className="text-sm text-gray-700 space-y-1 w-full">
+                <p><strong>ID:</strong> {selectedTx.id}</p>
+                <p><strong>Producto:</strong> {selectedTx.product}</p>
+                <p><strong>Monto:</strong> {selectedTx.amount} puntos</p>
+                <p><strong>Comercio:</strong> {selectedTx.store}</p>
+                <p><strong>Fecha:</strong> {selectedTx.date}</p>
+              </div>
+            </div>
+
+            <p className="text-xs text-gray-600 mb-4 text-center">
+              Presenta este código QR en el comercio para validar tu compra
+            </p>
+
+            <div className="flex justify-center">
+              <Button
+                className="bg-green-600 hover:bg-green-700 text-white px-8"
+                onClick={() => {
+                  setShowQrModal(false);
+                  setSelectedTx(null);
+                }}
+              >
+                Cerrar
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
