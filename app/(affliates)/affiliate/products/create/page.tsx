@@ -6,10 +6,7 @@ import { useRouter } from "next/navigation";
 export default function CreateProductPage() {
     const router = useRouter();
 
-    const handleProductSave = async (newProduct: Product) => {
-
-        console.log('Nuevo producto creado:', newProduct);
-        
+    const handleProductSave = async () => {
         // TODO:Llamada a la API para guardar en BD
         
         // Simular guardado exitoso y redirigir
