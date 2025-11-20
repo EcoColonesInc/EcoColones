@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,7 +17,8 @@ interface BusinessData {
   affiliated_business_name: string;
   description: string | null;
   phone: string | null;
-  email?: { email?: string } | null;
+  // email can be a numeric FK, a string, or an object with an `email` field
+  email?: number | string | { email?: string } | null;
   manager_id?: {
     first_name?: string | null;
     last_name?: string | null;
@@ -68,6 +69,47 @@ export default function ComercioDetalleClient({
   const [selectedType, setSelectedType] = useState<string>(
     business?.business_type_id?.name || ""
   );
+  const [emailValue, setEmailValue] = useState<string | null>(
+    business && typeof business.email === "object"
+      ? business.email?.email ?? null
+      : typeof business?.email === "string"
+      ? business.email
+      : null
+  );
+
+  // If email is provided as a numeric id, try to resolve it via plausible endpoints
+  useEffect(() => {
+    if (!business) return;
+    const e = business.email;
+    if (typeof e === "number") {
+      let cancelled = false;
+      (async () => {
+        const tryEndpoints = [
+          `/api/emails/${e}/get`,
+          `/api/email/${e}/get`,
+          `/api/persons/${e}/email/get`,
+        ];
+        for (const url of tryEndpoints) {
+          try {
+            const res = await fetch(url);
+            if (!res.ok) continue;
+            const j = await res.json();
+            const candidate = j?.data?.email ?? j?.email ?? j?.data ?? null;
+            if (!cancelled && candidate) {
+              setEmailValue(typeof candidate === 'string' ? candidate : String(candidate));
+              return;
+            }
+          } catch {
+            // ignore and try next
+          }
+        }
+        if (!cancelled) setEmailValue(null);
+      })();
+      return () => {
+        cancelled = true;
+      };
+    }
+  }, [business]);
 
   // Si se requiere refrescar los datos del comercio manualmente, se puede reintroducir una función dedicada.
 
@@ -197,6 +239,22 @@ export default function ComercioDetalleClient({
                   <input
                     className="border rounded px-3 py-2 bg-muted"
                     value={address}
+                    readOnly
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-sm font-medium">Teléfono</label>
+                  <input
+                    className="border rounded px-3 py-2 bg-muted"
+                    value={business.phone ?? "-"}
+                    readOnly
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-sm font-medium">Email</label>
+                  <input
+                    className="border rounded px-3 py-2 bg-muted"
+                    value={emailValue ?? (typeof business.email === 'string' ? business.email : '-')}
                     readOnly
                   />
                 </div>

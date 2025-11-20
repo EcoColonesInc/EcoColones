@@ -2,7 +2,7 @@ import { getAllCurrencies } from '@/lib/api/currencies';
 import CurrencySettingsClient from './CurrencySettingsClient';
 
 export default async function CurrenciesPage() {
-  const { data, error } = await getAllCurrencies();
+  const { data } = await getAllCurrencies();
 
   const currencies = Array.isArray(data) ? data : [];
 
