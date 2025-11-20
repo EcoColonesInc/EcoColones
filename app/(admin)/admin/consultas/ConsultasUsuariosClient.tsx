@@ -501,24 +501,6 @@ export default function ConsultasUsuariosClient({
     <div className="min-h-screen px-4 md:px-8 lg:px-12 py-6 space-y-8">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <h1 className="text-2xl md:text-3xl font-bold">Consultas Usuarios</h1>
-        <div className="flex flex-wrap gap-2 text-sm">
-          <label className="font-medium">Ir a:</label>
-          <select
-            className="border rounded px-2 py-1"
-            onChange={(e) => {
-              const value = e.target.value;
-              if (!value) return;
-              router.push(value);
-            }}
-            defaultValue=""
-          >
-            <option value="" disabled>
-              Selecciona consulta
-            </option>
-            <option value="/admin/consultas/comercios">Comercios</option>
-            <option value="/admin/consultas/centros">Centros de Acopio</option>
-          </select>
-        </div>
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="lg:col-span-2 h-full">

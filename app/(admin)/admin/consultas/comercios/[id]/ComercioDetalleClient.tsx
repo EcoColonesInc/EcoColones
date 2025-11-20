@@ -52,11 +52,11 @@ export default function ComercioDetalleClient({
   initialTypes,
 }: Props) {
   const router = useRouter();
-  const [business, setBusiness] = useState<BusinessData | null>(
+  const [business] = useState<BusinessData | null>(
     initialBusiness
   );
-  const [types, setTypes] = useState<BusinessType[]>(initialTypes);
-  const [loading, setLoading] = useState(false);
+  const [types] = useState<BusinessType[]>(initialTypes);
+  const [loading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -69,32 +69,7 @@ export default function ComercioDetalleClient({
     business?.business_type_id?.name || ""
   );
 
-  async function refresh() {
-    try {
-      setLoading(true);
-      const [bRes, tRes] = await Promise.all([
-        fetch(`/api/affiliatedbusiness/${id}/get`, { cache: "no-store" }),
-        fetch(`/api/businesstypes/get`, { cache: "no-store" }),
-      ]);
-      const bJ = await bRes.json();
-      const tJ = await tRes.json();
-      if (!bRes.ok) throw new Error(bJ?.error || "Error comercio");
-      if (!tRes.ok) throw new Error(tJ?.error || "Error tipos");
-      setBusiness((bJ.data as BusinessData) || null);
-      setTypes((tJ.data ?? []) as BusinessType[]);
-      if (bJ.data) {
-        const bd = bJ.data as BusinessData;
-        setName(bd.affiliated_business_name || "");
-        setDescription(bd.description || "");
-        setSelectedType(bd.business_type_id?.name || "");
-      }
-      setError(null);
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Error refrescando");
-    } finally {
-      setLoading(false);
-    }
-  }
+  // Si se requiere refrescar los datos del comercio manualmente, se puede reintroducir una función dedicada.
 
   async function performSave() {
     if (!business) return;
@@ -119,7 +94,6 @@ export default function ComercioDetalleClient({
       const j = await res.json();
       if (!res.ok) throw new Error(j?.error || "Error al guardar cambios");
       setSuccess("Cambios guardados correctamente");
-      await refresh();
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Error al guardar");
     } finally {
@@ -140,7 +114,6 @@ export default function ComercioDetalleClient({
       const j = await res.json();
       if (!res.ok) throw new Error(j?.error || "Error al desactivar");
       setSuccess("Comercio desactivado");
-      await refresh();
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Error al desactivar");
     } finally {
@@ -186,14 +159,6 @@ export default function ComercioDetalleClient({
     <div className="min-h-screen px-4 md:px-8 lg:px-12 py-6 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl md:text-3xl font-bold">Detalle del comercio</h1>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={refresh}
-          disabled={loading}
-        >
-          {loading ? "Actualizando..." : "Refrescar"}
-        </Button>
       </div>
       {error && <p className="text-sm text-red-600">{error}</p>}
       {success && <p className="text-sm text-green-600">{success}</p>}

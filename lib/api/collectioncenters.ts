@@ -4,6 +4,17 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 type EmailRow = { id_email: string | number; email: string | null };
 type PersonRef = { first_name?: string | null; last_name?: string | null } | null;
 type DistrictRef = { district_name?: string | null } | null;
+// Extendido para detalle: distrito -> ciudad -> provincia -> país
+type DistrictDeepRef = {
+  district_name?: string | null;
+  city_id?: {
+    city_name?: string | null;
+    province_id?: {
+      province_name?: string | null;
+      country_id?: { country_name?: string | null } | null;
+    } | null;
+  } | null;
+} | null;
 type EmailLike = string | number | { id_email?: string | number; email?: string | null } | null;
 type CollectionCenterRaw = {
   collectioncenter_id: string | number;
@@ -96,7 +107,7 @@ export async function getCollectionCenterById(collectionCenterId: string) {
     .select(`
       collectioncenter_id,
       person_id(first_name,last_name),
-      district_id(district_name),
+      district_id(district_name, city_id(city_name, province_id(province_name, country_id(country_name)))),
       name,
       phone,
       email,
@@ -109,7 +120,8 @@ export async function getCollectionCenterById(collectionCenterId: string) {
     return { error: error.message, data: null };
   }
   if (!data) return { error: null, data: null };
-  const row = data as CollectionCenterRaw;
+  // Para detalle usamos DistrictDeepRef en sustitución
+  const row = data as CollectionCenterRaw & { district_id?: DistrictDeepRef };
   const raw = row.email as EmailLike;
   let resolved: string | null = null;
   if (raw == null) {

@@ -82,16 +82,16 @@ export default function CentersClient({
   initialTopMaterials,
 }: CentersClientProps) {
   const router = useRouter();
-  const [centers, setCenters] = useState<CollectionCenter[]>(
+  const [centers] = useState<CollectionCenter[]>(
     initialCenters as CollectionCenter[]
   );
-  const [topMaterials, setTopMaterials] = useState<TopMaterial[]>(
+  const [topMaterials] = useState<TopMaterial[]>(
     initialTopMaterials as TopMaterial[]
   );
-  const [loading, setLoading] = useState(false);
-  const [topLoading, setTopLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [topError, setTopError] = useState<string | null>(null);
+  const [loading] = useState(false);
+  const [topLoading] = useState(false);
+  const [error] = useState<string | null>(null);
+  const [topError] = useState<string | null>(null);
 
   // filters
   const [fName, setFName] = useState("");
@@ -99,43 +99,7 @@ export default function CentersClient({
   const [fPhone, setFPhone] = useState("");
   const [fEmail, setFEmail] = useState("");
 
-  async function refreshCenters() {
-    try {
-      setLoading(true);
-      const res = await fetch("/api/collectioncenters/get", {
-        cache: "no-store",
-      });
-      const j = await res.json();
-      if (!res.ok) throw new Error(j?.error || "Error cargando centros");
-      setCenters((j ?? []) as CollectionCenter[]);
-      setError(null);
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Error cargando centros");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function refreshTopMaterials() {
-    try {
-      setTopLoading(true);
-      const res = await fetch("/api/materials/top", { cache: "no-store" });
-      const j = await res.json();
-      if (!res.ok) throw new Error(j?.error || "Error top materiales");
-      setTopMaterials((j.data ?? []) as TopMaterial[]);
-      setTopError(null);
-    } catch (err: unknown) {
-      setTopError(
-        err instanceof Error ? err.message : "Error cargando top de materiales"
-      );
-    } finally {
-      setTopLoading(false);
-    }
-  }
-
-  async function fullRefresh() {
-    await Promise.all([refreshCenters(), refreshTopMaterials()]);
-  }
+  // Si en el futuro se requiere refrescar datos desde API, se pueden reintroducir utilidades dedicadas.
 
   const filtered = useMemo(() => {
     const nameQ = fName.trim().toLowerCase();
@@ -263,7 +227,65 @@ export default function CentersClient({
         </Card>
 
         <div className="flex flex-col gap-6">
-          <Card>
+         
+
+          <FiltersPanel>
+            <div className="flex flex-col gap-1">
+              <label className="font-medium">Nombre</label>
+              <div className="flex items-center gap-2">
+                <input
+                  className="border rounded px-2 py-1 flex-1"
+                  placeholder="Ingresa el nombre"
+                  value={fName}
+                  onChange={(e) => setFName(e.target.value)}
+                />
+                {fName && (
+                  <FilterTag label="Nombre" onClear={() => setFName("")} />
+                )}
+              </div>
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="font-medium">Gerente</label>
+              <div className="flex items-center gap-2">
+                <input
+                  className="border rounded px-2 py-1 flex-1"
+                  placeholder="Ingresa el nombre"
+                  value={fManager}
+                  onChange={(e) => setFManager(e.target.value)}
+                />
+                {fManager && (
+                  <FilterTag label="Gerente" onClear={() => setFManager("")} />
+                )}
+              </div>
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="font-medium">Correo</label>
+              <div className="flex items-center gap-2">
+                <input
+                  className="border rounded px-2 py-1 flex-1"
+                  placeholder="Ingresa el correo"
+                  value={fEmail}
+                  onChange={(e) => setFEmail(e.target.value)}
+                />
+                {fEmail && (
+                  <FilterTag label="Correo" onClear={() => setFEmail("")} />
+                )}
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                setFName("");
+                setFManager("");
+                setFPhone("");
+                setFEmail("");
+              }}
+              className="border w-full rounded px-2 py-1 bg-muted"
+            >
+              Limpiar filtros
+            </button>
+          </FiltersPanel>
+
+           <Card>
             <CardHeader>
               <CardTitle>Top 5 de materiales más reciclados</CardTitle>
             </CardHeader>
@@ -322,78 +344,6 @@ export default function CentersClient({
             </CardContent>
           </Card>
 
-          <FiltersPanel>
-            <div className="flex flex-col gap-1">
-              <label className="font-medium">Nombre</label>
-              <div className="flex items-center gap-2">
-                <input
-                  className="border rounded px-2 py-1 flex-1"
-                  placeholder="Ingresa el nombre"
-                  value={fName}
-                  onChange={(e) => setFName(e.target.value)}
-                />
-                {fName && (
-                  <FilterTag label="Nombre" onClear={() => setFName("")} />
-                )}
-              </div>
-            </div>
-            <div className="flex flex-col gap-1">
-              <label className="font-medium">Gerente</label>
-              <div className="flex items-center gap-2">
-                <input
-                  className="border rounded px-2 py-1 flex-1"
-                  placeholder="Ingresa el nombre"
-                  value={fManager}
-                  onChange={(e) => setFManager(e.target.value)}
-                />
-                {fManager && (
-                  <FilterTag label="Gerente" onClear={() => setFManager("")} />
-                )}
-              </div>
-            </div>
-            <div className="flex flex-col gap-1">
-              <label className="font-medium">Teléfono</label>
-              <div className="flex items-center gap-2">
-                <input
-                  className="border rounded px-2 py-1 flex-1"
-                  placeholder="Ingresa teléfono"
-                  value={fPhone}
-                  onChange={(e) => setFPhone(e.target.value)}
-                />
-                {fPhone && (
-                  <FilterTag
-                    label="Ingresa teléfono"
-                    onClear={() => setFPhone("")}
-                  />
-                )}
-              </div>
-            </div>
-            <div className="flex flex-col gap-1">
-              <label className="font-medium">Correo</label>
-              <div className="flex items-center gap-2">
-                <input
-                  className="border rounded px-2 py-1 flex-1"
-                  placeholder="Ingresa el correo"
-                  value={fEmail}
-                  onChange={(e) => setFEmail(e.target.value)}
-                />
-                {fEmail && (
-                  <FilterTag label="Correo" onClear={() => setFEmail("")} />
-                )}
-              </div>
-            </div>
-            <button
-              onClick={() => {
-                setFName("");
-                setFManager("");
-                setFPhone("");
-                setFEmail("");
-              }}
-              className="border w-full rounded px-2 py-1 bg-muted"
-            >
-              Limpiar filtros
-            </button>
-          </FiltersPanel>
         </div>
       </div>
     </div>
