@@ -1,6 +1,67 @@
 "use client";
 
+import { useEffect, useState } from 'react';
+
+type Transaction = {
+    user_name: string;
+    first_name: string;
+    last_name: string;
+    collection_center_name: string;
+    string_agg: string;
+    sum: number;
+    max: number;
+    transaction_code: string;
+    created_at: string;
+};
+
 export default function Page() {
+    const [transactions, setTransactions] = useState<Transaction[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [collectionCenterId, setCollectionCenterId] = useState<string | null>(null);
+
+    useEffect(() => {
+        async function fetchData() {
+            try {
+                setLoading(true);
+                
+                // First, get the user's collection center
+                const centerResponse = await fetch('/api/collectioncenters/get/user');
+                if (!centerResponse.ok) {
+                    throw new Error('Error al obtener el centro de acopio');
+                }
+                const centerData = await centerResponse.json();
+                
+                if (!centerData?.collectioncenter_id) {
+                    throw new Error('No se encontró el centro de acopio del usuario');
+                }
+                
+                const centerId = centerData.collectioncenter_id;
+                setCollectionCenterId(centerId);
+                
+                // Now fetch transactions for this collection center
+                const transactionsResponse = await fetch(`/api/collectioncenters/${centerId}/collectioncentertransactions/get`);
+                if (!transactionsResponse.ok) {
+                    throw new Error('Error al obtener las transacciones');
+                }
+                const transactionsData = await transactionsResponse.json();
+                
+                setTransactions(transactionsData || []);
+            } catch (err) {
+                setError(err instanceof Error ? err.message : 'Error desconocido');
+            } finally {
+                setLoading(false);
+            }
+        }
+        
+        fetchData();
+    }, []);
+
+    const formatDate = (dateString: string) => {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('es-ES', { year: 'numeric', month: '2-digit', day: '2-digit' });
+    };
+
     return (
         <div className="min-h-screen bg-gray-50 p-8">
             <main className="max-w-7xl mx-auto">
@@ -17,68 +78,46 @@ export default function Page() {
                     </div>
 
                     <div className="overflow-x-auto">
-                        <table className="w-full">
-                            <thead>
-                                <tr className="text-gray-600 text-sm">
-                                    <th className="text-left py-3 px-4 font-medium">Transacción</th>
-                                    <th className="text-left py-3 px-4 font-medium">Usuario</th>
-                                    <th className="text-left py-3 px-4 font-medium">Material</th>
-                                    <th className="text-left py-3 px-4 font-medium">Cantidad (kg)</th>
-                                    <th className="text-left py-3 px-4 font-medium">Fecha</th>
-                                    <th className="text-left py-3 px-4 font-medium">Estatus</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr className="border-t border-gray-100 hover:bg-gray-50">
-                                    <td className="py-4 px-4 text-sm">TXN78649</td>
-                                    <td className="py-4 px-4 text-sm">Marquito15</td>
-                                    <td className="py-4 px-4 text-sm">Plástico</td>
-                                    <td className="py-4 px-4 text-sm">15.5 kg</td>
-                                    <td className="py-4 px-4 text-sm">2024-07-29</td>
-                                    <td className="py-4 px-4">
-                                        <span className="inline-block px-3 py-1 text-xs font-medium text-green-700 bg-green-100 rounded-full">
-                                            Completado
-                                        </span>
-                                    </td>
-                                </tr>
-                                <tr className="border-t border-gray-100 hover:bg-gray-50">
-                                    <td className="py-4 px-4 text-sm">TXN78648</td>
-                                    <td className="py-4 px-4 text-sm">Pedro985</td>
-                                    <td className="py-4 px-4 text-sm">Metal</td>
-                                    <td className="py-4 px-4 text-sm">8.2 kg</td>
-                                    <td className="py-4 px-4 text-sm">2024-07-29</td>
-                                    <td className="py-4 px-4">
-                                        <span className="inline-block px-3 py-1 text-xs font-medium text-green-700 bg-green-100 rounded-full">
-                                            Completado
-                                        </span>
-                                    </td>
-                                </tr>
-                                <tr className="border-t border-gray-100 hover:bg-gray-50">
-                                    <td className="py-4 px-4 text-sm">TXN78647</td>
-                                    <td className="py-4 px-4 text-sm">Albert06</td>
-                                    <td className="py-4 px-4 text-sm">Papel</td>
-                                    <td className="py-4 px-4 text-sm">25.0 kg</td>
-                                    <td className="py-4 px-4 text-sm">2024-07-28</td>
-                                    <td className="py-4 px-4">
-                                        <span className="inline-block px-3 py-1 text-xs font-medium text-green-700 bg-green-100 rounded-full">
-                                            Completado
-                                        </span>
-                                    </td>
-                                </tr>
-                                <tr className="border-t border-gray-100 hover:bg-gray-50">
-                                    <td className="py-4 px-4 text-sm">TXN78646</td>
-                                    <td className="py-4 px-4 text-sm">MariaA5</td>
-                                    <td className="py-4 px-4 text-sm">Vidrio</td>
-                                    <td className="py-4 px-4 text-sm">12.7 kg</td>
-                                    <td className="py-4 px-4 text-sm">2024-07-27</td>
-                                    <td className="py-4 px-4">
-                                        <span className="inline-block px-3 py-1 text-xs font-medium text-green-700 bg-green-100 rounded-full">
-                                            Completado
-                                        </span>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
+                        {loading ? (
+                            <div className="text-center py-8 text-gray-500">Cargando transacciones...</div>
+                        ) : error ? (
+                            <div className="text-center py-8 text-red-500">{error}</div>
+                        ) : transactions.length === 0 ? (
+                            <div className="text-center py-8 text-gray-500">No hay transacciones disponibles</div>
+                        ) : (
+                            <table className="w-full">
+                                <thead>
+                                    <tr className="text-gray-600 text-sm">
+                                        <th className="text-left py-3 px-4 font-medium">Transacción</th>
+                                        <th className="text-left py-3 px-4 font-medium">Usuario</th>
+                                        <th className="text-left py-3 px-4 font-medium">Material</th>
+                                        <th className="text-left py-3 px-4 font-medium">Cantidad (kg)</th>
+                                        <th className="text-left py-3 px-4 font-medium">Puntos</th>
+                                        <th className="text-left py-3 px-4 font-medium">Fecha</th>
+                                        <th className="text-left py-3 px-4 font-medium">Estatus</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {transactions.map((transaction, index) => (
+                                        <tr key={index} className="border-t border-gray-100 hover:bg-gray-50">
+                                            <td className="py-4 px-4 text-sm">{transaction.transaction_code}</td>
+                                            <td className="py-4 px-4 text-sm">
+                                                {transaction.user_name || `${transaction.first_name || ''} ${transaction.last_name || ''}`.trim() || 'N/A'}
+                                            </td>
+                                            <td className="py-4 px-4 text-sm">{transaction.string_agg}</td>
+                                            <td className="py-4 px-4 text-sm">{transaction.sum} kg</td>
+                                            <td className="py-4 px-4 text-sm">{transaction.max} pts</td>
+                                            <td className="py-4 px-4 text-sm">{formatDate(transaction.created_at)}</td>
+                                            <td className="py-4 px-4">
+                                                <span className="inline-block px-3 py-1 text-xs font-medium text-green-700 bg-green-100 rounded-full">
+                                                    Completado
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        )}
                     </div>
                 </section>
 
