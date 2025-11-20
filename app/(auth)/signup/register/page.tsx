@@ -4,12 +4,35 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Toast, useToast } from "@/components/ui/toast";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 
 import { AUTH_ROUTES, API_ROUTES } from "@/config/routes";
 import { useAuth } from "@/contexts/AuthProvider";
+
+type Country = {
+    country_id: string;
+    country_name: string;
+};
+
+type Province = {
+    province_id: string;
+    province_name: string;
+    country?: { country_id: string };
+};
+
+type City = {
+    city_id: string;
+    city_name: string;
+    province_id?: { province_id: string };
+};
+
+type District = {
+    district_id: string;
+    district_name: string;
+    city_id?: { city_id: string };
+};
 
 export default function RegisterPage() {
     const { user } = useAuth();
@@ -28,6 +51,94 @@ export default function RegisterPage() {
     const [isLoading, setIsLoading] = useState(false);
     const router = useRouter();
 
+    // Location states
+    const [countries, setCountries] = useState<Country[]>([]);
+    const [provinces, setProvinces] = useState<Province[]>([]);
+    const [cities, setCities] = useState<City[]>([]);
+    const [districts, setDistricts] = useState<District[]>([]);
+    
+    const [selectedCountry, setSelectedCountry] = useState("");
+    const [selectedProvince, setSelectedProvince] = useState("");
+    const [selectedCity, setSelectedCity] = useState("");
+    const [selectedDistrict, setSelectedDistrict] = useState("");
+
+    const [filteredProvinces, setFilteredProvinces] = useState<Province[]>([]);
+    const [filteredCities, setFilteredCities] = useState<City[]>([]);
+    const [filteredDistricts, setFilteredDistricts] = useState<District[]>([]);
+
+    // Load all location data on component mount
+    useEffect(() => {
+        async function loadLocations() {
+            try {
+                const [countriesRes, provincesRes, citiesRes, districtsRes] = await Promise.all([
+                    fetch('/api/countries/get'),
+                    fetch('/api/provinces/get'),
+                    fetch('/api/cities/get'),
+                    fetch('/api/districts/get'),
+                ]);
+
+                const [countriesData, provincesData, citiesData, districtsData] = await Promise.all([
+                    countriesRes.json(),
+                    provincesRes.json(),
+                    citiesRes.json(),
+                    districtsRes.json(),
+                ]);
+
+                setCountries(countriesData || []);
+                setProvinces(provincesData || []);
+                setCities(citiesData || []);
+                setDistricts(districtsData || []);
+            } catch (error) {
+                console.error('Error loading locations:', error);
+                showToast('Error al cargar las ubicaciones', 'error');
+            }
+        }
+
+        loadLocations();
+    }, []);
+
+    // Filter provinces when country changes
+    useEffect(() => {
+        if (selectedCountry) {
+            const filtered = provinces.filter(
+                (p) => p.country?.country_id === selectedCountry
+            );
+            setFilteredProvinces(filtered);
+        } else {
+            setFilteredProvinces([]);
+        }
+        setSelectedProvince("");
+        setSelectedCity("");
+        setSelectedDistrict("");
+    }, [selectedCountry, provinces]);
+
+    // Filter cities when province changes
+    useEffect(() => {
+        if (selectedProvince) {
+            const filtered = cities.filter(
+                (c) => c.province_id?.province_id === selectedProvince
+            );
+            setFilteredCities(filtered);
+        } else {
+            setFilteredCities([]);
+        }
+        setSelectedCity("");
+        setSelectedDistrict("");
+    }, [selectedProvince, cities]);
+
+    // Filter districts when city changes
+    useEffect(() => {
+        if (selectedCity) {
+            const filtered = districts.filter(
+                (d) => d.city_id?.city_id === selectedCity
+            );
+            setFilteredDistricts(filtered);
+        } else {
+            setFilteredDistricts([]);
+        }
+        setSelectedDistrict("");
+    }, [selectedCity, districts]);
+
     
     async function handleRegister() {
         // Basic client-side validation
@@ -35,7 +146,7 @@ export default function RegisterPage() {
             !username || 
             !idType || !idNumber ||
             !birthDate || !gender || !phone ||
-            !photo
+            !photo || !selectedDistrict
         ) {
             showToast("Por favor complete todos los campos.", "error");
             return;
@@ -58,6 +169,7 @@ export default function RegisterPage() {
             formData.append("gender", gender);
             formData.append("phone", phone);
             formData.append("user_id", user?.id || "");
+            formData.append("district_id", selectedDistrict);
             if (photo) {
                 formData.append("photo", photo);
             }
@@ -198,6 +310,79 @@ export default function RegisterPage() {
                                             <option value="female">Femenino</option>
                                             <option value="male">Masculino</option>
                                             <option value="other">Otro</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Location cascade selectors */}
+                            <div className="mt-6">
+                                <h3 className="text-lg font-semibold mb-4">Ubicación</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <Label className="mb-1 block">País</Label>
+                                        <select 
+                                            className="w-full rounded-md border bg-[#F7FCFA] px-3 py-2" 
+                                            value={selectedCountry} 
+                                            onChange={(e) => setSelectedCountry(e.target.value)}
+                                        >
+                                            <option value="">Seleccione un país</option>
+                                            {countries.map((country) => (
+                                                <option key={country.country_id} value={country.country_id}>
+                                                    {country.country_name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <Label className="mb-1 block">Provincia</Label>
+                                        <select 
+                                            className="w-full rounded-md border bg-[#F7FCFA] px-3 py-2" 
+                                            value={selectedProvince} 
+                                            onChange={(e) => setSelectedProvince(e.target.value)}
+                                            disabled={!selectedCountry}
+                                        >
+                                            <option value="">Seleccione una provincia</option>
+                                            {filteredProvinces.map((province) => (
+                                                <option key={province.province_id} value={province.province_id}>
+                                                    {province.province_name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <Label className="mb-1 block">Cantón</Label>
+                                        <select 
+                                            className="w-full rounded-md border bg-[#F7FCFA] px-3 py-2" 
+                                            value={selectedCity} 
+                                            onChange={(e) => setSelectedCity(e.target.value)}
+                                            disabled={!selectedProvince}
+                                        >
+                                            <option value="">Seleccione un cantón</option>
+                                            {filteredCities.map((city) => (
+                                                <option key={city.city_id} value={city.city_id}>
+                                                    {city.city_name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <Label className="mb-1 block">Distrito</Label>
+                                        <select 
+                                            className="w-full rounded-md border bg-[#F7FCFA] px-3 py-2" 
+                                            value={selectedDistrict} 
+                                            onChange={(e) => setSelectedDistrict(e.target.value)}
+                                            disabled={!selectedCity}
+                                        >
+                                            <option value="">Seleccione un distrito</option>
+                                            {filteredDistricts.map((district) => (
+                                                <option key={district.district_id} value={district.district_id}>
+                                                    {district.district_name}
+                                                </option>
+                                            ))}
                                         </select>
                                     </div>
                                 </div>
