@@ -118,3 +118,4 @@ export async function getTransactionsByAffiliatedBusinessIdWithFilters(
   }
   return { error: null, data };
 }
+

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { mockProducts } from "@/app/mockups/mockups";
 import { ProductForm } from "@/components/custom/affiliate/productForm";
-import { DashProducts } from "@/components/custom/affiliate/dashProducts";
+//import { DashProducts } from "@/components/custom/affiliate/dashProducts";
 
 export default function EditProductPage({ params }: { params: Promise<{ id: string }> }) {
     const [products] = useState(mockProducts);
@@ -41,7 +41,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
             </div>   
             <div className="mb-10">
                 <h2 className="text-xl font-semibold mb-4">Productos disponibles en el sistema</h2>
-                <DashProducts products={products} />
+                {/*<DashProducts products={products} />*/}
             </div>
         </div>
     );
