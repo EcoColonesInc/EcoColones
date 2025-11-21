@@ -8,7 +8,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 
 interface Product {
-    id: number;
+    id: string;
     imagen: string;
     titulo: string;
     descripcion: string;
@@ -25,7 +25,7 @@ export const ProductSearch = ({ products }: ProductSearchProps) => {
     const [productList, setProductList] = useState<Product[]>(products);
     const router = useRouter();
 
-    const handleState = (productId: number) => {
+    const handleState = (productId: string) => { // Cambiado de number a string
         setProductList(prevProducts => 
             prevProducts.map(p => 
                 p.id === productId 
@@ -45,29 +45,35 @@ export const ProductSearch = ({ products }: ProductSearchProps) => {
         <div className="container space-y-6">
             {/* Barra de búsqueda */}
             <div className="flex justify-center">
-            <Input
-                type="text"
-                placeholder="Buscar productos..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="max-w-md mx-auto bg-green-100 border-green-500 rounded-full "
-            />
+                <Input
+                    type="text"
+                    placeholder="Buscar productos..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="max-w-md mx-auto bg-green-100 border-green-500 rounded-full"
+                />
             </div>
-            { /* Grid de productos */ }
+            
+            {/* Grid de productos */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-h-250 overflow-y-auto">
                 {filteredProducts.map((product) => (
-                    
                     <Card key={product.id} className={`p-6 hover:shadow-lg transition-shadow ${product.state === false ? "bg-gray-200" : "bg-white"}`}>
                         <div className="space-y-4">
                             {/* Imagen */}
                             <div className="relative w-full h-48 rounded-md overflow-hidden bg-gray-100">
-                                <Image
-                                    src={product.imagen}
-                                    alt={product.titulo}
-                                    sizes="192"
-                                    fill
-                                    className="object-cover"
-                                />
+                                {product.imagen ? (
+                                    <Image
+                                        src={product.imagen}
+                                        alt={product.titulo}
+                                        sizes="192"
+                                        fill
+                                        className="object-cover"
+                                    />
+                                ) : (
+                                    <div className="w-full h-full flex items-center justify-center bg-gray-200 text-gray-400">
+                                        Sin imagen
+                                    </div>
+                                )}
                             </div>
 
                             {/* Información */}
@@ -90,23 +96,22 @@ export const ProductSearch = ({ products }: ProductSearchProps) => {
                                     >
                                         Activar
                                     </Button>
-      
-                                ) : (<>
-                                    <Button 
-                                        onClick={() => handleState(product.id)}
-                                        className="flex-1 bg-yellow-500 hover:bg-yellow-300"
-                                    >
-                                        Desactivar
-                                    </Button>
+                                ) : (
+                                    <>
+                                        <Button 
+                                            onClick={() => handleState(product.id)}
+                                            className="flex-1 bg-yellow-500 hover:bg-yellow-300"
+                                        >
+                                            Desactivar
+                                        </Button>
                                         
-                                    <Button 
-                                        onClick={() => router.push(`/affiliate/products/${product.id}/edit`)}
-                                        className="flex-1 bg-green-500 hover:bg-green-700"
-                                    >
-                                        Editar
-                                    </Button>
-                                </>
-
+                                        <Button 
+                                            onClick={() => router.push(`/affiliate/products/${product.id}/edit`)}
+                                            className="flex-1 bg-green-500 hover:bg-green-700"
+                                        >
+                                            Editar
+                                        </Button>
+                                    </>
                                 )}
                             </div>
                         </div>
@@ -135,4 +140,3 @@ export const ProductSearch = ({ products }: ProductSearchProps) => {
         </div>
     );
 }
-

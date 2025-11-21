@@ -1,9 +1,8 @@
 "use client";
 
 import React, { useMemo, useState } from 'react';
-import { Currency, convertCurrency, toColones } from '@/lib/utils/currency';
+import { Currency, convertCurrency } from '@/lib/utils/currency';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
@@ -33,8 +32,7 @@ const flagFor = (code: string) => {
 export default function CurrencySettingsClient({ initialCurrencies }: Props) {
   const [amount, setAmount] = useState<number>(1000);
   const [baseCurrency, setBaseCurrency] = useState<string>(() => initialCurrencies[0]?.currency_name ?? 'CRC');
-  const [addAmount, setAddAmount] = useState<number>(1);
-  const [selectedAddCurrency, setSelectedAddCurrency] = useState<string>(() => initialCurrencies[0]?.currency_name ?? 'CRC');
+  
 
   const currencies = useMemo(() => initialCurrencies, [initialCurrencies]);
   const base = currencies.find((c) => c.currency_name === baseCurrency) ?? ({ currency_exchange: 1 } as Currency);

@@ -38,9 +38,9 @@ interface BusinessData {
 export default async function AdminComercioDetallePage({
   params,
 }: {
-  params: PageParams;
+  params: PageParams | Promise<PageParams>;
 }) {
-  const id = params.id;
+  const { id } = await params;
   const [businessRes, typesRes] = await Promise.all([
     getAffiliatedBusinessById(id),
     getAllBusinessTypes(),

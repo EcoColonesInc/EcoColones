@@ -45,6 +45,7 @@ export default function EditarProductoClient({
   const [relation, setRelation] = useState<ProductRelation | null>(
     initialRelation
   );
+  console.log("businessId2", businessId, "relId2", relId);
   const [allRelations, setAllRelations] =
     useState<ProductRelation[]>(initialRelations);
   const [businessName] = useState<string>(initialBusinessName);
@@ -125,6 +126,7 @@ export default function EditarProductoClient({
       const r: ProductRelation | undefined = list.find(
         (x) => x.affiliated_business_x_prod === relId
       );
+      
       if (!r) throw new Error("Relación no encontrada");
       setRelation(r);
       const sameBusiness = list.filter(
@@ -271,7 +273,7 @@ export default function EditarProductoClient({
                     {name.substring(0, 2).toUpperCase()}
                   </div>
                 )}
-                <div className="flex gap-2">
+                <div className="w-full flex flex-col items-center gap-2">
                   <input
                     ref={fileInputRef}
                     type="file"
@@ -284,62 +286,66 @@ export default function EditarProductoClient({
                       setLocalPreview(url);
                     }}
                   />
-                  <Button
-                    variant="outline"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={uploadingImg}
-                  >
-                    Cambiar imagen
-                  </Button>
-                  <Button
-                    variant="success"
-                    disabled={
-                      uploadingImg || !fileInputRef.current?.files?.length
-                    }
-                    onClick={async () => {
-                      if (!relation) return;
-                      const file = fileInputRef.current?.files?.[0];
-                      if (!file) return;
-                      try {
-                        setUploadingImg(true);
-                        setError(null);
-                        const supabase = createClient();
-                        const productId = relation.product_id.product_id;
-                        const exts = ["png", "jpg", "jpeg", "webp"];
-                        await supabase.storage
-                          .from("product_logo")
-                          .remove(exts.map((e) => `${productId}.${e}`));
-                        const ext = (
-                          file.name.split(".").pop() || "png"
-                        ).toLowerCase();
-                        const path = `${productId}.${ext}`;
-                        const { error: upErr } = await supabase.storage
-                          .from("product_logo")
-                          .upload(path, file, {
-                            upsert: true,
-                            cacheControl: "3600",
-                            contentType: file.type,
-                          });
-                        if (upErr) throw upErr;
-                        const { data } = supabase.storage
-                          .from("product_logo")
-                          .getPublicUrl(path);
-                        setImgUrl(data?.publicUrl || null);
-                        setLocalPreview(null);
-                        setSuccess("Imagen actualizada");
-                      } catch (e: unknown) {
-                        setError(
-                          e instanceof Error
-                            ? e.message
-                            : "Error subiendo imagen"
-                        );
-                      } finally {
-                        setUploadingImg(false);
+                  <div className="flex flex-col gap-2 items-center w-[220px]">
+                    <Button
+                      variant="outline"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploadingImg}
+                      className="w-full"
+                    >
+                      Cambiar imagen
+                    </Button>
+                    <Button
+                      variant="success"
+                      disabled={
+                        uploadingImg || !fileInputRef.current?.files?.length
                       }
-                    }}
-                  >
-                    {uploadingImg ? "Subiendo..." : "Guardar imagen"}
-                  </Button>
+                      onClick={async () => {
+                        if (!relation) return;
+                        const file = fileInputRef.current?.files?.[0];
+                        if (!file) return;
+                        try {
+                          setUploadingImg(true);
+                          setError(null);
+                          const supabase = createClient();
+                          const productId = relation.product_id.product_id;
+                          const exts = ["png", "jpg", "jpeg", "webp"];
+                          await supabase.storage
+                            .from("product_logo")
+                            .remove(exts.map((e) => `${productId}.${e}`));
+                          const ext = (
+                            file.name.split(".").pop() || "png"
+                          ).toLowerCase();
+                          const path = `${productId}.${ext}`;
+                          const { error: upErr } = await supabase.storage
+                            .from("product_logo")
+                            .upload(path, file, {
+                              upsert: true,
+                              cacheControl: "3600",
+                              contentType: file.type,
+                            });
+                          if (upErr) throw upErr;
+                          const { data } = supabase.storage
+                            .from("product_logo")
+                            .getPublicUrl(path);
+                          setImgUrl(data?.publicUrl || null);
+                          setLocalPreview(null);
+                          setSuccess("Imagen actualizada");
+                        } catch (e: unknown) {
+                          setError(
+                            e instanceof Error
+                              ? e.message
+                              : "Error subiendo imagen"
+                          );
+                        } finally {
+                          setUploadingImg(false);
+                        }
+                      }}
+                      className="w-full"
+                    >
+                      {uploadingImg ? "Subiendo..." : "Guardar imagen"}
+                    </Button>
+                  </div>
                 </div>
               </div>
               <div className="md:col-span-2 space-y-2">

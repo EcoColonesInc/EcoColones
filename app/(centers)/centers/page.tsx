@@ -1,9 +1,54 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import CustomMap from "@/components/ui/map";
 
+type Center = {
+  collectioncenter_id: string | number;
+  name?: string | null;
+  phone?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  district_id?: { district_name?: string | null } | null;
+  person_id?: { first_name?: string | null; last_name?: string | null } | null;
+};
 
 export default function CenterHome() {
+  const [centers, setCenters] = useState<Center[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      setIsLoading(true);
+      try {
+        const res = await fetch("/api/collectioncenters/get");
+        const body = await res.json();
+        if (!res.ok) throw new Error(body?.error ?? "Error fetching centers");
+
+        // Normalize response shape
+        let rows: Center[] = [];
+        if (Array.isArray(body)) {
+          rows = body as Center[];
+        } else if (body && typeof body === 'object' && 'data' in body) {
+          rows = Array.isArray((body as { data?: unknown }).data) ? (body as { data?: unknown }).data as Center[] : [];
+        } else {
+          rows = [];
+        }
+
+        if (mounted) setCenters(rows);
+      } catch (err: unknown) {
+        console.error("Error fetching centers:", err);
+      } finally {
+        if (mounted) setIsLoading(false);
+      }
+    })();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
   return (
     <div className="min-h-screen bg-white py-10 px-6 md:px-16">
       <div className="max-w-6xl mx-auto">
@@ -14,15 +59,13 @@ export default function CenterHome() {
 
         {/* --- Map Section --- */}
         <div className="w-full h-[400px] mb-10 overflow-hidden rounded-xl border border-gray-200 shadow-sm">
-          <iframe
-            title="Mapa de centros de acopio"
-            src="https://www.google.com/maps/d/u/0/embed?mid=1kR8Ub9Fvzel6juFjy4bGn8KszPy8Ggk&ehbc=2E312F&noprof=1"
-            width="100%"
-            height="100%"
-            allowFullScreen
-            loading="lazy"
-            className="border-none"
-          ></iframe>
+          {isLoading ? (
+            <div className="w-full h-full flex items-center justify-center bg-gray-50">
+              <p className="text-gray-500">Cargando mapa...</p>
+            </div>
+          ) : (
+            <CustomMap centers={centers} />
+          )}
         </div>
       
         {/* --- Why Register Section --- */}

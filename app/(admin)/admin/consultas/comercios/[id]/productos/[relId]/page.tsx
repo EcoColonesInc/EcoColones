@@ -36,8 +36,26 @@ export default async function EditarProductoPage({
 }: {
   params: { id: string; relId: string };
 }) {
-  const { id: businessId, relId } = params;
+  // `params` can be a Promise in some Next versions, await to be safe
+  const { id: businessId, relId } = await params;
+  console.log("businessId", businessId, "relId", relId);
+
+  // Basic validation: avoid calling DB with missing/invalid ids
+  if (!businessId || businessId === "undefined") {
+    console.error("Invalid businessId in EditarProductoPage:", businessId);
+    return (
+      <EditarProductoClient
+        businessId={String(businessId)}
+        relId={String(relId)}
+        initialRelation={null}
+        initialRelations={[]}
+        initialBusinessName={""}
+      />
+    );
+  }
+
   const productsRes = await getProductsByAffiliatedBusinessId(businessId);
+  console.log("productsRes", productsRes);
   const raw = (productsRes.data ?? []) as unknown[];
   const rawRelations = raw as RawProductRelation[];
   const allRelations: ProductRelation[] = rawRelations.map((r) => ({
@@ -55,8 +73,12 @@ export default async function EditarProductoPage({
     },
     product_price: Number(r.product_price ?? 0),
   }));
-  const relation =
-    allRelations.find((r) => r.affiliated_business_x_prod === relId) || null;
+  // Try to resolve the relation by the relation PK first; if not found,
+  // allow resolving by the product_id so URLs using the product id work.
+  let relation = allRelations.find((r) => r.affiliated_business_x_prod === relId) || null;
+  if (!relation) {
+    relation = allRelations.find((r) => r.product_id?.product_id === relId) || null;
+  }
   const businessName =
     relation?.affiliated_business_id?.affiliated_business_name || "";
   return (

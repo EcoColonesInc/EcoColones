@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,7 +17,8 @@ interface BusinessData {
   affiliated_business_name: string;
   description: string | null;
   phone: string | null;
-  email?: { email?: string } | null;
+  // email can be a numeric FK, a string, or an object with an `email` field
+  email?: number | string | { email?: string } | null;
   manager_id?: {
     first_name?: string | null;
     last_name?: string | null;
@@ -61,13 +62,53 @@ export default function ComercioDetalleClient({
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [showSaveModal, setShowSaveModal] = useState(false);
-  const [showDeactivateModal, setShowDeactivateModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [name, setName] = useState(business?.affiliated_business_name || "");
   const [description, setDescription] = useState(business?.description || "");
   const [selectedType, setSelectedType] = useState<string>(
     business?.business_type_id?.name || ""
   );
+  const [emailValue, setEmailValue] = useState<string | null>(
+    business && typeof business.email === "object"
+      ? business.email?.email ?? null
+      : typeof business?.email === "string"
+      ? business.email
+      : null
+  );
+
+  // If email is provided as a numeric id, try to resolve it via plausible endpoints
+  useEffect(() => {
+    if (!business) return;
+    const e = business.email;
+    if (typeof e === "number") {
+      let cancelled = false;
+      (async () => {
+        const tryEndpoints = [
+          `/api/emails/${e}/get`,
+          `/api/email/${e}/get`,
+          `/api/persons/${e}/email/get`,
+        ];
+        for (const url of tryEndpoints) {
+          try {
+            const res = await fetch(url);
+            if (!res.ok) continue;
+            const j = await res.json();
+            const candidate = j?.data?.email ?? j?.email ?? j?.data ?? null;
+            if (!cancelled && candidate) {
+              setEmailValue(typeof candidate === 'string' ? candidate : String(candidate));
+              return;
+            }
+          } catch {
+            // ignore and try next
+          }
+        }
+        if (!cancelled) setEmailValue(null);
+      })();
+      return () => {
+        cancelled = true;
+      };
+    }
+  }, [business]);
 
   // Si se requiere refrescar los datos del comercio manualmente, se puede reintroducir una función dedicada.
 
@@ -100,27 +141,6 @@ export default function ComercioDetalleClient({
       setSaving(false);
     }
   }
-
-  async function performDeactivate() {
-    if (!business) return;
-    try {
-      setSaving(true);
-      setError(null);
-      setSuccess(null);
-      const res = await fetch(
-        `/api/affiliatedbusiness/${business.affiliated_business_id}/deactivate`,
-        { method: "POST" }
-      );
-      const j = await res.json();
-      if (!res.ok) throw new Error(j?.error || "Error al desactivar");
-      setSuccess("Comercio desactivado");
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Error al desactivar");
-    } finally {
-      setSaving(false);
-    }
-  }
-
   async function performDelete() {
     if (!business) return;
     try {
@@ -201,6 +221,22 @@ export default function ComercioDetalleClient({
                   />
                 </div>
                 <div className="flex flex-col gap-1">
+                  <label className="text-sm font-medium">Teléfono</label>
+                  <input
+                    className="border rounded px-3 py-2 bg-muted"
+                    value={business.phone ?? "-"}
+                    readOnly
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-sm font-medium">Email</label>
+                  <input
+                    className="border rounded px-3 py-2 bg-muted"
+                    value={emailValue ?? (typeof business.email === 'string' ? business.email : '-')}
+                    readOnly
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
                   <label className="text-sm font-medium">Descripción</label>
                   <textarea
                     className="border rounded px-3 py-2 h-28 resize-none"
@@ -264,14 +300,6 @@ export default function ComercioDetalleClient({
               {saving && showSaveModal ? "Guardando..." : "Guardar cambios"}
             </Button>
             <Button
-              variant="warning"
-              className="w-full rounded-xl"
-              onClick={() => setShowDeactivateModal(true)}
-              disabled={saving || loading}
-            >
-              Desactivar
-            </Button>
-            <Button
               variant="destructive"
               className="w-full rounded-xl"
               onClick={() => setShowDeleteModal(true)}
@@ -296,24 +324,6 @@ export default function ComercioDetalleClient({
       >
         <p className="text-sm">
           Has cambiado la información del comercio{" "}
-          <strong>{name || business?.affiliated_business_name}</strong>. ¿Estás
-          seguro?
-        </p>
-      </Modal>
-      <Modal
-        open={showDeactivateModal}
-        title="¡Atención!"
-        onCancel={() => {
-          if (!saving) setShowDeactivateModal(false);
-        }}
-        onConfirm={async () => {
-          await performDeactivate();
-          setShowDeactivateModal(false);
-        }}
-        loading={saving}
-      >
-        <p className="text-sm">
-          Vas a desactivar este comercio{" "}
           <strong>{name || business?.affiliated_business_name}</strong>. ¿Estás
           seguro?
         </p>

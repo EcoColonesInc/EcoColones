@@ -27,9 +27,9 @@ type CollectionCenter = {
 };
 
 type TopMaterial = {
+  collection_center_name: string;
   material_name: string;
   total_amount: number;
-  times_recycled: number;
 };
 
 function FilterTag({
@@ -218,8 +218,6 @@ export default function CentersClient({
         </Card>
 
         <div className="flex flex-col gap-6 min-w-[340px]">
-         
-
           <FiltersPanel>
             <div className="flex flex-col gap-1">
               <label className="font-medium">Nombre</label>
@@ -275,35 +273,34 @@ export default function CentersClient({
               Limpiar filtros
             </button>
           </FiltersPanel>
-
            <Card>
             <CardHeader>
               <CardTitle>Top 5 de materiales más reciclados</CardTitle>
             </CardHeader>
-            <CardContent className="overflow-x-auto">
+            <CardContent className="overflow-x-auto p-2">
               {topError && (
                 <p className="text-sm text-red-600 mb-2">{topError}</p>
               )}
-              <Table className="min-w-[280px]">
+              <Table className="min-w-[280px] text-sm">
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="text-center">Puesto</TableHead>
-                    <TableHead className="text-center">Material</TableHead>
-                    <TableHead className="text-right">Peso/Cantidad</TableHead>
+                    <TableHead className="text-center py-1">Puesto</TableHead>
+                    <TableHead className="text-center py-1">Material</TableHead>
+                    <TableHead className="text-right py-1">Cantidad</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {topLoading
                     ? Array.from({ length: 5 }).map((_, i) => (
                         <TableRow key={i}>
-                          <TableCell>
-                            <div className="h-4 w-10 animate-pulse bg-muted rounded" />
+                          <TableCell className="py-1">
+                            <div className="h-3 w-8 animate-pulse bg-muted rounded" />
                           </TableCell>
-                          <TableCell>
-                            <div className="h-4 w-40 animate-pulse bg-muted rounded" />
+                          <TableCell className="py-1">
+                            <div className="h-3 w-32 animate-pulse bg-muted rounded" />
                           </TableCell>
-                          <TableCell className="text-right">
-                            <div className="h-4 w-16 ml-auto animate-pulse bg-muted rounded" />
+                          <TableCell className="text-right py-1">
+                            <div className="h-3 w-12 ml-auto animate-pulse bg-muted rounded" />
                           </TableCell>
                         </TableRow>
                       ))
@@ -318,13 +315,16 @@ export default function CentersClient({
                             ? "🥉"
                             : "";
                         return (
-                          <TableRow key={`${m.material_name}-${idx}`}>
-                            <TableCell className="whitespace-nowrap flex items-center gap-2">
+                          <TableRow key={`${m.collection_center_name}-${m.material_name}-${idx}`}>
+                            <TableCell className="whitespace-nowrap flex items-center gap-2 py-1">
                               <span aria-hidden>{medal}</span>
                               <span>{rank}</span>
                             </TableCell>
-                            <TableCell>{m.material_name}</TableCell>
-                            <TableCell className="text-right">
+                            <TableCell className="py-1">
+                              <div className="font-medium">{m.material_name}</div>
+                              <div className="text-xs text-muted-foreground">{m.collection_center_name}</div>
+                            </TableCell>
+                            <TableCell className="text-right py-1">
                               {m.total_amount} kg
                             </TableCell>
                           </TableRow>
@@ -334,7 +334,6 @@ export default function CentersClient({
               </Table>
             </CardContent>
           </Card>
-
         </div>
       </div>
     </div>

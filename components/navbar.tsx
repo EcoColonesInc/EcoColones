@@ -36,6 +36,9 @@ export function Navbar() {
     return null;
   }
 
+  // Verificar si estamos en el área de centro de acopio
+  const isCenterArea = pathname?.startsWith("/center");
+
   return (
     <nav style={{ backgroundColor: '#F7FCFA' }} className="border-b backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
@@ -48,7 +51,7 @@ export function Navbar() {
         
         {/* Desktop Navigation Links */}
         <div className="hidden lg:flex items-center space-x-6">
-          {!user && (
+          {!user && !isCenterArea && (
             <>
               <Link
                 href={LANDING_PAGE_ROUTES.HOME}
@@ -151,8 +154,34 @@ export function Navbar() {
           </>
           )}
 
+          {/* Center Navigation */}
+          {isCenterArea && (
+            <>
+              <Link
+                href="/center/dashboard"
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                  pathname === "/center/dashboard"
+                    ? "bg-green-100 text-green-700"
+                    : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                }`}
+              >
+                Panel
+              </Link>
+              <Link
+                href="/center/queries"
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                  pathname === "/center/queries"
+                    ? "bg-green-100 text-green-700"
+                    : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                }`}
+              >
+                Consultas
+              </Link>
+            </>
+          )}
+
           {/* Auth Buttons */}
-          {user ? (
+          {user || isCenterArea? (
             <Button variant="close" size="sm" onClick={handleSignOut}>Cerrar Sesión</Button>
           ) : (
             <Link href={AUTH_ROUTES.LOGIN}>
@@ -175,7 +204,7 @@ export function Navbar() {
       {isMenuOpen && (
         <div className="lg:hidden border-t" style={{ backgroundColor: '#F7FCFA' }}>
           <div className="container mx-auto px-4 py-4 flex flex-col space-y-4">
-            {!user && (
+            {!user && !isCenterArea && (
               <>
                 <Link
                   href={LANDING_PAGE_ROUTES.HOME}
@@ -208,8 +237,36 @@ export function Navbar() {
               </>
             )}
 
+            {/* Center Navigation Mobile */}
+            {isCenterArea && (
+              <>
+                <Link
+                  href="/center/dashboard"
+                  className={`px-4 py-2 rounded-full text-sm font-medium text-center ${
+                    pathname === "/center/dashboard"
+                      ? "bg-green-100 text-green-700"
+                      : "bg-gray-200 text-gray-700"
+                  }`}
+                  onClick={closeMenu}
+                >
+                  Panel
+                </Link>
+                <Link
+                  href="/center/queries"
+                  className={`px-4 py-2 rounded-full text-sm font-medium text-center ${
+                    pathname === "/center/queries"
+                      ? "bg-green-100 text-green-700"
+                      : "bg-gray-200 text-gray-700"
+                  }`}
+                  onClick={closeMenu}
+                >
+                  Consultas
+                </Link>
+              </>
+            )}
+
             {/* Mobile Auth Buttons */}
-            {user ? (
+            {user || isCenterArea ? (
               <Button variant="default" size="sm" onClick={() => { handleSignOut(); closeMenu(); }} className="w-full">
                 Cerrar Sesión
               </Button>

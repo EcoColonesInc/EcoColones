@@ -115,7 +115,7 @@ export default function SignUpPage() {
                                         checked={termsAccepted} 
                                         onChange={(e) => setTermsAccepted(e.target.checked)} 
                                     />
-                                    <span className="text-sm">He leído y acepto los <Link href="#" className="text-green-600 underline">términos y condiciones</Link> y la <Link href="#" className="text-green-600 underline">política de privacidad</Link></span>
+                                    <span className="text-sm">He leído y acepto los <Link href="/terms" className="text-green-600 underline" target="_blank">términos y condiciones</Link> y la <Link href="/privacy" className="text-green-600 underline" target="_blank">política de privacidad</Link></span>
                                 </label>
                             </div>
 

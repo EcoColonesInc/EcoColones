@@ -83,27 +83,6 @@ export function ProductCard({ data, onStateChange, onEdit }: ProductCardProps) {
     loadImg();
   }, [loadImg]);
 
-  async function toggleState() {
-    if (!derivedId) return;
-    try {
-      setSaving(true);
-      setError(null);
-      const newState = inactive ? "active" : "inactive";
-      const res = await fetch(`/api/products/${derivedId}/patch`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ state: newState }),
-      });
-      const j = await res.json();
-      if (!res.ok) throw new Error(j?.error || "Error actualizando estado");
-      if (onStateChange) await onStateChange();
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Error inesperado");
-    } finally {
-      setSaving(false);
-    }
-  }
-
   return (
     <div
       className={`border rounded-xl p-4 flex flex-col justify-between gap-3 transition relative ${inactive ? "bg-gray-200 text-gray-600" : "bg-white"}`}
@@ -132,14 +111,6 @@ export function ProductCard({ data, onStateChange, onEdit }: ProductCardProps) {
         {error && <p className="text-xs text-red-600">{error}</p>}
       </div>
       <div className="flex gap-2 mt-2">
-        <Button
-          variant={inactive ? "success" : "warning"}
-          className="flex-1 rounded-md"
-          disabled={saving}
-          onClick={toggleState}
-        >
-          {saving ? "..." : inactive ? "Activar" : "Desactivar"}
-        </Button>
         <Button
           variant="success"
           className="flex-1 rounded-md"

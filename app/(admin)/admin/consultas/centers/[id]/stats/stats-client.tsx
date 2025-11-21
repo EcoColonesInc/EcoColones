@@ -5,11 +5,14 @@ import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 
 interface TransactionRow {
-  person_id?: { user_name?: string; first_name?: string; last_name?: string } | null;
-  collection_center_id?: { name?: string } | null;
-  material_id?: { name?: string; equivalent_points?: number | null } | null;
+  user_name?: string | null;
+  first_name?: string | null;
+  last_name?: string | null;
+  collection_center_name?: string | null;
+  material_names?: string | null; // comma-separated names
+  total_material_amount?: number | string | null;
   total_points?: number | null;
-  material_amount?: number | string | null;
+  transaction_code?: string | null;
   created_at?: string | null;
 }
 
@@ -64,7 +67,7 @@ export default function StatsClient({ centerId, initialTransactions }: Props) {
       setLoading(false);
     }
   }, [centerId]);
-
+  
   useEffect(() => { if (initialTransactions.length === 0) { void refresh(); } }, [initialTransactions.length, refresh]);
 
   const years = useMemo(() => {
@@ -80,9 +83,13 @@ export default function StatsClient({ centerId, initialTransactions }: Props) {
   const materialNames = useMemo(() => {
     const s = new Set<string>();
     for (const t of transactions) {
-      const n = t.material_id?.name; if (n) s.add(n);
+      const names = t.material_names;
+      if (!names) continue;
+      for (const p of names.split(',')) {
+        const n = p.trim(); if (n) s.add(n);
+      }
     }
-    return Array.from(s);
+    return Array.from(s).sort();
   }, [transactions]);
 
   function clearFilters() {
@@ -97,18 +104,20 @@ export default function StatsClient({ centerId, initialTransactions }: Props) {
       if (yearFilter && (!d || d.getFullYear().toString() !== yearFilter)) return false;
       if (monthFilter && (!d || (d.getMonth()+1).toString().padStart(2,'0') !== monthFilter)) return false;
       if (selectedMaterial) {
-        const n = t.material_id?.name; if (!n || n !== selectedMaterial) return false;
+        const names = t.material_names || '';
+        const parts = names.split(',').map(x => x.trim()).filter(Boolean);
+        if (!parts.includes(selectedMaterial)) return false;
       }
       return true;
     });
   }, [transactions, yearFilter, monthFilter, selectedMaterial]);
 
-  const totalKg = useMemo(() => filtered.reduce((acc, t) => acc + (typeof t.material_amount === 'string' ? parseFloat(t.material_amount) : (t.material_amount || 0)), 0), [filtered]);
+  const totalKg = useMemo(() => filtered.reduce((acc, t) => acc + (typeof t.total_material_amount === 'string' ? parseFloat(t.total_material_amount) : (t.total_material_amount || 0)), 0), [filtered]);
 
   const rankingMaterials = useMemo(() => {
     const rows = [...filtered].sort((a,b) => {
-      const av = typeof a.material_amount === 'string' ? parseFloat(a.material_amount) : (a.material_amount || 0);
-      const bv = typeof b.material_amount === 'string' ? parseFloat(b.material_amount) : (b.material_amount || 0);
+      const av = typeof a.total_material_amount === 'string' ? parseFloat(a.total_material_amount) : (a.total_material_amount || 0);
+      const bv = typeof b.total_material_amount === 'string' ? parseFloat(b.total_material_amount) : (b.total_material_amount || 0);
       return bv - av; // desc
     });
     return rows.map((r,i) => ({ ...r, puesto: i+1 }));
@@ -118,8 +127,8 @@ export default function StatsClient({ centerId, initialTransactions }: Props) {
   const topUsers = useMemo(() => {
     const map: Record<string, { user_name: string; totalKg: number; lastDate: string } > = {};
     for (const t of filtered) {
-      const userName = t.person_id?.user_name || t.person_id?.first_name || 'Anon';
-      const kg = typeof t.material_amount === 'string' ? parseFloat(t.material_amount) : (t.material_amount || 0);
+      const userName = t.user_name || t.first_name || 'Anon';
+      const kg = typeof t.total_material_amount === 'string' ? parseFloat(t.total_material_amount) : (t.total_material_amount || 0);
       if (!map[userName]) map[userName] = { user_name: userName, totalKg: 0, lastDate: '' };
       map[userName].totalKg += kg;
       const d = t.created_at ? formatDate(t.created_at) : '';
@@ -133,10 +142,9 @@ export default function StatsClient({ centerId, initialTransactions }: Props) {
   const userPoints = useMemo(() => {
     const map: Record<string, { user_name: string; totalKg: number; points: number } > = {};
     for (const t of filtered) {
-      const userName = t.person_id?.user_name || t.person_id?.first_name || 'Anon';
-      const kg = typeof t.material_amount === 'string' ? parseFloat(t.material_amount) : (t.material_amount || 0);
-      const eq = t.material_id?.equivalent_points ?? null;
-      const pts = eq ? eq * kg : (t.total_points || 0);
+      const userName = t.user_name || t.first_name || 'Anon';
+      const kg = typeof t.total_material_amount === 'string' ? parseFloat(t.total_material_amount) : (t.total_material_amount || 0);
+      const pts = t.total_points || 0;
       if (!map[userName]) map[userName] = { user_name: userName, totalKg: 0, points: 0 };
       map[userName].totalKg += kg;
       map[userName].points += pts;
@@ -147,9 +155,9 @@ export default function StatsClient({ centerId, initialTransactions }: Props) {
   return (
     <div className="min-h-screen px-4 md:px-8 lg:px-12 py-6 space-y-10 max-w-6xl mx-auto">
       <div className="flex items-center justify-between flex-wrap gap-4">
-        <h1 className="text-2xl md:text-3xl font-bold">Centro {transactions[0]?.collection_center_id?.name || ''}</h1>
-        <Button className="bg-gray-200 text-gray-800 hover:bg-gray-300" onClick={() => router.push(`/admin/consultas/centers/${centerId}`)}>Volver</Button>
-      </div>
+            <h1 className="text-2xl md:text-3xl font-bold">Centro {transactions[0]?.collection_center_name || ''}</h1>
+            <Button className="bg-gray-200 text-gray-800 hover:bg-gray-300" onClick={() => router.push(`/admin/consultas/centers/${centerId}`)}>Volver</Button>
+          </div>
       {error && <p className="text-sm text-red-600">{error}</p>}
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-8 items-start">
         {/* Ranking materiales (principal izquierda) */}
@@ -174,11 +182,13 @@ export default function StatsClient({ centerId, initialTransactions }: Props) {
                   </thead>
                   <tbody>
                     {rankingMaterials.map(r => {
-                      const kg = typeof r.material_amount === 'string' ? parseFloat(r.material_amount) : (r.material_amount || 0);
+                      const kg = typeof r.total_material_amount === 'string' ? parseFloat(r.total_material_amount) : (r.total_material_amount || 0);
+                      const firstMaterial = r.material_names ? r.material_names.split(',')[0].trim() : '-';
+                      const key = r.transaction_code || (r.created_at ? `${r.created_at}_${r.user_name || r.first_name || ''}` : undefined);
                       return (
-                        <tr key={r.created_at + '_' + r.person_id?.user_name} className="border-b last:border-0 hover:bg-green-50/60">
+                        <tr key={key} className="border-b last:border-0 hover:bg-green-50/60">
                           <td className="py-2 px-2">{r.puesto}</td>
-                          <td className="py-2 px-2">{r.material_id?.name || '-'}</td>
+                          <td className="py-2 px-2">{firstMaterial}</td>
                           <td className="py-2 px-2">{kg.toFixed(1)} kg</td>
                           <td className="py-2 px-2">{formatDate(r.created_at)}</td>
                         </tr>

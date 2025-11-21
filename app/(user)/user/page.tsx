@@ -1,7 +1,9 @@
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
+import ConversionTable from "@/components/ui/conversion";
 import { redirect } from "next/navigation";
-import { AUTH_ROUTES } from "@/config/routes";
+import { AUTH_ROUTES, USER_ROUTES } from "@/config/routes";
+import Link from "next/link";
 
 import { getUserData, calculateAge, getProfilePictureUrl} from "@/lib/api/users";
 import {getUserCenterTransactions} from "@/lib/api/transactions";
@@ -163,12 +165,11 @@ export default async function UserDashboard() {
             </div>
 
             <div className="flex flex-col gap-3 mt-6">
+              <Link href={USER_ROUTES.REDEEM}>
               <Button className="bg-green-600 hover:bg-green-700 text-white font-medium rounded-md py-2">
                 Canjear
               </Button>
-              <Button className="bg-green-100 hover:bg-green-200 text-green-700 font-medium rounded-md py-2">
-                Calculadora de puntos
-              </Button>
+              </Link>
             </div>
           </div>
         </div>
@@ -212,29 +213,15 @@ export default async function UserDashboard() {
               </table>
             </div>
           </div>
-
-          {/* Conversion Table */}
+          <div className="col-span-2 bg-white rounded-xl border border-gray-100 p-6 flex items-center justify-center">  
+          {/* Conversion Table  */}
           <div className="bg-white rounded-xl border border-gray-100 p-6">
             <h3 className="font-semibold text-gray-800 mb-3">
               Conversión del peso a puntos
             </h3>
-            <table className="w-full text-sm border-collapse">
-              <thead className="bg-[#E9F4EE] text-gray-700 font-medium">
-                <tr>
-                  <th className="py-2 px-3 rounded-tl-md">Material</th>
-                  <th className="py-2 px-3 rounded-tr-md">Puntos por Peso (CRC)</th>
-                </tr>
-              </thead>
-              <tbody>
-                {conversionRates.map((row: ConversionRate) => (
-                  <tr key={row.material} className="border-b border-gray-100">
-                    <td className="py-2 px-3">{row.material}</td>
-                    <td className="py-2 px-3">{row.points} pts {row.unit ? ` / ${row.unit}` : ''}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <ConversionTable conversionRates={conversionRates} />
           </div>
+          </div>      
         </div>
       </div>
     </div>
