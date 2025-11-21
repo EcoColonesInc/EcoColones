@@ -4,8 +4,9 @@ import { getAffiliatedBusinessById } from '@/lib/api/affiliatedbusiness';
 export async function GET(request: Request, context: { params: Promise<{ id: string }> }) {
   const resolvedParams = await context.params;
   const id = resolvedParams?.id;
+  
   if (!id) {
-    return NextResponse.json({ error: 'Missing affiliated business id' }, { status: 400 });
+    return NextResponse.json({ error: 'Missing collection center id' }, { status: 400 });
   }
 
   const { data, error } = await getAffiliatedBusinessById(id);
