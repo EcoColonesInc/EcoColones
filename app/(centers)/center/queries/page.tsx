@@ -1,6 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+
+interface TopRecycler {
+    ranking: number;
+    user_name: string;
+    total_recycled: number;
+    last_transaction_date: string;
+}
 
 export default function Page() {
     const [activeUserTab, setActiveUserTab] = useState<'usuario' | 'nombre'>('usuario');
@@ -8,14 +15,61 @@ export default function Page() {
     const [selectedMaterials, setSelectedMaterials] = useState<string[]>(['Plástico']);
     const [userSearchInput, setUserSearchInput] = useState('');
     const [cedulaSearchInput, setCedulaSearchInput] = useState('');
+    const [topRecyclers, setTopRecyclers] = useState<TopRecycler[]>([]);
+    const [loading, setLoading] = useState(true);
     
-    const topUsers = [
-        { position: 1, icon: '🥇', user: 'Albert05', weight: '45.5 kg', date: '2024-07-29' },
-        { position: 2, icon: '🥈', user: 'PedroR86', weight: '36.2 kg', date: '2024-07-29' },
-        { position: 3, icon: '🥉', user: 'MariaMA5', weight: '25.0 kg', date: '2024-07-28' },
-        { position: 4, icon: '🏀', user: 'FabR18', weight: '12.7 kg', date: '2024-07-27' },
-        { position: 5, icon: '🏐', user: 'MartyJos15', weight: '12.2 kg', date: '2024-07-31' },
-    ];
+    // Obtener el collection center ID del usuario autenticado
+    useEffect(() => {
+        async function fetchTopRecyclers() {
+            try {
+                setLoading(true);
+                // Primero obtener el collection center del usuario
+                const centerResponse = await fetch('/api/collectioncenters/user/get');
+                if (!centerResponse.ok) {
+                    console.error('Error fetching user collection center');
+                    return;
+                }
+                const centerData = await centerResponse.json();
+                const collectionCenterId = centerData?.collectioncenter_id;
+                
+                if (!collectionCenterId) {
+                    console.error('No collection center found for user');
+                    return;
+                }
+                
+                // Luego obtener el top 5 de recicladores
+                const response = await fetch(`/api/collectioncenters/${collectionCenterId}/get?query=top_recyclers`);
+                if (!response.ok) {
+                    console.error('Error fetching top recyclers');
+                    return;
+                }
+                const data = await response.json();
+                setTopRecyclers(data || []);
+            } catch (error) {
+                console.error('Error:', error);
+            } finally {
+                setLoading(false);
+            }
+        }
+        
+        fetchTopRecyclers();
+    }, []);
+    
+    const getPositionIcon = (position: number) => {
+        switch(position) {
+            case 1: return '🥇';
+            case 2: return '🥈';
+            case 3: return '🥉';
+            case 4: return '🏀';
+            case 5: return '🏐';
+            default: return '';
+        }
+    };
+    
+    const formatDate = (dateString: string) => {
+        const date = new Date(dateString);
+        return date.toISOString().split('T')[0];
+    };
     
     const userPoints = [
         { user: 'PedroR15', name: 'Pedro Gutierrez', weight: '25.0 kg', points: 375 },
@@ -73,16 +127,30 @@ export default function Page() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {topUsers.map((user) => (
-                                    <tr key={user.position} className="border-t border-gray-100">
-                                        <td className="py-4 text-center">
-                                            <span className="text-2xl">{user.icon}</span>
+                                {loading ? (
+                                    <tr>
+                                        <td colSpan={4} className="py-4 text-center text-sm text-gray-500">
+                                            Cargando...
                                         </td>
-                                        <td className="py-4 text-sm font-medium text-center">{user.user}</td>
-                                        <td className="py-4 text-sm text-center">{user.weight}</td>
-                                        <td className="py-4 text-xs text-gray-500 text-center">{user.date}</td>
                                     </tr>
-                                ))}
+                                ) : topRecyclers.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={4} className="py-4 text-center text-sm text-gray-500">
+                                            No hay datos disponibles
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    topRecyclers.map((recycler) => (
+                                        <tr key={recycler.ranking} className="border-t border-gray-100">
+                                            <td className="py-4 text-center">
+                                                <span className="text-2xl">{getPositionIcon(recycler.ranking)}</span>
+                                            </td>
+                                            <td className="py-4 text-sm font-medium text-center">{recycler.user_name}</td>
+                                            <td className="py-4 text-sm text-center">{recycler.total_recycled} kg</td>
+                                            <td className="py-4 text-xs text-gray-500 text-center">{formatDate(recycler.last_transaction_date)}</td>
+                                        </tr>
+                                    ))
+                                )}
                             </tbody>
                         </table>
                     </div>
