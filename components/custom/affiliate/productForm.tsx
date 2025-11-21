@@ -4,7 +4,8 @@ import { useProductForm } from "../hooks/useProductForm";
 import { ProductFormUI } from "./productFormUI";
 
 interface Product {
-    id: number;
+    id: string;
+    relId?: string;
     imagen: string;
     titulo: string;
     descripcion: string;
@@ -14,13 +15,15 @@ interface Product {
 interface ProductFormProps {
     product?: Product;                           // Producto a editar (opcional)
     mode?: 'create' | 'edit';                  // Modo (auto-detecta si no se especifica)
+    businessId?: string;                        // ID del negocio afiliado
     onSave?: (product: Product) => void;       // Callback al guardar
-    onDelete?: (productId: number) => void;    // Callback al eliminar
+    onDelete?: (productId: string) => void;    // Callback al eliminar
 }
 
 export const ProductForm = ({ 
     product, 
     mode = product ? 'edit' : 'create',  // Auto-detectar modo
+    businessId,
     onSave,
     onDelete 
 }: ProductFormProps) => {
@@ -29,6 +32,7 @@ export const ProductForm = ({
     const formLogic = useProductForm({
         initialProduct: product,
         mode,
+        businessId,
         onSave,
         onDelete
     });

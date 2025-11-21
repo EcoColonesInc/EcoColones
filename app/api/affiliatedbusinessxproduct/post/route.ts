@@ -127,7 +127,6 @@ export async function POST(request: Request) {
                     affiliated_business_id,
                     affiliated_business_name,
                     phone,
-                    manager_name,
                     email
                 )
             `);

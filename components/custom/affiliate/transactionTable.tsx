@@ -34,6 +34,8 @@ function getStatusLabel(status: string) {
     switch (status.toLowerCase()) {
         case 'active':
             return 'Activa';
+        case 'completed':
+            return 'Completada';
         case 'inactive':
             return 'Inactiva';
         case 'cancelled':
@@ -46,6 +48,8 @@ function getStatusLabel(status: string) {
 function getStatusStyles(status: string) {
     const statusLower = status.toLowerCase();
     switch (statusLower) {
+        case 'completed':
+            return 'bg-green-100 text-green-800 border-green-600';
         case 'active':
             return 'bg-gray-100 text-gray-800 border-gray-600';
         case 'inactive':

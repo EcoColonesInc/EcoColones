@@ -44,14 +44,20 @@ export default async function products() {
         if (productsFetchError) {
             productsError = `Error al obtener productos: ${productsFetchError}`;
         } else if (productsData) {
-            const businessProducts = productsData as unknown as ProductData[];
-            transformedProducts = businessProducts.map(item => ({
-                id: item.product_id.product_id,
-                imagen: '',
-                titulo: item.product_id.product_name,
-                descripcion: item.product_id.description,
-                costo: item.product_price,
-            }));
+            const businessProducts = productsData as unknown as any[];
+            transformedProducts = businessProducts.map(item => {
+                // The product_id object contains product_id_1 as the actual ID
+                const actualProductId = item.product_id?.product_id_1 || item.product_id?.product_id || '';
+                return {
+                    id: item.affiliated_business_x_prod, // Use the relation ID for editing
+                    productId: actualProductId, // Add the actual product ID for state updates
+                    imagen: item.product_id?.image_url || '',
+                    titulo: item.product_id?.product_name || '',
+                    descripcion: item.product_id?.description || '',
+                    costo: item.product_price || 0,
+                    state: item.product_id?.state === 'active', // Convert string 'active' to boolean
+                };
+            });
         }
     }
 

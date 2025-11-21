@@ -2,18 +2,76 @@
 import { ProductForm } from "@/components/custom/affiliate/productForm";
 import { Info, ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { createClient } from "@/utils/supabase/client";
 
 export default function CreateProductPage() {
     const router = useRouter();
+    const [businessId, setBusinessId] = useState<string | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
-    const handleProductSave = async () => {
-        // TODO:Llamada a la API para guardar en BD
-        
-        // Simular guardado exitoso y redirigir
-        setTimeout(() => {
-            router.push('/affiliate/products/create');
-        }, 2000);
-    };
+    useEffect(() => {
+        const fetchBusinessId = async () => {
+            try {
+                const supabase = createClient();
+                
+                // Get current user
+                const { data: { user }, error: authError } = await supabase.auth.getUser();
+                
+                if (authError || !user) {
+                    setError("Usuario no autenticado. Por favor, inicia sesión.");
+                    setLoading(false);
+                    return;
+                }
+
+                // Get affiliated business for this user
+                const { data, error: businessError } = await supabase
+                    .from('affiliatedbusiness')
+                    .select('affiliated_business_id, affiliated_business_name')
+                    .eq('manager_id', user.id)
+                    .single();
+                
+                if (businessError || !data) {
+                    setError(businessError?.message || "No se encontró un negocio afiliado para este usuario.");
+                    setLoading(false);
+                    return;
+                }
+                
+                setBusinessId(data.affiliated_business_id);
+                setLoading(false);
+            } catch (err) {
+                console.error("Error fetching business:", err);
+                setError("Error al cargar la información del negocio.");
+                setLoading(false);
+            }
+        };
+
+        fetchBusinessId();
+    }, []);
+
+    if (loading) {
+        return (
+            <div className="container mx-auto px-4 py-10">
+                <p className="text-gray-600">Cargando...</p>
+            </div>
+        );
+    }
+
+    if (error || !businessId) {
+        return (
+            <div className="container mx-auto px-4 py-10">
+                <h1 className="text-3xl font-bold text-red-600">Error</h1>
+                <p className="text-red-600 mt-4">{error || "No se pudo cargar la información del negocio."}</p>
+                <button 
+                    onClick={() => router.back()} 
+                    className="mt-4 text-green-600 hover:text-green-800"
+                >
+                    ← Volver
+                </button>
+            </div>
+        );
+    }
 
     return (
         <div className="container mx-auto px-4 space-y-8 md:space-y-12">
@@ -44,7 +102,7 @@ export default function CreateProductPage() {
             <div className="w-full">
                 <ProductForm 
                     mode="create"
-                    onSave={handleProductSave}
+                    businessId={businessId}
                 />
             </div>
 

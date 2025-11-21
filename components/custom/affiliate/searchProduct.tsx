@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 
 interface Product {
     id: string;
+    productId: string;
     imagen: string;
     titulo: string;
     descripcion: string;
@@ -23,16 +24,51 @@ interface ProductSearchProps {
 export const ProductSearch = ({ products }: ProductSearchProps) => {
     const [searchTerm, setSearchTerm] = useState("");
     const [productList, setProductList] = useState<Product[]>(products);
+    const [isUpdating, setIsUpdating] = useState<string | null>(null);
     const router = useRouter();
 
-    const handleState = (productId: string) => { // Cambiado de number a string
-        setProductList(prevProducts => 
-            prevProducts.map(p => 
-                p.id === productId 
-                    ? { ...p, state: !p.state }
-                    : p
-            )
-        );
+    const handleState = async (relId: string, productId: string, currentState: boolean) => {
+        if (isUpdating) return; // Prevent multiple clicks
+        
+        setIsUpdating(relId);
+        const newState = !currentState;
+        
+        try {
+            // Update the product state in the database
+            // The state field is an enum: 'active' or 'inactive'
+            const response = await fetch(`/api/products/${productId}/patch`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    state: newState ? 'active' : 'inactive',
+                }),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                console.error('API Error Response:', errorData);
+                throw new Error(errorData.error || 'Error al actualizar el estado del producto');
+            }
+
+            // Update local state
+            setProductList(prevProducts => 
+                prevProducts.map(p => 
+                    p.id === relId 
+                        ? { ...p, state: newState }
+                        : p
+                )
+            );
+            
+            // Refresh the page data
+            router.refresh();
+        } catch (error) {
+            console.error('Error updating product state:', error);
+            alert(`Error al actualizar el estado del producto: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+        } finally {
+            setIsUpdating(null);
+        }
     };
 
     // Filtrar productos según lo que se busque
@@ -91,18 +127,20 @@ export const ProductSearch = ({ products }: ProductSearchProps) => {
                             <div className="flex gap-2">
                                 {product.state === false ? (
                                     <Button 
-                                        onClick={() => handleState(product.id)}
-                                        className="flex-1 bg-green-500 hover:bg-green-700"
+                                        onClick={() => handleState(product.id, product.productId, product.state ?? true)}
+                                        disabled={isUpdating === product.id}
+                                        className="flex-1 bg-green-500 hover:bg-green-700 disabled:opacity-50"
                                     >
-                                        Activar
+                                        {isUpdating === product.id ? 'Activando...' : 'Activar'}
                                     </Button>
                                 ) : (
                                     <>
                                         <Button 
-                                            onClick={() => handleState(product.id)}
-                                            className="flex-1 bg-yellow-500 hover:bg-yellow-300"
+                                            onClick={() => handleState(product.id, product.productId, product.state ?? true)}
+                                            disabled={isUpdating === product.id}
+                                            className="flex-1 bg-yellow-500 hover:bg-yellow-300 disabled:opacity-50"
                                         >
-                                            Desactivar
+                                            {isUpdating === product.id ? 'Desactivando...' : 'Desactivar'}
                                         </Button>
                                         
                                         <Button 

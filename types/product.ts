@@ -4,7 +4,7 @@ export type ProductData = {
         product_id: string;
         product_name: string;
         description: string;
-        state: string;
+        state: boolean;
         image_url: string;
     };
     affiliated_business_id: { 
@@ -17,8 +17,10 @@ export type ProductData = {
 
 export type Product = {
     id: string;
+    productId: string;
     imagen: string;
     titulo: string;
     descripcion: string;
     costo: number;
+    state?: boolean;
 };

@@ -13,6 +13,7 @@ interface Product {
   description?: string;
   price?: number;
   image?: string;
+  state?: string;
 }
 
 function StoreInner() {
@@ -49,6 +50,9 @@ function StoreInner() {
           const description = ((productIdField && typeof productIdField === 'object') ? ((productIdField as Record<string, unknown>)['description'] as string | undefined) : undefined) ?? (row['description'] as string) ?? "";
           const price = Number(row['product_price'] ?? row['product_price'] ?? 0) || 0;
           
+          // Check if product is active
+          const state = ((productIdField && typeof productIdField === 'object') ? ((productIdField as Record<string, unknown>)['state'] as string | undefined) : undefined) ?? (row['state'] as string);
+          
           // Get image from Supabase storage using product_id
           // Try multiple extensions since we don't know which one is used
           let image = 'placeholder.png';
@@ -72,8 +76,11 @@ function StoreInner() {
             }
           }
           
-          return { id, name, description, price, image };
+          return { id, name, description, price, image, state };
         }));
+
+        // Filter out inactive products
+        const activeProducts = mapped.filter(p => p.state === 'active');
 
         // try to set store name from the first row if available
         if (rows && rows.length > 0) {
@@ -82,7 +89,7 @@ function StoreInner() {
           if (name && mounted) setStoreName(name);
         }
 
-        if (mounted) setProducts(mapped);
+        if (mounted) setProducts(activeProducts);
       } catch (err) {
         console.error("Error loading products for business:", err);
         if (mounted) setProducts([]);

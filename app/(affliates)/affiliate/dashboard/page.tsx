@@ -32,27 +32,6 @@ type Product = {
  * @param dateString La fecha en formato de cadena ISO.
  * @returns La fecha formateada o 'N/A'.
  */
-const formatDate = (dateString: string): string => {
-    if (!dateString) return 'N/A';
-    try {
-        const date = new Date(dateString);
-        
-        // Verificación de fecha inválida (e.g., "Invalid Date")
-        if (isNaN(date.getTime())) {
-            return 'Formato Inválido';
-        }
-
-        const year = date.getFullYear();
-        // getMonth() es 0-indexado, por eso se añade 1.
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-
-        return `${year}/${month}/${day}`; // Formato yyyy/mm/dd
-    } catch (e) {
-        console.error("Error formatting date:", e);
-        return 'N/A';
-    }
-};
 
 
 export default async function Page() {
@@ -145,7 +124,7 @@ export default async function Page() {
     }
 
     // -------------------------------------------------------------------
-    // --- LÓGICA DE MONEDA (sin cambios) ---
+    // --- LÓGICA DE MONEDA ---
     const { data: currenciesData, error: currencyError } = await getAllCurrencies();
     let exchangeRate = 0.05;
 
@@ -157,7 +136,7 @@ export default async function Page() {
     }
 
     // -------------------------------------------------------------------
-    // --- LÓGICA PARA OBTENER PRODUCTOS DEL COMERCIO LOGUEADO (sin cambios) ---
+    // --- LÓGICA PARA OBTENER PRODUCTOS DEL COMERCIO LOGUEADO ---
     // -------------------------------------------------------------------
     
     // Nueva variable para productos TRANSFORMADOS
@@ -185,6 +164,39 @@ export default async function Page() {
     } else if (!productsError) {
         productsError = "El usuario logueado no está vinculado a un comercio afiliado.";
     }
+
+    // -------------------------------------------------------------------
+    // --- CONSULTAS: Estadísticas de Productos ---
+    // -------------------------------------------------------------------
+    
+    // a) Listado de productos que ofrecen
+    const totalProductsOffered = transformedProducts.length;
+    
+    // b) Top 5 de productos más canjeados
+    const productRedemptionCounts = new Map<string, { name: string; count: number; points: number }>();
+    
+    allTransactions.forEach(tx => {
+        const productName = tx.product_id?.product_name || '';
+        const amount = tx.product_amount || 0;
+        const price = tx.total_price || 0;
+        
+        if (productName) {
+            const existing = productRedemptionCounts.get(productName);
+            if (existing) {
+                existing.count += amount;
+                existing.points += price;
+            } else {
+                productRedemptionCounts.set(productName, { name: productName, count: amount, points: price });
+            }
+        }
+    });
+    
+    const topProducts = Array.from(productRedemptionCounts.values())
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 5);
+    
+    // c) Total de puntos canjeados en sus productos
+    const totalPointsRedeemed = allTransactions.reduce((sum, tx) => sum + (tx.total_price || 0), 0);
 
 
     return (
@@ -214,18 +226,80 @@ export default async function Page() {
                 <PointsExchangeCards monthlyTotal={monthlyTotal} exchangeRate={exchangeRate} />
             </div>
             
-            {/* Productos */}
-            <div className="mb-20">
-                <h3 className="text-xl font-semibold mb-4">Productos Registrados</h3>
-                
-                {productsError ? (
-                    <div className="text-red-600 border border-red-300 p-4 rounded bg-red-50">
-                        {productsError}
+            {/* Módulo de Consultas */}
+            <div className="mb-12">
+                <h3 className="text-xl font-semibold mb-4">Módulo de Consultas</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {/* a) Listado de productos que ofrecen */}
+                    <div className="bg-white border border-gray-300 rounded-lg p-6 shadow-md">
+                        <h4 className="font-semibold text-lg mb-3 text-gray-800">Listado de productos ofrecidos</h4>
+                        <div className="text-center">
+                            <p className="text-4xl font-bold text-green-600 mb-2">{totalProductsOffered}</p>
+                            <p className="text-sm text-gray-600">Productos disponibles</p>
+                        </div>
+                        {transformedProducts.length > 0 && (
+                            <div className="mt-4 max-h-48 overflow-y-auto">
+                                <ul className="space-y-2">
+                                    {transformedProducts.map((product, idx) => (
+                                        <li key={idx} className="text-sm text-gray-700 border-b border-gray-200 pb-2">
+                                            <span className="font-medium">{product.titulo}</span>
+                                            <span className="text-gray-500 ml-2">({product.costo} pts)</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
                     </div>
-                ) : (
-                    // Usamos los productos TRANSFORMADOS
-                    <DashProducts products={transformedProducts} /> 
-                )}
+
+                    {/* b) Top 5 de productos más canjeados */}
+                    <div className="bg-white border border-gray-300 rounded-lg p-6 shadow-md">
+                        <h4 className="font-semibold text-lg mb-3 text-gray-800">Top 5 de productos más canjeados</h4>
+                        {topProducts.length > 0 ? (
+                            <div className="space-y-3">
+                                {topProducts.map((product, idx) => (
+                                    <div key={idx} className="flex items-center justify-between border-b border-gray-200 pb-2">
+                                        <div className="flex items-center gap-2">
+                                            <span className="flex items-center justify-center w-6 h-6 rounded-full bg-green-600 text-white text-xs font-bold">
+                                                {idx + 1}
+                                            </span>
+                                            <span className="text-sm font-medium text-gray-800">{product.name}</span>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="text-sm font-semibold text-green-600">{product.count}</p>
+                                            <p className="text-xs text-gray-500">{product.points} pts</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="text-sm text-gray-500 text-center py-4">No hay canjes registrados</p>
+                        )}
+                    </div>
+
+                    {/* c) Total de puntos canjeados en sus productos */}
+                    <div className="bg-white border border-gray-300 rounded-lg p-6 shadow-md">
+                        <h4 className="font-semibold text-lg mb-3 text-gray-800">Total de puntos canjeados en sus productos</h4>
+                        <div className="text-center">
+                            <p className="text-4xl font-bold text-green-600 mb-2">{totalPointsRedeemed.toLocaleString()}</p>
+                            <p className="text-sm text-gray-600">puntos totales</p>
+                        </div>
+                        <div className="mt-6 space-y-2">
+                            <div className="flex justify-between text-sm">
+                                <span className="text-gray-600">Transacciones:</span>
+                                <span className="font-semibold">{allTransactions.length}</span>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                                <span className="text-gray-600">Promedio por transacción:</span>
+                                <span className="font-semibold">
+                                    {allTransactions.length > 0 
+                                        ? Math.round(totalPointsRedeemed / allTransactions.length).toLocaleString()
+                                        : 0
+                                    } pts
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     );
