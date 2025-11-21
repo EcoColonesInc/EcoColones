@@ -168,3 +168,19 @@ export async function getUserCollectionCenter() {
   }
   return { error: null, data };
 }
+
+// Fetch top 5 recyclers by collection center
+export async function getTopRecyclersByCenter(collectionCenterId: string) {
+  const supabase = await createClient();
+  
+  const { data, error } = await supabase
+    .rpc('get_top_recyclers_by_center', {
+      p_collection_center_id: collectionCenterId
+    });
+
+  if (error) {
+    return { error: error.message, data: null };
+  }
+
+  return { error: null, data };
+}
