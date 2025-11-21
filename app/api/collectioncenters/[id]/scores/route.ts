@@ -9,7 +9,11 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
     return NextResponse.json({ error: 'Missing collection center id' }, { status: 400 });
   }
 
-  const { data, error } = await getCollectionCenterUserScores(id);
+  const { searchParams } = new URL(request.url);
+  const userName = searchParams.get('user_name')?.trim() || undefined;
+  const identification = searchParams.get('identification')?.trim() || undefined;
+
+  const { data, error } = await getCollectionCenterUserScores(id, userName, identification);
 
   if (error) {
     return NextResponse.json({ error }, { status: 500 });

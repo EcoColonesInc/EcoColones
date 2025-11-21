@@ -185,14 +185,23 @@ export async function getUserCollectionCenter() {
 }
 
 // Fetch user scores for a specific collection center
-export async function getCollectionCenterUserScores(collectionCenterId: string) {
+export async function getCollectionCenterUserScores(
+  collectionCenterId: string,
+  userName?: string,
+  identification?: string
+) {
   const supabase = await createClient();
   
-  const { data, error } = await supabase.rpc('get_collection_center_user_scores', {
-    p_collection_center_id: collectionCenterId
-  });
+  const params: Record<string, string | null> = {
+    p_collection_center_id: collectionCenterId,
+    p_user_name: userName || null,
+    p_identification: identification || null
+  };
+  
+  const { data, error } = await supabase.rpc('get_collection_center_user_scores', params);
 
   if (error) {
+    console.error('RPC Error:', error);
     return { error: error.message, data: null };
   }
 
