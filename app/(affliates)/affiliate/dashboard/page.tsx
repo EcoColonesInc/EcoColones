@@ -1,29 +1,17 @@
 import { createClient } from '@/utils/supabase/server'; 
-// import { cookies } from 'next/headers'; // Ya no se necesita
-import { CustomTable } from "@/components/custom/affiliate/affiliateTable";
+import { TransactionTable } from "@/components/custom/affiliate/transactionTable";
 import { PointsExchangeCards } from "@/components/custom/affiliate/dashredeemPoints";
 import { DashProducts } from "@/components/custom/affiliate/dashProducts";
-// import { getUserBusinessTransactions } from "@/lib/api/transactions"; // LÓGICA REEMPLAZADA: Se filtra por affiliatedBusinessId
 import { getAllCurrencies } from "@/lib/api/currencies";
 import { getProductsByAffiliatedBusinessId } from "@/lib/api/products"; 
 import { getBusinessByManagerId} from "@/lib/api/affiliatedbusiness"; 
+import type { AffiliateTransaction } from '@/types/transactions';
 
-
-// Tipos
-type Transaction = {
-    transaction_code: string;
-    first_name: string;
-    product_name: string;
-    product_amount: number | string | null;
-    created_at: string;
-    total_price: number | string | null;
-    state: string;
-};
 
 // Tipo de datos que retorna getProductsByAffiliatedBusinessId (Datos brutos de DB)
 type ProductData = {
     affiliated_business_x_prod: string;
-    product_id: { product_id: string, product_name: string, description: string, state: string };
+    product_id: { product_id: string, product_name: string, description: string, state: string, image_url: string };
     affiliated_business_id: { affiliated_business_id: string, affiliated_business_name: string, description: string };
     product_price: number;
 }
@@ -38,37 +26,6 @@ type Product = {
     costo: number; 
 };
 
-
-// -------------------------------------------------------------------
-// MOCK DE FUNCIÓN RPC: Asume que esta función existe en el archivo de API.
-// La estructura de datos 'data' debe coincidir con lo que retorna el RPC
-// -------------------------------------------------------------------
-type RawTransactionData = {
-    transaction_code: string;
-    created_at: string;
-    total_price: number;
-    state: string;
-    total_product_amount: number;
-    product_names: string;
-    first_name: string;
-}
-
-// La función RPC se importaría de un archivo como lib/api/transactions.ts
-// Como no está disponible, la definimos localmente para que el código compile.
-async function getTransactionsByAffiliatedBusinessId(affiliatedBusinessId: string): Promise<{ error: string | null, data: RawTransactionData[] | null }> {
-    const supabase = await createClient();
-    // Usa la función RPC con el parámetro
-    const { data, error } = await supabase.rpc('get_transactions_by_affiliated_business_id', { p_affiliated_business_id: affiliatedBusinessId });
-    
-    if (error) {
-        console.error('Error fetching transactions via RPC:', error);
-        return { error: error.message, data: null };
-    }
-    
-    // Suponemos que el RPC retorna un array de objetos con las propiedades necesarias
-    return { error: null, data: data as RawTransactionData[] };
-}
-// -------------------------------------------------------------------
 
 /**
  * Formatea una cadena de fecha ISO a YYYY/MM/DD.
@@ -99,16 +56,6 @@ const formatDate = (dateString: string): string => {
 
 
 export default async function Page() {
-
-    const columns = [
-        { header: 'Numero de Transacción', accessorKey: 'transaction_code' },
-        { header: 'Nombre del cliente', accessorKey: 'first_name'},
-        { header: 'Producto', accessorKey: 'product_name' },
-        { header: 'Cantidad', accessorKey: 'product_amount' },
-        { header: 'Fecha', accessorKey: 'created_at' },
-        { header: 'Monto', accessorKey: 'total_price' },
-        { header: 'Estado', accessorKey: 'state' },
-    ];
     
     // --- OBTENER EL ID DEL USUARIO DESDE LA SESIÓN DE SUPABASE ---
     const supabase = await createClient();
@@ -142,45 +89,58 @@ export default async function Page() {
     // -------------------------------------------------------------------
     // --- LÓGICA DE TRANSACCIONES FILTRADAS POR ID DE NEGOCIO (USANDO RPC) ---
     // -------------------------------------------------------------------
-    let allTransactions: Transaction[] = [];
+    let allTransactions: AffiliateTransaction[] = [];
     let transactionsError: string | null = null;
     let monthlyTotal = 0; 
     
     if (affiliatedBusinessId) {
-        // Llama a la función RPC
-        const { data: rawTransactions, error: fetchError } = await getTransactionsByAffiliatedBusinessId(affiliatedBusinessId);
+        // Llama directamente a Supabase RPC
+        const { data: rawTransactions, error: fetchError } = await supabase.rpc(
+            'get_transactions_by_affiliated_business_id',
+            { p_affiliated_business_id: affiliatedBusinessId }
+        );
 
         if (fetchError) {
-            transactionsError = `Error al obtener transacciones: ${fetchError}`;
+            transactionsError = `Error al obtener transacciones: ${fetchError.message}`;
             console.error("Error al cargar transacciones del negocio:", transactionsError);
         } else if (rawTransactions) {
-            // Mapear los datos que retorna el RPC al tipo 'Transaction'
-            allTransactions = rawTransactions.map(tx => ({
-                transaction_code: tx.transaction_code,
-                first_name: tx.first_name || 'N/A', // Asumiendo que el RPC retorna el nombre del cliente
-                product_name: tx.product_names || 'N/A', // Asumiendo que el RPC retorna el nombre del producto
-                product_amount: tx.total_product_amount,
-                // APLICAR FORMATO DE FECHA AQUÍ (yyyy/mm/dd)
-                created_at: formatDate(tx.created_at),
-                total_price: tx.total_price,
-                state: tx.state,
-            } as Transaction));
+            // Mapear y transformar los datos al formato AffiliateTransaction
+            allTransactions = rawTransactions.map((tx: any) => ({
+                ab_transaction_id: tx.ab_transaction_id || '',
+                person_id: {
+                    user_name: tx.user_name || '',
+                    first_name: tx.first_name || '',
+                    last_name: tx.last_name || ''
+                },
+                affiliated_business_id: {
+                    affiliated_business_name: tx.affiliated_business_name || ''
+                },
+                product_id: {
+                    product_name: tx.product_names || tx.product_name || ''
+                },
+                currency: {
+                    currency_name: tx.currency_name || 'CRC',
+                    currency_exchange: tx.currency_exchange || 1
+                },
+                total_price: tx.total_price || 0,
+                product_amount: tx.total_product_amount || tx.product_amount || 0,
+                transaction_code: tx.transaction_code || '',
+                state: tx.state || '',
+                created_at: tx.created_at || ''
+            }));
         }
     } else {
         // Si no hay ID de negocio, el error será el de autenticación/negocio no encontrado.
         transactionsError = productsError; 
     }
     
-    let recentTransactions: Transaction[] = [];
+    let recentTransactions: AffiliateTransaction[] = [];
 
-    // Cálculo del total mensual (se reubica y usa `allTransactions`)
+    // Cálculo del total mensual
     if (!transactionsError) {
-        recentTransactions = allTransactions;
+        recentTransactions = allTransactions.slice(0, 10); // Mostrar solo las 10 más recientes
         monthlyTotal = allTransactions.reduce((sum, transaction) => {
-            const amountValue = (transaction.total_price ?? 0).toString();
-            // Usamos parseFloat y manejo de NaN para robustez
-            const amount = parseFloat(amountValue); 
-            return sum + (isNaN(amount) ? 0 : amount);
+            return sum + (transaction.total_price || 0);
         }, 0);
     }
 
@@ -195,17 +155,6 @@ export default async function Page() {
             exchangeRate = colonCurrency.currency_exchange;
         }
     }
-    
-    const tableData = recentTransactions.map(tx => {
-        const normalizedTx = { 
-            ...tx, 
-            // La fecha ya viene formateada desde el mapeo de allTransactions
-            product_amount: tx.product_amount ?? 0,
-            total_price: tx.total_price ?? 0,
-            state: tx.state ?? 'N/A',
-        };
-        return normalizedTx as Record<string, string | number>;
-    });
 
     // -------------------------------------------------------------------
     // --- LÓGICA PARA OBTENER PRODUCTOS DEL COMERCIO LOGUEADO (sin cambios) ---
@@ -225,12 +174,12 @@ export default async function Page() {
             productsError = null;
 
             // PASO 3: Mapear los datos de la base de datos (ProductData) al tipo Product
-            transformedProducts = businessProducts.map(item => ({
-                id: item.product_id.product_id, // string UUID
-                imagen: '', 
-                titulo: item.product_id.product_name,
-                descripcion: item.product_id.description,
-                costo: item.product_price,
+            transformedProducts = businessProducts.map((item, index) => ({
+                id: item.product_id?.product_id || `product-${index}`, // Fallback to index if ID is missing
+                imagen: item.product_id?.image_url || '/productos/placeholder.png',
+                titulo: item.product_id?.product_name || 'Producto sin nombre',
+                descripcion: item.product_id?.description || '',
+                costo: item.product_price || 0,
             }));
         }
     } else if (!productsError) {
@@ -241,17 +190,21 @@ export default async function Page() {
     return (
         <div className="container mx-auto px-4 space-y-12 md:space-y-20">
             <h1 className="text-2xl font-bold mb-4 pt-10">Panel de Control</h1>
-            <h2 className="text-lg text-gray-600 mb-5">¡Bienvenido! Gestiona las opciones de tu comercio desde aquí</h2>
+            <h2 className="text-lg text-gray-600 mb-5">
+                {`¡Bienvenido${businessProducts[0]?.affiliated_business_id?.affiliated_business_name ? ' ' + businessProducts[0].affiliated_business_id.affiliated_business_name : ''}! Gestiona las opciones de tu comercio desde aquí`}
+            </h2>
             
             {/* Tabla de Transacciones */}
-            <div className="bg-green-50 min-h-96 max-h-96 border border-gray-300 rounded-lg p-6 shadow-md"> 
-                <h3 className="text-xl font-semibold mb-4">Transacciones recientes</h3>
+            <div className="border border-gray-300 rounded-lg shadow-md overflow-hidden"> 
+                <div className="bg-green-50 p-6 border-b border-gray-300">
+                    <h3 className="text-xl font-semibold">Transacciones recientes</h3>
+                </div>
                 {transactionsError ? (
-                    <div className="text-red-600 border border-red-300 p-4 rounded bg-red-50">
+                    <div className="text-red-600 border border-red-300 p-4 m-6 rounded bg-red-50">
                         Error al cargar transacciones: {transactionsError}
                     </div>
                 ) : (
-                    <CustomTable columns={columns} data={tableData} />
+                    <TransactionTable transactions={recentTransactions} loading={false} />
                 )}
             </div>
 

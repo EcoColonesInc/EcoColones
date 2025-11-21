@@ -5,6 +5,7 @@ export type ProductData = {
         product_name: string;
         description: string;
         state: string;
+        image_url: string;
     };
     affiliated_business_id: { 
         affiliated_business_id: string;

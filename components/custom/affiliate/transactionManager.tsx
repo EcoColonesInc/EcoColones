@@ -99,7 +99,7 @@ export const TransactionManager = ({ initialTransactions, errMsg }: TransactionM
                 
                 {/* Tabla a la izquierda */}
                 <div className="xl:col-span-2">
-                    <div className="bg-green-50 h-auto border border-gray-300 rounded-lg p-6 shadow-md">
+                    <div className="bg-gray-50 h-auto border border-gray-300 rounded-lg p-6 shadow-md">
                         <TransactionTable 
                             transactions={filteredTransactions}
                             loading={false}
@@ -107,7 +107,7 @@ export const TransactionManager = ({ initialTransactions, errMsg }: TransactionM
                         
                         {/* Total transacciones*/}
                         <div className="mt-3 text-center">
-                            <p className="text-sm text-green-700">
+                            <p className="text-sm text-gray-700">
                                 Mostrando {filteredTransactions.length} de {initialTransactions.length} transacciones
                             </p>
                         </div>

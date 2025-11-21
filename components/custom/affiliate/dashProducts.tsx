@@ -6,7 +6,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 
 interface Product {
-    id: string; // Mantengo 'string' porque los IDs de Supabase son UUIDs y esto es CRUCIAL para la navegación
+    id: string; 
     imagen: string;
     titulo: string;
     descripcion: string;

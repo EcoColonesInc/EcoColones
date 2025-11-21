@@ -66,5 +66,43 @@ export async function getProductsByAffiliatedBusinessId(affiliatedBusinessId: st
     if (error) {
       return { error: error.message, data: null };
     }
+    
+    // Fetch images from Supabase Storage for each product
+    if (data && Array.isArray(data)) {
+      const dataWithImages = await Promise.all(data.map(async (item: any) => {
+        const productId = item.product_id?.product_id;
+        let imageUrl = '';
+        
+        if (productId) {
+          const extensions = ['png', 'jpg', 'jpeg', 'webp'];
+          for (const ext of extensions) {
+            const path = `${productId}.${ext}`;
+            const { data: storageData } = supabase.storage.from("product_logo").getPublicUrl(path);
+            if (storageData?.publicUrl) {
+              try {
+                const response = await fetch(storageData.publicUrl, { method: 'HEAD' });
+                if (response.ok) {
+                  imageUrl = storageData.publicUrl;
+                  break;
+                }
+              } catch {
+                // Continue to next extension
+              }
+            }
+          }
+        }
+        
+        return {
+          ...item,
+          product_id: {
+            ...item.product_id,
+            image_url: imageUrl
+          }
+        };
+      }));
+      
+      return { error: null, data: dataWithImages };
+    }
+    
     return { error: null, data };
 }
