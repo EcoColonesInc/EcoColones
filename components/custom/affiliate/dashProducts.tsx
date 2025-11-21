@@ -46,6 +46,7 @@ export const DashProducts: React.FC<DashProductsProps> = ({ products }) => {
                                 <p className="text-sm text-gray-600 line-clamp-2">
                                     {product.descripcion}
                                 </p>
+                                
                                 <p className="text-green-700 font-bold">
                                     {product.costo} EcoColones
                                 </p>
