@@ -19,14 +19,16 @@ interface UserScore {
 
 export default function Page() {
     const router = useRouter();
+    const [activeUserTab, setActiveUserTab] = useState<'usuario' | 'nombre'>('usuario');
+    const [activeCedulaTab, setActiveCedulaTab] = useState<'cedula' | 'numero'>('cedula');
     const [selectedMaterials, setSelectedMaterials] = useState<string[]>(['Plástico']);
     const [userScores, setUserScores] = useState<UserScore[]>([]);
     const [topRecyclers, setTopRecyclers] = useState<TopRecycler[]>([]);
-    const [userSearchInput, setUserSearchInput] = useState('');
-    const [cedulaSearchInput, setCedulaSearchInput] = useState('');
     const [loading, setLoading] = useState(true);
     const [collectionCenterId, setCollectionCenterId] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const [userSearchInput, setUserSearchInput] = useState('');
+    const [cedulaSearchInput, setCedulaSearchInput] = useState('');
 
     useEffect(() => {
         // Fetch the collection center ID for the authenticated user
