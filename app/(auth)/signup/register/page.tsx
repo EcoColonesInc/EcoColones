@@ -92,10 +92,10 @@ export default function RegisterPage() {
                 console.error('Error loading locations:', error);
                 showToast('Error al cargar las ubicaciones', 'error');
             }
-            }
+        }
 
-            loadLocations();
-        }, [showToast]);
+        loadLocations();
+    }, []);
 
     // Filter provinces when country changes
     useEffect(() => {
