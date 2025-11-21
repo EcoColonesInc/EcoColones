@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 interface TopRecycler {
     ranking: number;
@@ -9,14 +10,89 @@ interface TopRecycler {
     last_transaction_date: string;
 }
 
+interface UserScore {
+    usuario: string;
+    nombre: string;
+    peso_kg: number;
+    puntos_obtenidos: number;
+}
+
 export default function Page() {
+    const router = useRouter();
     const [activeUserTab, setActiveUserTab] = useState<'usuario' | 'nombre'>('usuario');
     const [activeCedulaTab, setActiveCedulaTab] = useState<'cedula' | 'numero'>('cedula');
     const [selectedMaterials, setSelectedMaterials] = useState<string[]>(['Plástico']);
-    const [userSearchInput, setUserSearchInput] = useState('');
-    const [cedulaSearchInput, setCedulaSearchInput] = useState('');
+    const [userScores, setUserScores] = useState<UserScore[]>([]);
     const [topRecyclers, setTopRecyclers] = useState<TopRecycler[]>([]);
     const [loading, setLoading] = useState(true);
+    const [collectionCenterId, setCollectionCenterId] = useState<string | null>(null);
+    const [error, setError] = useState<string | null>(null);
+    const [userSearchInput, setUserSearchInput] = useState('');
+    const [cedulaSearchInput, setCedulaSearchInput] = useState('');
+
+    useEffect(() => {
+        // Fetch the collection center ID for the authenticated user
+        const fetchCollectionCenter = async () => {
+            try {
+                const response = await fetch('/api/collectioncenters/user');
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('Collection center data:', data);
+                    if (!data || !data.collectioncenter_id) {
+                        setError('No se encontró un centro de acopio asociado a este usuario');
+                        setLoading(false);
+                        return;
+                    }
+                    setCollectionCenterId(data.collectioncenter_id);
+                } else if (response.status === 401) {
+                    console.error('Usuario no autenticado, redirigiendo al login...');
+                    setError('Sesión expirada. Redirigiendo al login...');
+                    setTimeout(() => router.push('/login'), 2000);
+                } else {
+                    const errorData = await response.json();
+                    console.error('Error response:', errorData);
+                    const errorMessage = errorData.error || 'Error desconocido';
+                    setError(`Error: ${errorMessage}`);
+                    setLoading(false);
+                }
+            } catch (error) {
+                console.error('Error fetching collection center:', error);
+                setError('Error al conectar con el servidor');
+                setLoading(false);
+            }
+        };
+
+        fetchCollectionCenter();
+    }, [router]);
+
+    useEffect(() => {
+        if (!collectionCenterId) return;
+
+        const fetchUserScores = async () => {
+            setLoading(true);
+            setError(null);
+            try {
+                console.log('Fetching scores for center:', collectionCenterId);
+                const response = await fetch(`/api/collectioncenters/${collectionCenterId}/scores`);
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('User scores data:', data);
+                    setUserScores(data || []);
+                } else {
+                    const errorData = await response.json();
+                    console.error('Error response:', errorData);
+                    setError(`Error al obtener puntajes: ${errorData.error || 'Desconocido'}`);
+                }
+            } catch (error) {
+                console.error('Error fetching user scores:', error);
+                setError('Error al cargar los puntajes');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchUserScores();
+    }, [collectionCenterId]);
     
     // Obtener el collection center ID del usuario autenticado
     useEffect(() => {
@@ -70,14 +146,6 @@ export default function Page() {
         const date = new Date(dateString);
         return date.toISOString().split('T')[0];
     };
-    
-    const userPoints = [
-        { user: 'PedroR15', name: 'Pedro Gutierrez', weight: '25.0 kg', points: 375 },
-        { user: 'FerMar96', name: 'Fatima Molina', weight: '30 kg', points: 187.5 },
-        { user: 'Marquitos18', name: 'Marcos Valverde', weight: '28 kg', points: 180 },
-        { user: 'GonZillaMarc', name: 'Bill González', weight: '32 kg', points: 155 },
-        { user: 'Albert06', name: 'Alberto Zamora', weight: '49 kg', points: 123 },
-    ];
     
     const materials = [
         { name: 'Plástico', icon: '♻️' },
@@ -189,28 +257,46 @@ export default function Page() {
                             />
                         </div>
                         
-                        <div className="overflow-x-auto">
-                            <table className="w-full">
-                                <thead>
-                                    <tr className="text-xs text-gray-600 border-b border-gray-200">
-                                        <th className="text-center pb-3 font-medium">Usuario</th>
-                                        <th className="text-center pb-3 font-medium">Nombre</th>
-                                        <th className="text-center pb-3 font-medium">Peso (kg)</th>
-                                        <th className="text-center pb-3 font-medium">Puntos obtenidos</th>
+                        <table className="w-full">
+                            <thead>
+                                <tr className="border-b text-sm">
+                                    <th className="text-center py-2">Usuario</th>
+                                    <th className="text-center py-2">Nombre</th>
+                                    <th className="text-center py-2">Peso (kg)</th>
+                                    <th className="text-center py-2">Puntos obtenidos</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {loading ? (
+                                    <tr>
+                                        <td colSpan={4} className="py-3 text-sm text-center text-gray-500">
+                                            Cargando...
+                                        </td>
                                     </tr>
-                                </thead>
-                                <tbody>
-                                    {userPoints.map((user, index) => (
-                                        <tr key={index} className="border-b border-gray-100">
-                                            <td className="py-3 text-sm text-center">{user.user}</td>
-                                            <td className="py-3 text-sm text-center">{user.name}</td>
-                                            <td className="py-3 text-sm text-center">{user.weight}</td>
-                                            <td className="py-3 text-sm font-medium text-center">{user.points}</td>
+                                ) : error ? (
+                                    <tr>
+                                        <td colSpan={4} className="py-3 text-sm text-center text-red-500">
+                                            {error}
+                                        </td>
+                                    </tr>
+                                ) : userScores.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={4} className="py-3 text-sm text-center text-gray-500">
+                                            No hay datos disponibles
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    userScores.map((score, index) => (
+                                        <tr key={index} className="border-b">
+                                            <td className="py-3 text-sm text-center">{score.usuario}</td>
+                                            <td className="py-3 text-sm text-center">{score.nombre}</td>
+                                            <td className="py-3 text-sm text-center">{score.peso_kg.toFixed(2)} kg</td>
+                                            <td className="py-3 text-sm text-center">{score.puntos_obtenidos}</td>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
                     </div>
                     
                     {/* Material Filter Card */}
