@@ -243,65 +243,7 @@ export default function ComerciosClient({
         </Card>
 
         <div className="flex flex-col gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Top 5 de productos más canjeados</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {topError && (
-                <p className="text-sm text-red-600 mb-2">{topError}</p>
-              )}
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="text-center">Puesto</TableHead>
-                    <TableHead className="text-center">Nombre</TableHead>
-                    <TableHead className="text-right">Veces Canjeado</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {topLoading
-                    ? Array.from({ length: 5 }).map((_, i) => (
-                        <TableRow key={i}>
-                          <TableCell>
-                            <div className="h-4 w-10 animate-pulse bg-muted rounded" />
-                          </TableCell>
-                          <TableCell>
-                            <div className="h-4 w-40 animate-pulse bg-muted rounded" />
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="h-4 w-16 ml-auto animate-pulse bg-muted rounded" />
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    : topProducts.slice(0, 5).map((p, idx) => {
-                        const rank = idx + 1;
-                        const medal =
-                          rank === 1
-                            ? "🥇"
-                            : rank === 2
-                            ? "🥈"
-                            : rank === 3
-                            ? "🥉"
-                            : "";
-                        return (
-                          <TableRow key={`${p.product_name}-${idx}`}>
-                            <TableCell className="whitespace-nowrap flex items-center gap-2">
-                              <span aria-hidden>{medal}</span>
-                              <span>{rank}</span>
-                            </TableCell>
-                            <TableCell>{p.product_name}</TableCell>
-                            <TableCell className="text-right">
-                              {p.times_purchased}
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-
+          
           <FiltersPanel>
             <div className="flex flex-col gap-1">
               <label className="font-medium">Nombre del comercio</label>
@@ -363,6 +305,65 @@ export default function ComerciosClient({
               Limpiar filtros
             </button>
           </FiltersPanel>
+          <Card>
+            <CardHeader>
+              <CardTitle>Top 5 de productos más canjeados</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {topError && (
+                <p className="text-sm text-red-600 mb-2">{topError}</p>
+              )}
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-center">Puesto</TableHead>
+                    <TableHead className="text-center">Nombre</TableHead>
+                    <TableHead className="text-right">Veces Canjeado</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {topLoading
+                    ? Array.from({ length: 5 }).map((_, i) => (
+                        <TableRow key={i}>
+                          <TableCell>
+                            <div className="h-4 w-10 animate-pulse bg-muted rounded" />
+                          </TableCell>
+                          <TableCell>
+                            <div className="h-4 w-40 animate-pulse bg-muted rounded" />
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="h-4 w-16 ml-auto animate-pulse bg-muted rounded" />
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    : topProducts.slice(0, 5).map((p, idx) => {
+                        const rank = idx + 1;
+                        const medal =
+                          rank === 1
+                            ? "🥇"
+                            : rank === 2
+                            ? "🥈"
+                            : rank === 3
+                            ? "🥉"
+                            : "";
+                        return (
+                          <TableRow key={`${p.product_name}-${idx}`}>
+                            <TableCell className="whitespace-nowrap flex items-center gap-2">
+                              <span aria-hidden>{medal}</span>
+                              <span>{rank}</span>
+                            </TableCell>
+                            <TableCell>{p.product_name}</TableCell>
+                            <TableCell className="text-right">
+                              {p.times_purchased}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+
         </div>
       </div>
     </div>

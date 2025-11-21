@@ -306,8 +306,8 @@ export default function ConsultasUsuariosClient({
   const [fProvince, setFProvince] = useState("");
   const [fCity, setFCity] = useState("");
   const [fDistrict, setFDistrict] = useState("");
-  const [fDateFrom, setFDateFrom] = useState("");
-  const [fDateTo, setFDateTo] = useState("");
+  const [fDateFrom] = useState("");
+  const [fDateTo] = useState("");
 
   // Sección: usuarios sin cambio de contraseña
   interface NoPwdRow {
@@ -800,25 +800,23 @@ export default function ConsultasUsuariosClient({
           <Toast message={toast.message} type={toast.type} duration={toast.duration} onClose={hideToast} position="top-right" />
         )}
       </div>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className= "flex flex-auto">
         <Card className="lg:col-span-2 h-full">
           <CardHeader>
             <CardTitle>Reporte de puntos por usuario</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col h-[520px]">
-            <Table className="mb-1">
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Usuario</TableHead>
-                  <TableHead>Total</TableHead>
-                  <TableHead>Acumulados</TableHead>
-                  <TableHead>Canjeados</TableHead>
-                  <TableHead>Diferencia</TableHead>
-                </TableRow>
-              </TableHeader>
-            </Table>
             <div className="overflow-y-auto pr-2 flex-1">
-              <Table>
+              <Table className="w-full table-fixed">
+                <TableHeader className="sticky top-0 bg-background z-10">
+                  <TableRow>
+                    <TableHead>Usuario</TableHead>
+                    <TableHead>Total</TableHead>
+                    <TableHead>Acumulados</TableHead>
+                    <TableHead>Canjeados</TableHead>
+                    <TableHead>Diferencia</TableHead>
+                  </TableRow>
+                </TableHeader>
                 <TableBody>
                   {pointsReport.rows.map((r, i) => (
                     <TableRow key={i}>
@@ -833,7 +831,7 @@ export default function ConsultasUsuariosClient({
               </Table>
             </div>
             <div className="mt-3 border-t pt-3">
-              <Table>
+              <Table className="w-full table-fixed">
                 <TableBody>
                   <TableRow>
                     <TableCell className="font-medium">
@@ -857,25 +855,6 @@ export default function ConsultasUsuariosClient({
             </div>
           </CardContent>
         </Card>
-        <FiltersPanel title="Filtrar puntos">
-          <div className="flex flex-col gap-2">
-            <label className="font-medium">Fecha</label>
-            <div className="grid grid-cols-2 gap-2">
-              <input
-                type="date"
-                className="border rounded px-2 py-1"
-                value={fDateFrom}
-                onChange={(e) => setFDateFrom(e.target.value)}
-              />
-              <input
-                type="date"
-                className="border rounded px-2 py-1"
-                value={fDateTo}
-                onChange={(e) => setFDateTo(e.target.value)}
-              />
-            </div>
-          </div>
-        </FiltersPanel>
       </div>
     </div>
   );

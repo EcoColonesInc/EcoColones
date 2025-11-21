@@ -68,13 +68,11 @@ export default function ProductosComercioClient({
   useEffect(() => {
     load();
   }, [load]);
-
   const displayed: AffiliatedBusinessProduct[] = relations
     .filter((r) =>
       r.product_id.product_name.toLowerCase().includes(search.toLowerCase())
     )
     .map((r) => ({ ...r }));
-
   return (
     <div className="min-h-screen px-4 md:px-8 lg:px-12 py-6 space-y-6 max-w-6xl mx-auto">
       <div className="flex items-center justify-between flex-wrap gap-4">
@@ -133,7 +131,7 @@ export default function ProductosComercioClient({
                 }}
                 onEdit={() =>
                   router.push(
-                    `/admin/consultas/comercios/${businessId}/productos/${rel.affiliated_business_x_prod}`
+                    `/admin/consultas/comercios/${businessId}/productos/${rel.product_id.product_id}`
                   )
                 }
               />

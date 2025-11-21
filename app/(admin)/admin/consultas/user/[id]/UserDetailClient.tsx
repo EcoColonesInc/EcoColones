@@ -142,7 +142,7 @@ export default function UserDetailClient({ initialProfile }: UserDetailClientPro
           <div className="mt-6">
             <Button
               variant="destructive"
-              onClick={() => router.push("/admin/consultas")}
+              onClick={() => router.push("/admin/consultas/user")}
             >
               Cancelar
             </Button>
