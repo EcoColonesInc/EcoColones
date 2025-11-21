@@ -45,3 +45,24 @@ export async function getAffiliatedBusinessById(affiliatedBusinessId: string) {
     }
     return { error: null, data };
 }
+
+// Fetch the collection center of the authenticated user
+export async function getUserAffiliatedBusiness() {
+  const supabase = await createClient();
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: 'Unauthorized', data: null };
+  }
+
+  const { data, error } = await supabase
+    .from('affiliatedbusiness')
+    .select('affiliated_business_id, manager_id(first_name, last_name, second_last_name), district_id(district_name), affiliated_business_name, phone, email, description')
+    .eq('manager_id', user.id)
+    .single();
+
+  if (error) {
+    return { error: error.message, data: null };
+  }
+  return { error: null, data };
+}
