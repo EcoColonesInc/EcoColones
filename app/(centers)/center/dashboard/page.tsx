@@ -30,7 +30,23 @@ export default function Page() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [collectionCenterId, setCollectionCenterId] = useState<string | null>(null);
+    const [collectionCenterName, setCollectionCenterName] = useState<string | null>(null);
 
+    useEffect(() => {
+        if (!collectionCenterId) return;
+        (async () => {
+            try {
+                const res = await fetch(`/api/collectioncenters/${collectionCenterId}/get`);
+                if (!res.ok) return;
+                const data = await res.json();
+                setCollectionCenterName(
+                    data?.collectioncenter_name ?? data?.name ?? null
+                );
+            } catch {
+                // silent
+            }
+        })();
+    }, [collectionCenterId]);
     useEffect(() => {
         async function fetchData() {
             try {
@@ -88,6 +104,7 @@ export default function Page() {
         <div className="min-h-screen bg-gray-50 p-8">
             <main className="max-w-7xl mx-auto">
                 <h1 className="text-3xl font-bold mb-2">Panel del centro de acopio</h1>
+                <h2 className="text-2xl font-bold mb-2">{collectionCenterName}</h2>
                 <p className="text-gray-600 mb-8">
                     ¡Bienvenido de vuelta! Gestiona las opciones de tu centro de acopio desde aquí
                 </p>
@@ -169,20 +186,12 @@ export default function Page() {
                                     className="w-full p-3 border border-gray-200 rounded-lg text-sm"
                                 />
                             </div>
-                            <div>
-                                <label className="block text-sm text-gray-600 mb-2">Usuario-comprador</label>
-                                <input 
-                                    type="text" 
-                                    placeholder="Ingrese el nombre del usuario" 
-                                    className="w-full p-3 border border-gray-200 rounded-lg text-sm"
-                                />
-                            </div>
                             <button className="w-full bg-green-500 hover:bg-green-600 text-white py-3 rounded-lg font-medium text-sm">
-                                Enviar entrada
+                                Agregar a la lista {/*Deberia agregar el material registrado a la lista que funciona como un carrito */}
                             </button>
                         </div>
                     </section>
-
+                                    
                     {/* Aggregated Materials */}
                     <section className="bg-white rounded-lg p-6 shadow-sm">
                         <h2 className="text-lg font-semibold mb-4">Lista de materiales agregados</h2>
@@ -220,6 +229,17 @@ export default function Page() {
                                     <button className="text-red-500 ml-2 hover:text-red-600">🗑️</button>
                                 </div>
                             </div>
+                            <div>
+                                <label className="block text-sm text-gray-600 mb-2">Usuario</label>
+                                <input 
+                                    type="text" 
+                                    placeholder="Ingrese el ID del usuario (leer QR)" 
+                                    className="w-full p-3 border border-gray-200 rounded-lg text-sm"
+                                />
+                            </div>
+                            <button className="w-full bg-green-500 hover:bg-green-600 text-white py-3 rounded-lg font-medium text-sm">
+                                Enviar entrada
+                            </button>
                         </div>
                     </section>
 
