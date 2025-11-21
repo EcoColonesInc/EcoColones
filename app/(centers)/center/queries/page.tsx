@@ -18,18 +18,30 @@ interface UserScore {
     cedula: string;
 }
 
+interface RecycledMaterial {
+    puesto: number;
+    material: string;
+    peso_kg: number;
+    ultima_fecha: string;
+}
+
 export default function Page() {
     const router = useRouter();
     const [activeUserTab, setActiveUserTab] = useState<'usuario' | 'nombre'>('usuario');
     const [activeCedulaTab, setActiveCedulaTab] = useState<'cedula' | 'numero'>('cedula');
     const [userScores, setUserScores] = useState<UserScore[]>([]);
     const [topRecyclers, setTopRecyclers] = useState<TopRecycler[]>([]);
+    const [recycledMaterials, setRecycledMaterials] = useState<RecycledMaterial[]>([]);
     const [loadingScores, setLoadingScores] = useState(true);
     const [loadingTopRecyclers, setLoadingTopRecyclers] = useState(true);
+    const [loadingMaterials, setLoadingMaterials] = useState(true);
     const [collectionCenterId, setCollectionCenterId] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [userSearchInput, setUserSearchInput] = useState('');
     const [cedulaSearchInput, setCedulaSearchInput] = useState('');
+    const [selectedYear, setSelectedYear] = useState<string>('');
+    const [selectedMonth, setSelectedMonth] = useState<string>('');
+    const [totalRecycled, setTotalRecycled] = useState<number>(0);
 
     useEffect(() => {
         // Fetch the collection center ID for the authenticated user
@@ -167,13 +179,46 @@ export default function Page() {
         return date.toISOString().split('T')[0];
     };
     
-    const recycledMaterials = [
-        { position: 1, material: 'Plástico', weight: '49 kg', date: '2024-07-29' },
-        { position: 2, material: 'Papel', weight: '40 kg', date: '2024-07-31' },
-        { position: 3, material: 'Vidrio', weight: '35 kg', date: '2024-07-26' },
-        { position: 4, material: 'Metales', weight: '32 kg', date: '2024-07-27' },
-        { position: 5, material: 'Cartón', weight: '29 kg', date: '2024-07-31' },
-    ];
+    // Fetch recycled materials by collection center
+    useEffect(() => {
+        async function fetchRecycledMaterials() {
+            if (!collectionCenterId) return;
+            
+            try {
+                setLoadingMaterials(true);
+                const params = new URLSearchParams();
+                if (selectedMonth) params.append('month', selectedMonth);
+                if (selectedYear) params.append('year', selectedYear);
+                
+                const queryString = params.toString();
+                const url = `/api/collectioncenters/${collectionCenterId}/materials${queryString ? `?${queryString}` : ''}`;
+                
+                const response = await fetch(url);
+                if (!response.ok) {
+                    console.error('Error fetching recycled materials');
+                    return;
+                }
+                
+                const data = await response.json();
+                setRecycledMaterials(data || []);
+                
+                // Fetch total weight separately    
+                const totalResponse = await fetch(`/api/collectioncenters/${collectionCenterId}/total-weight${queryString ? `?${queryString}` : ''}`);
+                if (totalResponse.ok) {
+                    const totalData = await totalResponse.json();
+                    setTotalRecycled(totalData.total || 0);
+                } else {
+                    setTotalRecycled(0);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            } finally {
+                setLoadingMaterials(false);
+            }
+        }
+        
+        fetchRecycledMaterials();
+    }, [collectionCenterId, selectedMonth, selectedYear]);
     
     return (
         <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-6">
@@ -325,14 +370,28 @@ export default function Page() {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {recycledMaterials.map((item) => (
-                                            <tr key={item.position} className="border-b border-gray-100">
-                                                <td className="py-3 px-4 text-sm text-center">{item.position}</td>
-                                                <td className="py-3 px-4 text-sm font-medium text-center">{item.material}</td>
-                                                <td className="py-3 px-4 text-sm text-center">{item.weight}</td>
-                                                <td className="py-3 px-4 text-xs text-gray-500 text-center">{item.date}</td>
+                                        {loadingMaterials ? (
+                                            <tr>
+                                                <td colSpan={4} className="py-8 text-center text-gray-500">
+                                                    Cargando materiales...
+                                                </td>
                                             </tr>
-                                        ))}
+                                        ) : recycledMaterials.length === 0 ? (
+                                            <tr>
+                                                <td colSpan={4} className="py-8 text-center text-gray-500">
+                                                    No se encontraron materiales reciclados
+                                                </td>
+                                            </tr>
+                                        ) : (
+                                            recycledMaterials.map((item) => (
+                                                <tr key={item.puesto} className="border-b border-gray-100">
+                                                    <td className="py-3 px-4 text-sm text-center">{item.puesto}</td>
+                                                    <td className="py-3 px-4 text-sm font-medium text-center">{item.material}</td>
+                                                    <td className="py-3 px-4 text-sm text-center">{item.peso_kg} kg</td>
+                                                    <td className="py-3 px-4 text-xs text-gray-500 text-center">{item.ultima_fecha}</td>
+                                                </tr>
+                                            ))
+                                        )}
                                     </tbody>
                                 </table>
                             </div>
@@ -341,26 +400,40 @@ export default function Page() {
                             <div className="w-64 flex flex-col gap-4">
                                 <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
                                     <p className="text-sm">
-                                        Total reciclado: <span className="font-bold text-base">185 kg</span>
+                                        Total reciclado: <span className="font-bold text-base">{totalRecycled.toFixed(2)} kg</span>
                                     </p>
                                 </div>
                                 
                                 <div className="space-y-3">
                                     <p className="text-sm font-semibold text-gray-700">Filtrar por</p>
-                                    <select className="w-full p-3 bg-gray-200 rounded-lg text-sm font-medium text-gray-700 border-none focus:ring-2 focus:ring-green-500 focus:outline-none">
-                                        <option>Seleccionar año</option>
-                                        <option>2024</option>
-                                        <option>2023</option>
+                                    <select 
+                                        value={selectedYear}
+                                        onChange={(e) => setSelectedYear(e.target.value)}
+                                        className="w-full p-3 bg-gray-200 rounded-lg text-sm font-medium text-gray-700 border-none focus:ring-2 focus:ring-green-500 focus:outline-none"
+                                    >
+                                        <option value="">Seleccionar año</option>
+                                        {Array.from({ length: new Date().getFullYear() - 2001 + 1 }, (_, i) => 2001 + i).reverse().map(year => (
+                                            <option key={year} value={year}>{year}</option>
+                                        ))}
                                     </select>
-                                    <select className="w-full p-3 bg-gray-200 rounded-lg text-sm font-medium text-gray-700 border-none focus:ring-2 focus:ring-green-500 focus:outline-none">
-                                        <option>Seleccionar mes</option>
-                                        <option>Enero</option>
-                                        <option>Febrero</option>
-                                        <option>Marzo</option>
-                                        <option>Abril</option>
-                                        <option>Mayo</option>
-                                        <option>Junio</option>
-                                        <option>Julio</option>
+                                    <select 
+                                        value={selectedMonth}
+                                        onChange={(e) => setSelectedMonth(e.target.value)}
+                                        className="w-full p-3 bg-gray-200 rounded-lg text-sm font-medium text-gray-700 border-none focus:ring-2 focus:ring-green-500 focus:outline-none"
+                                    >
+                                        <option value="">Seleccionar mes</option>
+                                        <option value="1">Enero</option>
+                                        <option value="2">Febrero</option>
+                                        <option value="3">Marzo</option>
+                                        <option value="4">Abril</option>
+                                        <option value="5">Mayo</option>
+                                        <option value="6">Junio</option>
+                                        <option value="7">Julio</option>
+                                        <option value="8">Agosto</option>
+                                        <option value="9">Septiembre</option>
+                                        <option value="10">Octubre</option>
+                                        <option value="11">Noviembre</option>
+                                        <option value="12">Diciembre</option>
                                     </select>
                                 </div>
                             </div>

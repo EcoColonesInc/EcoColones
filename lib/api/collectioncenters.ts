@@ -223,3 +223,27 @@ export async function getTopRecyclersByCenter(collectionCenterId: string) {
 
   return { error: null, data };
 }
+
+// Fetch recycled materials by collection center
+export async function getCollectionCenterRecycledMaterials(
+  collectionCenterId: string,
+  month?: string,
+  year?: string
+) {
+  const supabase = await createClient();
+  
+  const params: Record<string, string | null> = {
+    p_collection_center_id: collectionCenterId,
+    p_month: month || null,
+    p_year: year || null
+  };
+  
+  const { data, error } = await supabase.rpc('get_top_recycled_materials_by_center', params);
+
+  if (error) {
+    console.error('RPC Error:', error);
+    return { error: error.message, data: null };
+  }
+
+  return { error: null, data };
+}
