@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 interface TopRecycler {
     ranking: number;
@@ -9,20 +10,127 @@ interface TopRecycler {
     last_transaction_date: string;
 }
 
+interface UserScore {
+    usuario: string;
+    nombre: string;
+    peso_kg: number;
+    puntos_obtenidos: number;
+    cedula: string;
+}
+
+interface RecycledMaterial {
+    puesto: number;
+    material: string;
+    peso_kg: number;
+    ultima_fecha: string;
+}
+
 export default function Page() {
+    const router = useRouter();
     const [activeUserTab, setActiveUserTab] = useState<'usuario' | 'nombre'>('usuario');
     const [activeCedulaTab, setActiveCedulaTab] = useState<'cedula' | 'numero'>('cedula');
-    const [selectedMaterials, setSelectedMaterials] = useState<string[]>(['Plástico']);
+    const [userScores, setUserScores] = useState<UserScore[]>([]);
+    const [topRecyclers, setTopRecyclers] = useState<TopRecycler[]>([]);
+    const [recycledMaterials, setRecycledMaterials] = useState<RecycledMaterial[]>([]);
+    const [loadingScores, setLoadingScores] = useState(true);
+    const [loadingTopRecyclers, setLoadingTopRecyclers] = useState(true);
+    const [loadingMaterials, setLoadingMaterials] = useState(true);
+    const [collectionCenterId, setCollectionCenterId] = useState<string | null>(null);
+    const [error, setError] = useState<string | null>(null);
     const [userSearchInput, setUserSearchInput] = useState('');
     const [cedulaSearchInput, setCedulaSearchInput] = useState('');
-    const [topRecyclers, setTopRecyclers] = useState<TopRecycler[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [selectedYear, setSelectedYear] = useState<string>('');
+    const [selectedMonth, setSelectedMonth] = useState<string>('');
+    const [totalRecycled, setTotalRecycled] = useState<number>(0);
+
+    useEffect(() => {
+        // Fetch the collection center ID for the authenticated user
+        const fetchCollectionCenter = async () => {
+            try {
+                const response = await fetch('/api/collectioncenters/user');
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('Collection center data:', data);
+                    if (!data || !data.collectioncenter_id) {
+                        setError('No se encontró un centro de acopio asociado a este usuario');
+                        setLoadingScores(false);
+                        return;
+                    }
+                    setCollectionCenterId(data.collectioncenter_id);
+                } else if (response.status === 401) {
+                    console.error('Usuario no autenticado, redirigiendo al login...');
+                    setError('Sesión expirada. Redirigiendo al login...');
+                    setTimeout(() => router.push('/login'), 2000);
+                } else {
+                    const errorData = await response.json();
+                    console.error('Error response:', errorData);
+                    const errorMessage = errorData.error || 'Error desconocido';
+                    setError(`Error: ${errorMessage}`);
+                    setLoadingScores(false);
+                }
+            } catch (error) {
+                console.error('Error fetching collection center:', error);
+                setError('Error al conectar con el servidor');
+                setLoadingScores(false);
+            }
+        };
+
+        fetchCollectionCenter();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    useEffect(() => {
+        if (!collectionCenterId) return;
+
+        const fetchUserScores = async () => {
+            setLoadingScores(true);
+            setError(null);
+            try {
+                console.log('Fetching scores for center:', collectionCenterId);
+                
+                // Construir URL con parámetros de búsqueda
+                const params = new URLSearchParams();
+                if (userSearchInput.trim()) {
+                    params.append('user_name', userSearchInput.trim());
+                }
+                if (cedulaSearchInput.trim()) {
+                    params.append('identification', cedulaSearchInput.trim());
+                }
+                
+                const url = `/api/collectioncenters/${collectionCenterId}/scores${params.toString() ? `?${params.toString()}` : ''}`;
+                console.log('Fetching URL:', url);
+                
+                const response = await fetch(url);
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('User scores data:', data);
+                    setUserScores(data || []);
+                } else {
+                    const errorData = await response.json();
+                    console.error('Error response:', errorData);
+                    setError(`Error al obtener puntajes: ${errorData.error || 'Desconocido'}`);
+                }
+            } catch (error) {
+                console.error('Error fetching user scores:', error);
+                setError('Error al cargar los puntajes');
+            } finally {
+                setLoadingScores(false);
+            }
+        };
+
+        // Debounce: esperar 500ms después de que el usuario deje de escribir
+        const timeoutId = setTimeout(() => {
+            fetchUserScores();
+        }, 500);
+
+        return () => clearTimeout(timeoutId);
+    }, [collectionCenterId, userSearchInput, cedulaSearchInput]);
     
     // Obtener el collection center ID del usuario autenticado
     useEffect(() => {
         async function fetchTopRecyclers() {
             try {
-                setLoading(true);
+                setLoadingTopRecyclers(true);
                 // Primero obtener el collection center del usuario
                 const centerResponse = await fetch('/api/collectioncenters/user/get');
                 if (!centerResponse.ok) {
@@ -48,7 +156,7 @@ export default function Page() {
             } catch (error) {
                 console.error('Error:', error);
             } finally {
-                setLoading(false);
+                setLoadingTopRecyclers(false);
             }
         }
         
@@ -71,50 +179,56 @@ export default function Page() {
         return date.toISOString().split('T')[0];
     };
     
-    const userPoints = [
-        { user: 'PedroR15', name: 'Pedro Gutierrez', weight: '25.0 kg', points: 375 },
-        { user: 'FerMar96', name: 'Fatima Molina', weight: '30 kg', points: 187.5 },
-        { user: 'Marquitos18', name: 'Marcos Valverde', weight: '28 kg', points: 180 },
-        { user: 'GonZillaMarc', name: 'Bill González', weight: '32 kg', points: 155 },
-        { user: 'Albert06', name: 'Alberto Zamora', weight: '49 kg', points: 123 },
-    ];
-    
-    const materials = [
-        { name: 'Plástico', icon: '♻️' },
-        { name: 'Papel', icon: '📄' },
-        { name: 'Vidrio', icon: '🥛' },
-        { name: 'Metales', icon: '⚙️' },
-        { name: 'Textiles', icon: '🧵' },
-        { name: 'Otros', icon: '📦' },
-        { name: 'Tetra Pak', icon: '🌿' },
-        { name: 'Cartón', icon: '📦' }
-    ];
-    
-    const recycledMaterials = [
-        { position: 1, material: 'Plástico', weight: '49 kg', date: '2024-07-29' },
-        { position: 2, material: 'Papel', weight: '40 kg', date: '2024-07-31' },
-        { position: 3, material: 'Vidrio', weight: '35 kg', date: '2024-07-26' },
-        { position: 4, material: 'Metales', weight: '32 kg', date: '2024-07-27' },
-        { position: 5, material: 'Cartón', weight: '29 kg', date: '2024-07-31' },
-    ];
-    
-    const toggleMaterial = (material: string) => {
-        setSelectedMaterials(prev => 
-            prev.includes(material) 
-                ? prev.filter(m => m !== material)
-                : [...prev, material]
-        );
-    };
+    // Fetch recycled materials by collection center
+    useEffect(() => {
+        async function fetchRecycledMaterials() {
+            if (!collectionCenterId) return;
+            
+            try {
+                setLoadingMaterials(true);
+                const params = new URLSearchParams();
+                if (selectedMonth) params.append('month', selectedMonth);
+                if (selectedYear) params.append('year', selectedYear);
+                
+                const queryString = params.toString();
+                const url = `/api/collectioncenters/${collectionCenterId}/materials${queryString ? `?${queryString}` : ''}`;
+                
+                const response = await fetch(url);
+                if (!response.ok) {
+                    console.error('Error fetching recycled materials');
+                    return;
+                }
+                
+                const data = await response.json();
+                setRecycledMaterials(data || []);
+                
+                // Fetch total weight separately    
+                const totalResponse = await fetch(`/api/collectioncenters/${collectionCenterId}/total-weight${queryString ? `?${queryString}` : ''}`);
+                if (totalResponse.ok) {
+                    const totalData = await totalResponse.json();
+                    setTotalRecycled(totalData.total || 0);
+                } else {
+                    setTotalRecycled(0);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            } finally {
+                setLoadingMaterials(false);
+            }
+        }
+        
+        fetchRecycledMaterials();
+    }, [collectionCenterId, selectedMonth, selectedYear]);
     
     return (
         <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-6">
             <main className="max-w-[1600px] mx-auto">
                 {/* Top Section */}
-                <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.2fr_0.8fr] gap-6 mb-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                     {/* Top 5 Users Card */}
                     <div className="bg-white rounded-2xl p-8 shadow-md border border-gray-100">
                         <h2 className="text-xl font-bold mb-8 leading-tight">
-                            Top 5 de<br />usuarios<br />con<br />mayor<br />reciclaje
+                            Top 5 de usuarios con mayor reciclaje
                         </h2>
                         
                         <table className="w-full">
@@ -127,7 +241,7 @@ export default function Page() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {loading ? (
+                                {loadingTopRecyclers ? (
                                     <tr>
                                         <td colSpan={4} className="py-4 text-center text-sm text-gray-500">
                                             Cargando...
@@ -161,91 +275,77 @@ export default function Page() {
                             Listado de puntos obtenidos por usuario
                         </h2>
                         
-                        {/* Tabs Row 1 */}
-                        <div className="flex gap-3 mb-3">
-                            <div className="px-6 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-600 border-2 border-transparent">
-                                Usuario
-                            </div>
-                            <input
-                                type="text"
-                                value={userSearchInput}
-                                onChange={(e) => setUserSearchInput(e.target.value)}
-                                placeholder="Nombre de usuario"
-                                className="px-6 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-600 border-2 border-transparent hover:bg-gray-200 focus:bg-green-100 focus:text-green-800 focus:border-green-200 focus:outline-none transition-all"
-                            />
-                        </div>
-                        
-                        {/* Tabs Row 2 */}
+                        {/* Search Inputs Row */}
                         <div className="flex gap-3 mb-6">
-                            <div className="px-6 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-600 border-2 border-transparent">
-                                Cédula
+                            <div className="flex gap-2 items-center">
+                                <div className="px-6 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-600 border-2 border-transparent">
+                                    Usuario
+                                </div>
+                                <input
+                                    type="text"
+                                    value={userSearchInput}
+                                    onChange={(e) => setUserSearchInput(e.target.value)}
+                                    placeholder="Buscar por usuario"
+                                    className="px-6 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-600 border-2 border-transparent hover:bg-gray-200 focus:bg-green-100 focus:text-green-800 focus:border-green-200 focus:outline-none transition-all"
+                                />
                             </div>
-                            <input
-                                type="text"
-                                value={cedulaSearchInput}
-                                onChange={(e) => setCedulaSearchInput(e.target.value)}
-                                placeholder="Numero de cédula"
-                                className="px-6 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-600 border-2 border-transparent hover:bg-gray-200 focus:bg-green-100 focus:text-green-800 focus:border-green-200 focus:outline-none transition-all"
-                            />
+                            
+                            <div className="flex gap-2 items-center">
+                                <div className="px-6 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-600 border-2 border-transparent">
+                                    Cédula
+                                </div>
+                                <input
+                                    type="text"
+                                    value={cedulaSearchInput}
+                                    onChange={(e) => setCedulaSearchInput(e.target.value)}
+                                    placeholder="Buscar por cédula"
+                                    className="px-6 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-600 border-2 border-transparent hover:bg-gray-200 focus:bg-green-100 focus:text-green-800 focus:border-green-200 focus:outline-none transition-all"
+                                />
+                            </div>
                         </div>
                         
-                        <div className="overflow-x-auto">
-                            <table className="w-full">
-                                <thead>
-                                    <tr className="text-xs text-gray-600 border-b border-gray-200">
-                                        <th className="text-center pb-3 font-medium">Usuario</th>
-                                        <th className="text-center pb-3 font-medium">Nombre</th>
-                                        <th className="text-center pb-3 font-medium">Peso (kg)</th>
-                                        <th className="text-center pb-3 font-medium">Puntos obtenidos</th>
+                        <table className="w-full">
+                            <thead>
+                                <tr className="border-b text-sm">
+                                    <th className="text-center py-2">Usuario</th>
+                                    <th className="text-center py-2">Nombre</th>
+                                    <th className="text-center py-2">Cédula</th>
+                                    <th className="text-center py-2">Peso (kg)</th>
+                                    <th className="text-center py-2">Puntos obtenidos</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {loadingScores ? (
+                                    <tr>
+                                        <td colSpan={5} className="py-3 text-sm text-center text-gray-500">
+                                            Cargando...
+                                        </td>
                                     </tr>
-                                </thead>
-                                <tbody>
-                                    {userPoints.map((user, index) => (
-                                        <tr key={index} className="border-b border-gray-100">
-                                            <td className="py-3 text-sm text-center">{user.user}</td>
-                                            <td className="py-3 text-sm text-center">{user.name}</td>
-                                            <td className="py-3 text-sm text-center">{user.weight}</td>
-                                            <td className="py-3 text-sm font-medium text-center">{user.points}</td>
+                                ) : error ? (
+                                    <tr>
+                                        <td colSpan={5} className="py-3 text-sm text-center text-red-500">
+                                            {error}
+                                        </td>
+                                    </tr>
+                                ) : userScores.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={5} className="py-3 text-sm text-center text-gray-500">
+                                            No hay datos disponibles
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    userScores.map((score, index) => (
+                                        <tr key={index} className="border-b">
+                                            <td className="py-3 text-sm text-center">{score.usuario}</td>
+                                            <td className="py-3 text-sm text-center">{score.nombre}</td>
+                                            <td className="py-3 text-sm text-center">{score.cedula}</td>
+                                            <td className="py-3 text-sm text-center">{score.peso_kg.toFixed(2)} kg</td>
+                                            <td className="py-3 text-sm text-center">{score.puntos_obtenidos}</td>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                    
-                    {/* Material Filter Card */}
-                    <div className="bg-white rounded-2xl p-6 shadow-md border border-gray-100">
-                        <h2 className="text-lg font-bold mb-3">Filtro de material</h2>
-                        <p className="text-xs text-gray-600 mb-4">
-                            Selecciona el material a buscar
-                        </p>
-                        <div className="space-y-2">
-                            {materials.map((material) => (
-                                <button
-                                    key={material.name}
-                                    onClick={() => toggleMaterial(material.name)}
-                                    className={`w-full p-3 rounded-xl border-2 text-left flex items-center gap-3 transition-all ${
-                                        selectedMaterials.includes(material.name)
-                                            ? 'border-green-500 bg-green-50 shadow-sm'
-                                            : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
-                                    }`}
-                                >
-                                    <span className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 ${
-                                        selectedMaterials.includes(material.name)
-                                            ? 'border-green-500 bg-green-500'
-                                            : 'border-gray-300'
-                                    }`}>
-                                        {selectedMaterials.includes(material.name) && (
-                                            <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                                            </svg>
-                                        )}
-                                    </span>
-                                    <span className="text-lg">{material.icon}</span>
-                                    <span className="text-sm font-medium">{material.name}</span>
-                                </button>
-                            ))}
-                        </div>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
                 
@@ -270,14 +370,28 @@ export default function Page() {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {recycledMaterials.map((item) => (
-                                            <tr key={item.position} className="border-b border-gray-100">
-                                                <td className="py-3 px-4 text-sm text-center">{item.position}</td>
-                                                <td className="py-3 px-4 text-sm font-medium text-center">{item.material}</td>
-                                                <td className="py-3 px-4 text-sm text-center">{item.weight}</td>
-                                                <td className="py-3 px-4 text-xs text-gray-500 text-center">{item.date}</td>
+                                        {loadingMaterials ? (
+                                            <tr>
+                                                <td colSpan={4} className="py-8 text-center text-gray-500">
+                                                    Cargando materiales...
+                                                </td>
                                             </tr>
-                                        ))}
+                                        ) : recycledMaterials.length === 0 ? (
+                                            <tr>
+                                                <td colSpan={4} className="py-8 text-center text-gray-500">
+                                                    No se encontraron materiales reciclados
+                                                </td>
+                                            </tr>
+                                        ) : (
+                                            recycledMaterials.map((item) => (
+                                                <tr key={item.puesto} className="border-b border-gray-100">
+                                                    <td className="py-3 px-4 text-sm text-center">{item.puesto}</td>
+                                                    <td className="py-3 px-4 text-sm font-medium text-center">{item.material}</td>
+                                                    <td className="py-3 px-4 text-sm text-center">{item.peso_kg} kg</td>
+                                                    <td className="py-3 px-4 text-xs text-gray-500 text-center">{item.ultima_fecha}</td>
+                                                </tr>
+                                            ))
+                                        )}
                                     </tbody>
                                 </table>
                             </div>
@@ -286,26 +400,40 @@ export default function Page() {
                             <div className="w-64 flex flex-col gap-4">
                                 <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
                                     <p className="text-sm">
-                                        Total reciclado: <span className="font-bold text-base">185 kg</span>
+                                        Total reciclado: <span className="font-bold text-base">{totalRecycled.toFixed(2)} kg</span>
                                     </p>
                                 </div>
                                 
                                 <div className="space-y-3">
                                     <p className="text-sm font-semibold text-gray-700">Filtrar por</p>
-                                    <select className="w-full p-3 bg-gray-200 rounded-lg text-sm font-medium text-gray-700 border-none focus:ring-2 focus:ring-green-500 focus:outline-none">
-                                        <option>Seleccionar año</option>
-                                        <option>2024</option>
-                                        <option>2023</option>
+                                    <select 
+                                        value={selectedYear}
+                                        onChange={(e) => setSelectedYear(e.target.value)}
+                                        className="w-full p-3 bg-gray-200 rounded-lg text-sm font-medium text-gray-700 border-none focus:ring-2 focus:ring-green-500 focus:outline-none"
+                                    >
+                                        <option value="">Seleccionar año</option>
+                                        {Array.from({ length: new Date().getFullYear() - 2001 + 1 }, (_, i) => 2001 + i).reverse().map(year => (
+                                            <option key={year} value={year}>{year}</option>
+                                        ))}
                                     </select>
-                                    <select className="w-full p-3 bg-gray-200 rounded-lg text-sm font-medium text-gray-700 border-none focus:ring-2 focus:ring-green-500 focus:outline-none">
-                                        <option>Seleccionar mes</option>
-                                        <option>Enero</option>
-                                        <option>Febrero</option>
-                                        <option>Marzo</option>
-                                        <option>Abril</option>
-                                        <option>Mayo</option>
-                                        <option>Junio</option>
-                                        <option>Julio</option>
+                                    <select 
+                                        value={selectedMonth}
+                                        onChange={(e) => setSelectedMonth(e.target.value)}
+                                        className="w-full p-3 bg-gray-200 rounded-lg text-sm font-medium text-gray-700 border-none focus:ring-2 focus:ring-green-500 focus:outline-none"
+                                    >
+                                        <option value="">Seleccionar mes</option>
+                                        <option value="1">Enero</option>
+                                        <option value="2">Febrero</option>
+                                        <option value="3">Marzo</option>
+                                        <option value="4">Abril</option>
+                                        <option value="5">Mayo</option>
+                                        <option value="6">Junio</option>
+                                        <option value="7">Julio</option>
+                                        <option value="8">Agosto</option>
+                                        <option value="9">Septiembre</option>
+                                        <option value="10">Octubre</option>
+                                        <option value="11">Noviembre</option>
+                                        <option value="12">Diciembre</option>
                                     </select>
                                 </div>
                             </div>

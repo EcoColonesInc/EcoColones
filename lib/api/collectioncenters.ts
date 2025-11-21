@@ -152,10 +152,19 @@ export async function getCollectionCenterById(collectionCenterId: string) {
 export async function getUserCollectionCenter() {
   const supabase = await createClient();
 
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  
+  if (authError) {
+    console.error('Auth error:', authError);
+    return { error: 'Authentication error: ' + authError.message, data: null };
+  }
+  
   if (!user) {
+    console.error('No user found in session');
     return { error: 'Unauthorized', data: null };
   }
+
+  console.log('Authenticated user ID:', user.id);
 
   const { data, error } = await supabase
     .from('collectioncenter')
@@ -164,8 +173,38 @@ export async function getUserCollectionCenter() {
     .single();
 
   if (error) {
+    console.error('Database error:', error);
+    if (error.code === 'PGRST116') {
+      return { error: 'No collection center found for this user', data: null };
+    }
     return { error: error.message, data: null };
   }
+  
+  console.log('Collection center found:', data);
+  return { error: null, data };
+}
+
+// Fetch user scores for a specific collection center
+export async function getCollectionCenterUserScores(
+  collectionCenterId: string,
+  userName?: string,
+  identification?: string
+) {
+  const supabase = await createClient();
+  
+  const params: Record<string, string | null> = {
+    p_collection_center_id: collectionCenterId,
+    p_user_name: userName || null,
+    p_identification: identification || null
+  };
+  
+  const { data, error } = await supabase.rpc('get_collection_center_user_scores', params);
+
+  if (error) {
+    console.error('RPC Error:', error);
+    return { error: error.message, data: null };
+  }
+
   return { error: null, data };
 }
 
@@ -179,6 +218,30 @@ export async function getTopRecyclersByCenter(collectionCenterId: string) {
     });
 
   if (error) {
+    return { error: error.message, data: null };
+  }
+
+  return { error: null, data };
+}
+
+// Fetch recycled materials by collection center
+export async function getCollectionCenterRecycledMaterials(
+  collectionCenterId: string,
+  month?: string,
+  year?: string
+) {
+  const supabase = await createClient();
+  
+  const params: Record<string, string | null> = {
+    p_collection_center_id: collectionCenterId,
+    p_month: month || null,
+    p_year: year || null
+  };
+  
+  const { data, error } = await supabase.rpc('get_top_recycled_materials_by_center', params);
+
+  if (error) {
+    console.error('RPC Error:', error);
     return { error: error.message, data: null };
   }
 

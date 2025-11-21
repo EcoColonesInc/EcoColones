@@ -193,8 +193,8 @@ export default function PrivacyPage() {
             <h2 className="text-2xl font-semibold text-gray-900">11. Cambios a esta Política</h2>
             <p>
               Podemos actualizar nuestra Política de Privacidad periódicamente. Le notificaremos sobre cambios 
-              significativos publicando la nueva política en esta página y actualizando la fecha de "Última 
-              actualización" en la parte superior.
+              significativos publicando la nueva política en esta página y actualizando la fecha de &quot;Última 
+              actualización&quot; en la parte superior.
             </p>
             <p className="mt-3">
               Se le recomienda revisar esta Política de Privacidad periódicamente para estar informado sobre 
