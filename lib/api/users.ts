@@ -120,3 +120,25 @@ export async function getUserById(userId: string) {
   }
   return { error: null, data };
 }
+
+// Fetch total points claimed (redeemed) by user
+export async function getUserClaimedPoints(userId: string) {
+  const supabase = await createClient();
+
+  // Sum all transactions from affiliatedbusinesstransaction for this user
+  const { data, error } = await supabase
+    .from('affiliatedbusinesstransaction')
+    .select('total_price')
+    .eq('person_id', userId);
+
+  if (error) {
+    return { error: error.message, data: 0 };
+  }
+
+  // Calculate total claimed points
+  const totalClaimed = (data || []).reduce((sum, transaction) => {
+    return sum + (transaction.total_price || 0);
+  }, 0);
+
+  return { error: null, data: totalClaimed };
+}

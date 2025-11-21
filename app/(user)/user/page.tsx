@@ -1,16 +1,13 @@
-import Image from "next/image";
-import { Button } from "@/components/ui/button";
-import ConversionTable from "@/components/ui/conversion";
+// Server Component
 import { redirect } from "next/navigation";
-import { AUTH_ROUTES, USER_ROUTES } from "@/config/routes";
-import Link from "next/link";
-
-import { getUserData, calculateAge, getProfilePictureUrl} from "@/lib/api/users";
+import { AUTH_ROUTES } from "@/config/routes";
+import { getUserData, calculateAge, getProfilePictureUrl, getUserClaimedPoints} from "@/lib/api/users";
 import {getUserCenterTransactions} from "@/lib/api/transactions";
 import {getMaterialConversionRates} from "@/lib/api/materials";
 import {getDefaultCurrency} from "@/lib/api/currencies";
+import UserDashboardClient from "./UserDashboardClient";
 
-// --- Local types to avoid `any` usage ---
+// --- Local types for server-side data mapping ---
 type UserCenterTransaction = {
   user_name?: string;
   first_name?: string;
@@ -46,7 +43,6 @@ type ConversionRate = {
 };
 
 export default async function UserDashboard() {
-
   // Fetch user data using shared API logic
   const { data, error } = await getUserData();
   if (error || !data || data.length === 0) {
@@ -73,6 +69,11 @@ export default async function UserDashboard() {
   const currencyName = _currencyRow?.name ?? _currencyRow?.parameter ?? 'CRC';
   const currencyValue = _currencyRow?.value ?? _currencyRow?.parameter_value ?? 1;
   
+  // Get claimed points
+  const { data: claimedPoints, error: claimedError } = await getUserClaimedPoints(personData.user_id);
+  const totalClaimed = claimedError ? 0 : (claimedPoints || 0);
+  const availablePoints = (personData.acumulated_points || 0) - totalClaimed;
+  
    // Construct user object with database data
   const userName = `${personData.first_name} ${personData.last_name} ${personData.second_last_name || ''}`.trim();
   const age = personData.birth_date ? calculateAge(personData.birth_date) : 0;
@@ -91,6 +92,8 @@ export default async function UserDashboard() {
     age: age,
     identification: personData.identification || "N/A",
     points: personData.acumulated_points,
+    claimedPoints: totalClaimed,
+    availablePoints: availablePoints,
     recycled: personData.material_recycled,
     rate: `1 = ${currencyValue} ${currencyName}`,
     avatar: avatarUrl,
@@ -125,105 +128,5 @@ export default async function UserDashboard() {
       }))
     : [];
 
-  return (
-    <div className="min-h-screen bg-[#F7FCFA] px-6 py-10">
-      <div className="max-w-7xl mx-auto space-y-8">
-        {/* --- Top Profile Section --- */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Profile Card */}
-          <div className="col-span-2 bg-white rounded-xl border border-gray-100 p-6 flex items-center justify-center">
-            <div className="flex flex-col md:flex-row items-center gap-6">
-              <Image
-                src={user.avatar}
-                alt="Foto de usuario"
-                width={160}
-                height={160}
-                className="rounded-full object-cover"
-              />
-              <div>
-                <h2 className="text-lg font-semibold text-gray-900">{user.name}</h2>
-                <p className="text-sm text-gray-700 mt-2">Género: {user.gender}</p>
-                <p className="text-sm text-gray-700">Edad: {user.age} años</p>
-                <p className="text-sm text-gray-700">
-                  Identificación: {user.identification}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Stats Card */}
-          <div className="bg-white rounded-xl border border-gray-100 p-6 flex flex-col justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Puntos acumulados:</p>
-              <p className="text-xl font-semibold">{user.points}</p>
-
-              <p className="text-sm text-gray-600 mt-3">Material reciclado:</p>
-              <p className="text-xl font-semibold">{user.recycled}</p>
-
-              <p className="text-sm text-gray-600 mt-3">Tipo de cambio:</p>
-              <p className="text-xl font-semibold">{user.rate}</p>
-            </div>
-
-            <div className="flex flex-col gap-3 mt-6">
-              <Link href={USER_ROUTES.REDEEM}>
-              <Button className="bg-green-600 hover:bg-green-700 text-white font-medium rounded-md py-2">
-                Canjear
-              </Button>
-              </Link>
-            </div>
-          </div>
-        </div>
-
-        {/* --- Bottom Section --- */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Transactions Table */}
-          <div className="lg:col-span-2 bg-white rounded-xl border border-gray-100 p-6">
-            <div className="flex justify-between items-center mb-3">
-              <h3 className="font-semibold text-gray-800">Transacciones recientes</h3>
-              <a href="#" className="text-sm text-green-600 hover:underline">
-                Ver todas las transacciones
-              </a>
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm text-left border-collapse">
-                <thead className="bg-[#E9F4EE] text-gray-700 font-medium">
-                  <tr>
-                    <th className="py-2 px-3 rounded-tl-md">ID Transacción</th>
-                    <th className="py-2 px-3">Centro</th>
-                    <th className="py-2 px-3">Material</th>
-                    <th className="py-2 px-3">Cantidad</th>
-                    <th className="py-2 px-3 rounded-tr-md">Fecha</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {transactions.map((txn: TransactionRow) => (
-                    <tr
-                      key={txn.id}
-                      className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
-                    >
-                      <td className="py-2 px-3">{txn.id}</td>
-                      <td className="py-2 px-3">{txn.center}</td>
-                      <td className="py-2 px-3">{txn.material}</td>
-                      <td className="py-2 px-3">{txn.qty}</td>
-                      <td className="py-2 px-3">{txn.date}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-          <div className="col-span-2 bg-white rounded-xl border border-gray-100 p-6 flex items-center justify-center">  
-          {/* Conversion Table  */}
-          <div className="bg-white rounded-xl border border-gray-100 p-6">
-            <h3 className="font-semibold text-gray-800 mb-3">
-              Conversión del peso a puntos
-            </h3>
-            <ConversionTable conversionRates={conversionRates} />
-          </div>
-          </div>      
-        </div>
-      </div>
-    </div>
-  );
+  return <UserDashboardClient user={user} transactions={transactions} conversionRates={conversionRates} />;
 }
