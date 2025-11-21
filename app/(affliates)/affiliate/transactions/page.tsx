@@ -1,245 +1,85 @@
 import { TransactionManager } from "@/components/custom/affiliate/transactionManager";
+import { createClient } from "@/utils/supabase/server";
 
-
+export const dynamic = 'force-dynamic';
 
 export default async function transactions() {
+    let errorMessage: string | null = null;
+    let transactions: any[] = [];
 
-    //const allTranstactions = await getUserBusinessTransactions();
-    //console.log('All Transactions:', allTranstactions);
+    try {
+        const supabase = await createClient();
 
-    const mockTransactions = [
-        {
-            ab_transaction_id: "1",
-            person_id: {
-                user_name: "maria_lopez",
-                first_name: "María",
-                last_name: "López"
-            },
-            affiliated_business_id: {
-                affiliated_business_name: "Taco Bell - Belén"
-            },
-            product_id: {
-                product_name: "Crunchy Tacos"
-            },
-            currency: {
-                currency_name: "CRC",
-                currency_exchange: 1
-            },
-            total_price: 2500,
-            product_amount: 2,
-            transaction_code: "TCO2024001",
-            state: "active",
-            created_at: "2024-11-20T10:30:00Z"
-        },
-        {
-            ab_transaction_id: "2",
-            person_id: {
-                user_name: "carlos_ruiz",
-                first_name: "Carlos",
-                last_name: "Ruiz"
-            },
-            affiliated_business_id: {
-                affiliated_business_name: "Taco Bell - Belén"
-            },
-            product_id: {
-                product_name: "Burrito Vegano"
-            },
-            currency: {
-                currency_name: "CRC",
-                currency_exchange: 1
-            },
-            total_price: 1750,
-            product_amount: 1,
-            transaction_code: "TCO2024002",
-            state: "cancelled",
-            created_at: "2024-11-20T09:15:00Z"
-        },
-        {
-            ab_transaction_id: "3",
-            person_id: {
-                user_name: "ana_garcia",
-                first_name: "Ana",
-                last_name: "García"
-            },
-            affiliated_business_id: {
-                affiliated_business_name: "Taco Bell - Belén"
-            },
-            product_id: {
-                product_name: "Smoothie Tropical"
-            },
-            currency: {
-                currency_name: "CRC",
-                currency_exchange: 1
-            },
-            total_price: 900,
-            product_amount: 3,
-            transaction_code: "TCO2024003",
-            state: "inactive",
-            created_at: "2024-11-19T14:45:00Z"
-        },
-        {
-            ab_transaction_id: "4",
-            person_id: {
-                user_name: "luis_mendez",
-                first_name: "Luis",
-                last_name: "Méndez"
-            },
-            affiliated_business_id: {
-                affiliated_business_name: "Taco Bell - Belén"
-            },
-            product_id: {
-                product_name: "Ensalada Verde"
-            },
-            currency: {
-                currency_name: "CRC",
-                currency_exchange: 1
-            },
-            total_price: 1200,
-            product_amount: 2,
-            transaction_code: "TCO2024004",
-            state: "active",
-            created_at: "2024-11-19T11:20:00Z"
-        },
-        {
-            ab_transaction_id: "5",
-            person_id: {
-                user_name: "sofia_jimenez",
-                first_name: "Sofía",
-                last_name: "Jiménez"
-            },
-            affiliated_business_id: {
-                affiliated_business_name: "Taco Bell - Belén"
-            },
-            product_id: {
-                product_name: "Bowl Saludable"
-            },
-            currency: {
-                currency_name: "USD",
-                currency_exchange: 0.0018
-            },
-            total_price: 4200,
-            product_amount: 1,
-            transaction_code: "TCO2024005",
-            state: "active",
-            created_at: "2024-11-18T16:30:00Z"
-        },
-        {
-            ab_transaction_id: "6",
-            person_id: {
-                user_name: "diego_vargas",
-                first_name: "Diego",
-                last_name: "Vargas"
-            },
-            affiliated_business_id: {
-                affiliated_business_name: "Taco Bell - Belén"
-            },
-            product_id: {
-                product_name: "Wrap de Pollo"
-            },
-            currency: {
-                currency_name: "CRC",
-                currency_exchange: 1
-            },
-            total_price: 3600,
-            product_amount: 4,
-            transaction_code: "TCO2024006",
-            state: "active",
-            created_at: "2024-11-18T13:15:00Z"
-        },
-        {
-            ab_transaction_id: "7",
-            person_id: {
-                user_name: "paula_castro",
-                first_name: "Paula",
-                last_name: "Castro"
-            },
-            affiliated_business_id: {
-                affiliated_business_name: "Taco Bell - Belén"
-            },
-            product_id: {
-                product_name: "Crunchy Tacos"
-            },
-            currency: {
-                currency_name: "CRC",
-                currency_exchange: 1
-            },
-            total_price: 1250,
-            product_amount: 1,
-            transaction_code: "TCO2024007",
-            state: "cancelled",
-            created_at: "2024-11-17T12:00:00Z"
-        },
-        {
-            ab_transaction_id: "8",
-            person_id: {
-                user_name: "roberto_solis",
-                first_name: "Roberto",
-                last_name: "Solís"
-            },
-            affiliated_business_id: {
-                affiliated_business_name: "Taco Bell - Belén"
-            },
-            product_id: {
-                product_name: "Smoothie Tropical"
-            },
-            currency: {
-                currency_name: "CRC",
-                currency_exchange: 1
-            },
-            total_price: 540,
-            product_amount: 2,
-            transaction_code: "TCO2024008",
-            state: "inactive",
-            created_at: "2024-11-17T08:45:00Z"
-        },
-        {
-            ab_transaction_id: "9",
-            person_id: {
-                user_name: "elena_morales",
-                first_name: "Elena",
-                last_name: "Morales"
-            },
-            affiliated_business_id: {
-                affiliated_business_name: "Taco Bell - Belén"
-            },
-            product_id: {
-                product_name: "Bowl Saludable"
-            },
-            currency: {
-                currency_name: "CRC",
-                currency_exchange: 1
-            },
-            total_price: 2800,
-            product_amount: 2,
-            transaction_code: "TCO2024009",
-            state: "active",
-            created_at: "2024-11-16T15:30:00Z"
-        },
-        {
-            ab_transaction_id: "10",
-            person_id: {
-                user_name: "fernando_vega",
-                first_name: "Fernando",
-                last_name: "Vega"
-            },
-            affiliated_business_id: {
-                affiliated_business_name: "Taco Bell - Belén"
-            },
-            product_id: {
-                product_name: "Burrito Vegano"
-            },
-            currency: {
-                currency_name: "USD",
-                currency_exchange: 0.0018
-            },
-            total_price: 5250,
-            product_amount: 3,
-            transaction_code: "TCO2024010",
-            state: "active",
-            created_at: "2024-11-16T10:15:00Z"
+        // Get the current user
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        
+        if (authError || !user) {
+            errorMessage = 'No autorizado. Por favor, inicia sesión.';
+        } else {
+            console.log('Fetching transactions for user:', user.id);
+
+            // Get the user's affiliated business
+            const { data: businesses, error: businessError } = await supabase
+                .from('affiliatedbusiness')
+                .select('affiliated_business_id')
+                .eq('manager_id', user.id)
+                .limit(1)
+                .single();
+
+            if (businessError) {
+                console.error('Business fetch error:', businessError);
+                errorMessage = `Error al obtener el negocio: ${businessError.message}`;
+            } else if (!businesses) {
+                errorMessage = 'No se encontró un negocio afiliado para este usuario.';
+            } else {
+                console.log('Found business:', businesses.affiliated_business_id);
+
+                // Fetch transactions using RPC
+                const { data: rpcData, error: rpcError } = await supabase.rpc(
+                    'get_transactions_by_affiliated_business_id',
+                    { p_affiliated_business_id: businesses.affiliated_business_id }
+                );
+
+                if (rpcError) {
+                    console.error('RPC error:', rpcError);
+                    errorMessage = `Error al obtener transacciones: ${rpcError.message}`;
+                } else {
+                    console.log('Raw transactions data:', rpcData);
+                    
+                    // Transform data to match expected structure
+                    transactions = (rpcData || []).map((tx: any, index: number) => ({
+                        ab_transaction_id: tx.ab_transaction_id || `transaction-${index}`,
+                        person_id: {
+                            user_name: tx.user_name || '',
+                            first_name: tx.first_name || '',
+                            last_name: tx.last_name || ''
+                        },
+                        affiliated_business_id: {
+                            affiliated_business_name: tx.affiliated_business_name || ''
+                        },
+                        product_id: {
+                            product_name: tx.product_names || tx.product_name || ''
+                        },
+                        currency: {
+                            currency_name: tx.currency_name || 'CRC',
+                            currency_exchange: tx.currency_exchange || 1
+                        },
+                        total_price: tx.total_price || 0,
+                        product_amount: tx.total_product_amount || tx.product_amount || 0,
+                        transaction_code: tx.transaction_code || '',
+                        state: tx.state || '',
+                        created_at: tx.created_at || ''
+                    }));
+                    
+                    console.log('Transformed transactions:', transactions.length);
+                }
+            }
         }
-    ]; 
-    
+    } catch (error) {
+        console.error('Unexpected error:', error);
+        errorMessage = error instanceof Error ? error.message : 'Error desconocido al cargar transacciones';
+    }
+
     return (
         <div className="container mx-auto px-4 mb-20">
             <div className="pt-8 mb-5">
@@ -248,13 +88,24 @@ export default async function transactions() {
                     Gestiona y revisa todas las transacciones de tu negocio
                 </p>
             </div>
+            {errorMessage && (
+                <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+                    <p className="font-semibold">Error al cargar transacciones:</p>
+                    <p className="text-sm">{errorMessage}</p>
+                </div>
+            )}
+            {!errorMessage && transactions.length === 0 && (
+                <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg text-blue-700">
+                    <p className="font-semibold">No hay transacciones disponibles</p>
+                    <p className="text-sm">Aún no se han registrado transacciones para tu negocio.</p>
+                </div>
+            )}
             <div>
-             <TransactionManager
-                initialTransactions={mockTransactions || []}
-                errMsg={''}
-               />
+                <TransactionManager
+                    initialTransactions={transactions}
+                    errMsg={errorMessage}
+                />
             </div>
-            
         </div>
     );
 }

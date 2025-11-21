@@ -64,14 +64,14 @@ export const TransactionFilters = ({
 
 
     return (
-        <div className="bg-green-50 border border-green-300 rounded-lg shadow-md p-4 h-fit">
+        <div className="bg-gray-50 border border-gray-300 rounded-lg shadow-md p-4 h-fit">
             {/* Header más compacto */}
             <div className="mb-4">
-                <h3 className="text-lg font-semibold text-green-800">Filtros</h3>
-                <p className="text-xs text-green-600 mt-1">
+                <h3 className="text-lg font-semibold text-gray-800">Filtros</h3>
+                <p className="text-xs text-gray-600 mt-1">
                     {filteredCount} de {totalCount} transacciones
                     {activeFiltersCount > 0 && (
-                        <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-green-200 text-green-800">
+                        <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-gray-200 text-gray-800">
                             {activeFiltersCount} activo{activeFiltersCount !== 1 ? 's' : ''}
                         </span>
                     )}
@@ -81,40 +81,40 @@ export const TransactionFilters = ({
                         variant="outline" 
                         size="sm" 
                         onClick={onClearFilters}
-                        className="border-green-300 text-green-700 hover:bg-green-100 w-full mt-2"
+                        className="border-gray-300 text-gray-700 hover:bg-gray-100 w-full mt-2"
                     >
-                        🗑️ Limpiar filtros
+                        Limpiar filtros
                     </Button>
                 )}
             </div>
 
-            {/* ✅ Filtros en layout vertical para sidebar */}
+            {/* Filtros en layout vertical para sidebar */}
             <div className="space-y-4">
                 {/* Búsqueda */}
                 <div>
                     <Label className="block text-sm font-medium text-gray-700 mb-2">
-                        🔍 Cliente
+                        Cliente
                     </Label>
                     <Input
                         type="text"
                         placeholder="Buscar..."
                         value={searchTerm}
                         onChange={(e) => onSearchChange(e.target.value)}
-                        className="bg-white border-green-300 focus:border-green-500 text-sm"
+                        className="bg-white border-gray-300 focus:border-gray-500 text-sm"
                     />
                 </div>
 
                 {/* Filtro por Producto */}
                 <div>
                     <Label className="block text-sm font-medium text-gray-700 mb-2">
-                        🛍️ Producto
+                        Producto
                     </Label>
                     <select
                         value={productFilter}
                         onChange={(e) => onProductChange(e.target.value)}
-                        className="w-full p-2 text-sm border border-green-300 rounded-md bg-white focus:border-green-500"
+                        className="w-full p-2 text-sm border border-gray-300 rounded-md bg-white focus:border-gray-500"
                     >
-                        <option value="">📦 Todos los productos</option>
+                        <option value="">Todos los productos</option>
                         {availableProducts.map((product) => (
                             <option key={product} value={product}>
                                 {product}
@@ -122,7 +122,7 @@ export const TransactionFilters = ({
                         ))}
                     </select>
                     {productFilter && (
-                        <p className="text-xs text-green-600 mt-1">
+                        <p className="text-xs text-gray-600 mt-1">
                             Filtrando: <strong>{productFilter}</strong>
                         </p>
                     )}
@@ -131,49 +131,49 @@ export const TransactionFilters = ({
                 {/* Estado */}
                 <div>
                     <Label className="block text-sm font-medium text-gray-700 mb-2">
-                        📋 Estado
+                        Estado
                     </Label>
                     <select
                         value={statusFilter}
                         onChange={(e) => onStatusChange(e.target.value)}
-                        className="w-full p-2 text-sm border border-green-300 rounded-md bg-white focus:border-green-500"
+                        className="w-full p-2 text-sm border border-gray-300 rounded-md bg-white focus:border-gray-500"
                     >
                         <option value="">Todos</option>
-                        <option value="active">✅ Activas</option>
-                        <option value="inactive">⏸️ Inactivas</option>
-                        <option value="cancelled">❌ Canceladas</option>
+                        <option value="active">Activas</option>
+                        <option value="inactive">Inactivas</option>
+                        <option value="cancelled">Canceladas</option>
                     </select>
                 </div>
 
                 {/* Fechas */}
                 <div>
                     <Label className="block text-sm font-medium text-gray-700 mb-2">
-                        📅 Fecha Desde
+                        Fecha Desde
                     </Label>
                     <Input
                         type="date"
                         value={dateFrom}
                         onChange={(e) => onDateFromChange(e.target.value)}
-                        className="bg-white border-green-300 text-sm"
+                        className="bg-white border-gray-300 text-sm"
                     />
                 </div>
 
                 <div>
                     <Label className="block text-sm font-medium text-gray-700 mb-2">
-                        📅 Fecha Hasta
+                        Fecha Hasta
                     </Label>
                     <Input
                         type="date"
                         value={dateTo}
                         onChange={(e) => onDateToChange(e.target.value)}
-                        className="bg-white border-green-300 text-sm"
+                        className="bg-white border-gray-300 text-sm"
                     />
                 </div>
 
                 {/* Montos */}
                 <div className="space-y-2">
                     <Label className="block text-sm font-medium text-gray-700 mb-3">
-                        💰 Rango de Montos
+                        Rango de Montos
                     </Label>
                     
                     {/* Valores actuales */}

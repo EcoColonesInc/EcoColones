@@ -47,7 +47,7 @@ function getStatusStyles(status: string) {
     const statusLower = status.toLowerCase();
     switch (statusLower) {
         case 'active':
-            return 'bg-green-100 text-green-800 border-green-600';
+            return 'bg-gray-100 text-gray-800 border-gray-600';
         case 'inactive':
             return 'bg-yellow-100 text-yellow-800 border-yellow-600';
         case 'cancelled':
@@ -63,7 +63,7 @@ export const TransactionTable =({
 
     if (loading) {
         return (
-            <div className="bg-green-50 border border-green-300 rounded-lg p-6">
+            <div className="bg-gray-50 border border-gray-300 rounded-lg p-6">
                 <div className="animate-pulse space-y-4">
                     <div className="h-4 bg-gray-200 rounded w-1/4"></div>
                     <div className="space-y-2">
@@ -77,32 +77,32 @@ export const TransactionTable =({
     }
 
     return (
-        <div className="bg-green-50 max-h-120 overflow-y-auto overflow-x-auto">
+        <div className="bg-gray-50 max-h-120 overflow-y-auto overflow-x-auto">
             {transactions.length === 0 ? (
                 // Estado vacío
                 <div className="p-8 text-center text-gray-500">
-                    <div className="text-4xl mb-2">📋</div>
+                    
                     <p className="text-lg font-medium">No hay transacciones</p>
                     <p className="text-sm">No se encontraron transacciones con los filtros aplicados</p>
                 </div>
             ) : (
                 <Table>
-                    <TableHeader className="sticky top-0 bg-green-100 z-10">
-                        <TableRow className="hover:bg-green-100">
-                            <TableHead className="bg-green-50 border-b border-gray-300 text-center font-semibold">Código</TableHead>
-                            <TableHead className="bg-green-50 border-b border-gray-300 text-center font-semibold">Cliente</TableHead>
-                            <TableHead className="bg-green-50 border-b border-gray-300 text-center font-semibold">Producto</TableHead>
-                            <TableHead className="bg-green-50 border-b border-gray-300 text-center font-semibold">Cantidad</TableHead>
-                            <TableHead className="bg-green-50 border-b border-gray-300 text-center font-semibold">Total</TableHead>
-                            <TableHead className="bg-green-50 border-b border-gray-300 text-center font-semibold">Estado</TableHead>
-                            <TableHead className="bg-green-50 border-b border-gray-300 text-center font-semibold">Fecha</TableHead>
+                    <TableHeader className="sticky top-0 bg-gray-100 z-10">
+                        <TableRow className="hover:bg-gray-100">
+                            <TableHead className="bg-gray-50 border-b border-gray-300 text-center font-semibold">Código</TableHead>
+                            <TableHead className="bg-gray-50 border-b border-gray-300 text-center font-semibold">Cliente</TableHead>
+                            <TableHead className="bg-gray-50 border-b border-gray-300 text-center font-semibold">Producto</TableHead>
+                            <TableHead className="bg-gray-50 border-b border-gray-300 text-center font-semibold">Cantidad</TableHead>
+                            <TableHead className="bg-gray-50 border-b border-gray-300 text-center font-semibold">Total</TableHead>
+                            <TableHead className="bg-gray-50 border-b border-gray-300 text-center font-semibold">Estado</TableHead>
+                            <TableHead className="bg-gray-50 border-b border-gray-300 text-center font-semibold">Fecha</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {transactions.map((transaction) => (
                             <TableRow 
                                 key={transaction.ab_transaction_id} 
-                                className="bg-green-50 hover:bg-green-100"
+                                className="bg-gray-50 hover:bg-gray-100"
                             >
                                 {/* Código de transacción */}
                                 <TableCell className="border-b border-gray-300 text-center">

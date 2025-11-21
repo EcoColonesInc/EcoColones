@@ -82,7 +82,7 @@ export default function UserRedeemPage() {
           
           // Get logo from Supabase storage using affiliated_business_id
           const businessId = row['affiliated_business_id'] as string | number | null;
-          let logo = 'placeholder.png';
+          let logo = '/placeholder.png';
           if (businessId) {
             const extensions = ['png', 'jpg', 'jpeg', 'webp'];
             for (const ext of extensions) {
