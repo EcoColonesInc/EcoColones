@@ -86,11 +86,7 @@ export default function UserDashboardClient({ user, transactions, conversionRate
               <p className="text-sm text-gray-600">Puntos acumulados:</p>
               <p className="text-xl font-semibold">{user.points}</p>
 
-              <p className="text-sm text-gray-600 mt-3">Puntos canjeados:</p>
-              <p className="text-xl font-semibold text-red-600">{user.claimedPoints}</p>
-
-              <p className="text-sm text-gray-600 mt-3">Puntos disponibles:</p>
-              <p className="text-xl font-semibold text-green-600">{user.availablePoints}</p>
+              
 
               <p className="text-sm text-gray-600 mt-3">Material reciclado:</p>
               <p className="text-xl font-semibold">{user.recycled}</p>
