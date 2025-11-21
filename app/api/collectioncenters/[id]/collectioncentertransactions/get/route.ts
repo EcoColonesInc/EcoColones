@@ -4,6 +4,7 @@ import { getTransactionsByCollectionCenterId } from '@/lib/api/transactions';
 export async function GET(request: Request, context: { params: Promise<{ id: string }> }) {
   const resolvedParams = await context.params;
   const id = resolvedParams?.id;
+  
   if (!id) {
     return NextResponse.json({ error: 'Missing collection center id' }, { status: 400 });
   }
