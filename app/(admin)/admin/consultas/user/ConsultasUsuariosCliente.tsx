@@ -306,8 +306,8 @@ export default function ConsultasUsuariosClient({
   const [fProvince, setFProvince] = useState("");
   const [fCity, setFCity] = useState("");
   const [fDistrict, setFDistrict] = useState("");
-  const [fDateFrom, setFDateFrom] = useState("");
-  const [fDateTo, setFDateTo] = useState("");
+  const [fDateFrom] = useState("");
+  const [fDateTo] = useState("");
 
   // Sección: usuarios sin cambio de contraseña
   interface NoPwdRow {

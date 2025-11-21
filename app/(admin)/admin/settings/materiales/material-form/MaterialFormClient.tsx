@@ -51,9 +51,15 @@ export default function MaterialFormClient({ mode, initialMaterial, units }: Pro
           const { data } = supabase.storage.from("material_logo").getPublicUrl(path);
           const url = data?.publicUrl;
           if (!url) continue;
-          // Directly set the public URL. If the file exists it will load; if not, the image element will show nothing.
-          setImgUrl(url);
-          return;
+          try {
+            const head = await fetch(url, { method: "HEAD" });
+            if (head.ok) {
+              setImgUrl(url);
+              return;
+            }
+          } catch {
+            // ignore network errors
+          }
         }
       }
     } catch {
@@ -193,7 +199,7 @@ export default function MaterialFormClient({ mode, initialMaterial, units }: Pro
               <label className="text-sm font-medium w-full">Foto</label>
               <div className="w-72 h-72 border rounded flex items-center justify-center bg-muted relative overflow-hidden">
                 {localPreview || imgUrl ? (
-                  <Image src={localPreview || imgUrl || ""} alt={name || "material"} fill className="object-contain p-4" />
+                  <Image src={localPreview || imgUrl || ""} alt={name || "material"} fill className="object-contain p-4" unoptimized onError={() => setImgUrl(null)} />
                 ) : (
                   <span className="text-xs text-muted-foreground">Sin imagen</span>
                 )}

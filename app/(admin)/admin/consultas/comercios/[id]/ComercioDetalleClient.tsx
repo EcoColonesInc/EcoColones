@@ -62,7 +62,6 @@ export default function ComercioDetalleClient({
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [showSaveModal, setShowSaveModal] = useState(false);
-  const [showDeactivateModal, setShowDeactivateModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [name, setName] = useState(business?.affiliated_business_name || "");
   const [description, setDescription] = useState(business?.description || "");

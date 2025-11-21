@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
+import Image from "next/image";
+import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -49,11 +51,11 @@ export default function CenterDetalleClient({ id, initialCenter, initialCenterMa
   const [centerMaterials, setCenterMaterials] = useState<MaterialData[]>(initialCenterMaterials);
   const [allMaterials, setAllMaterials] = useState<MaterialData[]>(initialAllMaterials);
   const [loading, setLoading] = useState(false);
+  const [centerImgUrl, setCenterImgUrl] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [showSaveModal, setShowSaveModal] = useState(false);
-  const [showDeactivateModal, setShowDeactivateModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const [name, setName] = useState(center?.name || "");
@@ -129,6 +131,10 @@ export default function CenterDetalleClient({ id, initialCenter, initialCenterMa
     .filter(Boolean);
   const [baselineIds, setBaselineIds] = useState<string[]>(initialIds);
   const [selectedMaterialIds, setSelectedMaterialIds] = useState<string[]>(baselineIds);
+  const [materialImgUrls, setMaterialImgUrls] = useState<Record<string, string | null>>({});
+  const [materialUploading, setMaterialUploading] = useState<Record<string, boolean>>({});
+  const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  const [localMaterialPreviews, setLocalMaterialPreviews] = useState<Record<string, string | null>>({});
 
   async function performSave() {
     if (!center) return;
@@ -224,6 +230,96 @@ export default function CenterDetalleClient({ id, initialCenter, initialCenterMa
     setSelectedMaterialIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   }
 
+  const resolveCenterImage = useCallback(
+    async (centerId: string, centerName: string) => {
+      try {
+        const supabase = createClient();
+        const candidates: string[] = [];
+        if (centerId) candidates.push(centerId);
+        const slug = (centerName || "")
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-+|-+$/g, "");
+        candidates.push(slug);
+        const exts = ["png", "jpg", "jpeg", "webp"];
+        for (const base of candidates) {
+          for (const ext of exts) {
+            const path = `${base}.${ext}`;
+            const { data } = supabase.storage
+              .from("collection_center_logo")
+              .getPublicUrl(path);
+            if (!data?.publicUrl) continue;
+            const head = await fetch(data.publicUrl, { method: "HEAD" });
+            if (head.ok) return data.publicUrl;
+          }
+        }
+        return null;
+      } catch {
+        return null;
+      }
+    },
+    []
+  );
+
+  useEffect(() => {
+    if (center) {
+      (async () => {
+        const url = await resolveCenterImage(center.collectioncenter_id, center.name || "");
+        setCenterImgUrl(url);
+      })();
+    }
+  }, [center, resolveCenterImage]);
+
+  const resolveMaterialImage = useCallback(
+    async (materialId: string, materialName: string) => {
+      try {
+        const supabase = createClient();
+        const candidates: string[] = [];
+        if (materialId) candidates.push(materialId);
+        const slug = (materialName || "")
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-+|-+$/g, "");
+        if (slug) candidates.push(slug);
+        const exts = ["png", "jpg", "jpeg", "webp"];
+        for (const base of candidates) {
+          for (const ext of exts) {
+            const path = `${base}.${ext}`;
+            const { data } = supabase.storage.from("material_logo").getPublicUrl(path);
+            if (!data?.publicUrl) continue;
+            const head = await fetch(data.publicUrl, { method: "HEAD" });
+            if (head.ok) return data.publicUrl;
+          }
+        }
+        return null;
+      } catch {
+        return null;
+      }
+    },
+    []
+  );
+
+  useEffect(() => {
+    // Resolve images for each material when centerMaterials changes
+    if (!centerMaterials || centerMaterials.length === 0) return;
+    (async () => {
+      const map: Record<string, string | null> = {};
+      for (const m of centerMaterials) {
+        const ex = extractMaterial(m);
+        const matId = ex.id || ex.name;
+        const matName = ex.name || getMaterialName(m) || "";
+        if (!matId) continue;
+        try {
+          const url = await resolveMaterialImage(matId, matName);
+          map[matId] = url;
+        } catch {
+          map[matId] = null;
+        }
+      }
+      setMaterialImgUrls(prev => ({ ...prev, ...map }));
+    })();
+  }, [centerMaterials, resolveMaterialImage]);
+
   const selectedSet = new Set(selectedMaterialIds);
 
   return (
@@ -242,6 +338,23 @@ export default function CenterDetalleClient({ id, initialCenter, initialCenterMa
             {loading && <p className="text-sm">Cargando...</p>}
             {!loading && center && (
               <>
+                <div className="flex items-center justify-center">
+                  {centerImgUrl ? (
+                    <Image
+                      src={centerImgUrl}
+                      alt={center.name || "Centro"}
+                      width={220}
+                      height={220}
+                      className="rounded-lg object-contain mb-4"
+                      unoptimized
+                      onError={() => setCenterImgUrl(null)}
+                    />
+                  ) : (
+                    <div className="h-52 w-52 rounded-lg bg-gradient-to-br from-green-200 to-green-400 flex items-center justify-center text-2xl font-semibold text-green-900 mb-4">
+                      {center.name?.substring(0, 2).toUpperCase()}
+                    </div>
+                  )}
+                </div>
                 <div className="flex flex-col gap-1">
                   <label className="text-sm font-medium">
                     Nombre del centro
@@ -296,25 +409,101 @@ export default function CenterDetalleClient({ id, initialCenter, initialCenterMa
                       const matName = ex.name || "Material";
                       const matId = ex.id || matName;
                       const selected = selectedSet.has(matId);
+                      const uploading = !!materialUploading[matId];
+                      const localPreview = localMaterialPreviews[matId] || null;
                       return (
                         <div
                           key={matId + i}
-                          role="button"
-                          onClick={() => toggleMaterial(matId)}
-                          className={`cursor-pointer border rounded px-3 py-3 text-sm flex items-center gap-2 transition select-none ${
-                            selected
-                              ? "bg-green-50 border-green-600"
-                              : "bg-muted/40 hover:bg-muted"
+                          className={`border rounded px-3 py-3 text-sm transition select-none ${
+                            selected ? "bg-green-50 border-green-600" : "bg-muted/40 hover:bg-muted"
                           }`}
-                          aria-pressed={selected}
                         >
-                          <input
-                            type="checkbox"
-                            checked={selected}
-                            onChange={() => toggleMaterial(matId)}
-                            className="h-4 w-4"
-                          />
-                          {matName}
+                          <div className="flex items-center gap-3">
+                            <div className="h-12 w-12 rounded overflow-hidden bg-white flex items-center justify-center">
+                              {localPreview ? (
+                                <Image src={localPreview} alt={matName} width={48} height={48} className="object-cover" unoptimized onError={() => setLocalMaterialPreviews(prev => ({ ...prev, [matId]: null }))} />
+                              ) : materialImgUrls[matId] ? (
+                                <Image src={materialImgUrls[matId] || ""} alt={matName} width={48} height={48} className="object-cover" unoptimized onError={() => setMaterialImgUrls(prev => ({ ...prev, [matId]: null }))} />
+                              ) : (
+                                <div className="text-sm font-semibold">
+                                  {matName.substring(0, 2).toUpperCase()}
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex-1">
+                              <div className="font-semibold line-clamp-1">{matName}</div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <input
+                                ref={(el) => { fileInputRefs.current[matId] = el; }}
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) => {
+                                  const f = e.target.files?.[0];
+                                  if (!f) return;
+                                  const url = URL.createObjectURL(f);
+                                  setLocalMaterialPreviews(prev => ({ ...prev, [matId]: url }));
+                                }}
+                              />
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={(ev) => {
+                                  ev.stopPropagation();
+                                  fileInputRefs.current[matId]?.click();
+                                }}
+                                disabled={uploading}
+                              >
+                                Cambiar imagen
+                              </Button>
+                              <Button
+                                variant="success"
+                                size="sm"
+                                onClick={async (ev) => {
+                                  ev.stopPropagation();
+                                  if (!fileInputRefs.current[matId]?.files?.length) return;
+                                  const file = fileInputRefs.current[matId]!.files![0];
+                                  try {
+                                    setMaterialUploading(prev => ({ ...prev, [matId]: true }));
+                                    setError(null);
+                                    const supabase = createClient();
+                                    const exts = ["png", "jpg", "jpeg", "webp"];
+                                    await supabase.storage.from("material_logo").remove(exts.map(e => `${matId}.${e}`));
+                                    const ext = (file.name.split(".").pop() || "png").toLowerCase();
+                                    const path = `${matId}.${ext}`;
+                                    const { error: upErr } = await supabase.storage.from("material_logo").upload(path, file, {
+                                      upsert: true,
+                                      cacheControl: "3600",
+                                      contentType: file.type,
+                                    });
+                                    if (upErr) throw upErr;
+                                    const { data } = supabase.storage.from("material_logo").getPublicUrl(path);
+                                    setMaterialImgUrls(prev => ({ ...prev, [matId]: data?.publicUrl || null }));
+                                    setLocalMaterialPreviews(prev => ({ ...prev, [matId]: null }));
+                                    try { if (fileInputRefs.current[matId]) fileInputRefs.current[matId]!.value = ""; } catch {}
+                                    setSuccess(`Imagen actualizada para ${matName}`);
+                                  } catch (e: unknown) {
+                                    setError(e instanceof Error ? e.message : "Error subiendo imagen");
+                                  } finally {
+                                    setMaterialUploading(prev => ({ ...prev, [matId]: false }));
+                                  }
+                                }}
+                                disabled={uploading || !fileInputRefs.current[matId]?.files?.length}
+                              >
+                                Guardar imagen
+                              </Button>
+                            </div>
+                          </div>
+                          <div className="mt-2 flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              checked={selected}
+                              onChange={() => toggleMaterial(matId)}
+                              className="h-4 w-4"
+                            />
+                            <div className="text-sm">{selected ? "Seleccionado" : ""}</div>
+                          </div>
                         </div>
                       );
                     })}
