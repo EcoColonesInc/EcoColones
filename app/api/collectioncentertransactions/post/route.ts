@@ -17,7 +17,7 @@ export async function POST(request: Request) {
     //   items: [{ material_name: string, material_amount: number }]
     // }
 
-    const items: any[] = Array.isArray(body?.items) ? body.items : [];
+    const items: { material_name: string; material_amount: number }[] = Array.isArray(body?.items) ? body.items : [];
     if (!items.length) {
       return NextResponse.json({ error: "Missing items array" }, { status: 400 });
     }
@@ -31,8 +31,7 @@ export async function POST(request: Request) {
       }
 
       // Try to find person by identification: prefer exact string match, then numeric fallback
-      let personData: any = null;
-      let personErr: any = null;
+      let personData: { user_id: string } | null = null;
 
       const { data: pDataStr, error: pErrStr } = await supabase
         .from('person')

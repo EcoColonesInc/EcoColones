@@ -25,10 +25,16 @@ type CollectionCenterMaterial = {
     updated_at: string;
 };
 
+type GlobalMaterial = {
+    name?: string;
+    material_name?: string;
+    equivalent_points?: number;
+};
+
 export default function Page() {
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [materials, setMaterials] = useState<CollectionCenterMaterial[]>([]);
-    const [globalMaterials, setGlobalMaterials] = useState<any[]>([]);
+    const [globalMaterials, setGlobalMaterials] = useState<GlobalMaterial[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [collectionCenterId, setCollectionCenterId] = useState<string | null>(null);
@@ -243,7 +249,7 @@ export default function Page() {
                         }: {
                             materials: CollectionCenterMaterial[];
                             collectionCenterId: string | null;
-                            globalMaterials: any[];
+                            globalMaterials: GlobalMaterial[];
                         }) => {
                             const [selectedMaterialId, setSelectedMaterialId] = useState('');
                             const [amountInput, setAmountInput] = useState('');
@@ -278,7 +284,7 @@ export default function Page() {
                                 }
                                 // Prefer global equivalent_points from canonical material table
                                 const global = (globalMaterials || []).find(
-                                    (g: any) => (g.name || g.material_name) === material.material_name
+                                    (g: GlobalMaterial) => (g.name || g.material_name) === material.material_name
                                 );
                                 const rate = (global && (global.equivalent_points ?? global.equivalent_points === 0))
                                     ? Number(global.equivalent_points)
@@ -408,7 +414,7 @@ export default function Page() {
                                                     <option value="">Seleccionar material</option>
                                                     {materials.map(material => {
                                                         const global = (globalMaterials || []).find(
-                                                            (g: any) => (g.name || g.material_name) === material.material_name
+                                                            (g: GlobalMaterial) => (g.name || g.material_name) === material.material_name
                                                         );
                                                         const rate = global?.equivalent_points ?? material.unit_exchange ?? 0;
                                                         return (
