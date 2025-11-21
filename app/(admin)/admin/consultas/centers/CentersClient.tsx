@@ -27,9 +27,9 @@ type CollectionCenter = {
 };
 
 type TopMaterial = {
+  collection_center_name: string;
   material_name: string;
   total_amount: number;
-  times_recycled: number;
 };
 
 function FilterTag({
@@ -318,12 +318,15 @@ export default function CentersClient({
                             ? "🥉"
                             : "";
                         return (
-                          <TableRow key={`${m.material_name}-${idx}`}>
+                          <TableRow key={`${m.collection_center_name}-${m.material_name}-${idx}`}>
                             <TableCell className="whitespace-nowrap flex items-center gap-2">
                               <span aria-hidden>{medal}</span>
                               <span>{rank}</span>
                             </TableCell>
-                            <TableCell>{m.material_name}</TableCell>
+                            <TableCell>
+                              <div className="font-medium">{m.material_name}</div>
+                              <div className="text-xs text-muted-foreground">{m.collection_center_name}</div>
+                            </TableCell>
                             <TableCell className="text-right">
                               {m.total_amount} kg
                             </TableCell>
