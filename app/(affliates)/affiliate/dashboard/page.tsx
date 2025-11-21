@@ -48,8 +48,8 @@ type RawTransactionData = {
     created_at: string;
     total_price: number;
     state: string;
-    product_amount: number;
-    product_name: string;
+    total_product_amount: number;
+    product_names: string;
     first_name: string;
 }
 
@@ -69,6 +69,33 @@ async function getTransactionsByAffiliatedBusinessId(affiliatedBusinessId: strin
     return { error: null, data: data as RawTransactionData[] };
 }
 // -------------------------------------------------------------------
+
+/**
+ * Formatea una cadena de fecha ISO a YYYY/MM/DD.
+ * @param dateString La fecha en formato de cadena ISO.
+ * @returns La fecha formateada o 'N/A'.
+ */
+const formatDate = (dateString: string): string => {
+    if (!dateString) return 'N/A';
+    try {
+        const date = new Date(dateString);
+        
+        // Verificación de fecha inválida (e.g., "Invalid Date")
+        if (isNaN(date.getTime())) {
+            return 'Formato Inválido';
+        }
+
+        const year = date.getFullYear();
+        // getMonth() es 0-indexado, por eso se añade 1.
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+
+        return `${year}/${month}/${day}`; // Formato yyyy/mm/dd
+    } catch (e) {
+        console.error("Error formatting date:", e);
+        return 'N/A';
+    }
+};
 
 
 export default async function Page() {
@@ -103,7 +130,10 @@ export default async function Page() {
         if (businessFetchError) {
             productsError = `Error en DB al buscar ID de negocio: ${businessFetchError}`;
         } else if (businessData) {
-            affiliatedBusinessId = businessData.affiliated_business_id;
+             // Manejo de respuesta para asegurar la extracción del ID
+            affiliatedBusinessId = Array.isArray(businessData) && businessData.length > 0
+                ? businessData[0].affiliated_business_id
+                : (businessData as { affiliated_business_id: string } | null)?.affiliated_business_id || null;
         } else {
             productsError = "No se encontró un negocio afiliado para el ID de usuario proporcionado.";
         }
@@ -128,9 +158,10 @@ export default async function Page() {
             allTransactions = rawTransactions.map(tx => ({
                 transaction_code: tx.transaction_code,
                 first_name: tx.first_name || 'N/A', // Asumiendo que el RPC retorna el nombre del cliente
-                product_name: tx.product_name || 'N/A', // Asumiendo que el RPC retorna el nombre del producto
-                product_amount: tx.product_amount,
-                created_at: tx.created_at,
+                product_name: tx.product_names || 'N/A', // Asumiendo que el RPC retorna el nombre del producto
+                product_amount: tx.total_product_amount,
+                // APLICAR FORMATO DE FECHA AQUÍ (yyyy/mm/dd)
+                created_at: formatDate(tx.created_at),
                 total_price: tx.total_price,
                 state: tx.state,
             } as Transaction));
@@ -147,8 +178,9 @@ export default async function Page() {
         recentTransactions = allTransactions;
         monthlyTotal = allTransactions.reduce((sum, transaction) => {
             const amountValue = (transaction.total_price ?? 0).toString();
+            // Usamos parseFloat y manejo de NaN para robustez
             const amount = parseFloat(amountValue); 
-            return sum + amount;
+            return sum + (isNaN(amount) ? 0 : amount);
         }, 0);
     }
 
@@ -167,6 +199,7 @@ export default async function Page() {
     const tableData = recentTransactions.map(tx => {
         const normalizedTx = { 
             ...tx, 
+            // La fecha ya viene formateada desde el mapeo de allTransactions
             product_amount: tx.product_amount ?? 0,
             total_price: tx.total_price ?? 0,
             state: tx.state ?? 'N/A',
@@ -188,7 +221,7 @@ export default async function Page() {
         if (productsFetchError) {
             productsError = `Error al obtener productos: ${productsFetchError}`; 
         } else {
-            businessProducts = (productsData as unknown as ProductData[]) || [];
+            businessProducts = (productsData as unknown as ProductData[] | null) || [];
             productsError = null;
 
             // PASO 3: Mapear los datos de la base de datos (ProductData) al tipo Product
