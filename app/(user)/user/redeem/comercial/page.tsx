@@ -217,24 +217,18 @@ function StoreInner() {
         throw new Error('No se pudo obtener los puntos del usuario');
       }
 
-      if (pts < total) {
-        setInsufficientMsg('No tienes puntos suficientes');
-        window.setTimeout(() => setInsufficientMsg(null), 4000);
-        return;
-      }
-
-      const newPoints = Math.max(0, Math.floor(pts - total));
-
-      // 2) Patch the user's points
-      const patchRes = await fetch(`/api/points/${authUser.id}/patch`, {
+      // 2) Subtract the points using the new subtract endpoint
+      const subtractRes = await fetch(`/api/points/${authUser.id}/subtract`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ point_amount: newPoints }),
+        body: JSON.stringify({ points: total }),
       });
-      const patchBody = await patchRes.json();
-      if (!patchRes.ok) {
-        throw new Error(patchBody?.error ?? 'Error actualizando puntos');
+      const subtractBody = await subtractRes.json();
+      if (!subtractRes.ok) {
+        throw new Error(subtractBody?.error ?? 'Error actualizando puntos');
       }
+
+      const newPoints = subtractBody.new_total ?? Math.max(0, pts - total);
 
       // 3) Get person full name
       const personRes = await fetch(`/api/persons/${authUser.id}/get`);
