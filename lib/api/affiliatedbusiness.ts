@@ -1,5 +1,16 @@
 import { createClient } from '@/utils/supabase/server';
 
+export type BusinessData = {
+  affiliated_business_id: string;
+  district_id: string | null;
+  business_type_id: string | null;
+  affiliated_business_name: string;
+  phone: string | null;
+  email: string | null;
+  description: string | null;
+  manager_id: string;
+} | null;
+
 // Fetch all affiliated businesses with their info
 export async function getAllAffiliatedBusiness() {
   const supabase = await createClient();
@@ -44,4 +55,31 @@ export async function getAffiliatedBusinessById(affiliatedBusinessId: string) {
       return { error: error.message, data: null };
     }
     return { error: null, data };
+}
+
+export async function getBusinessByManagerId(managerId: string) {
+  const supabase = await createClient();
+
+  // Utilizamos el SELECT completo que definiste en tu Route Handler
+  const { data, error } = await supabase
+      .from('affiliatedbusiness')
+      .select(`
+          affiliated_business_id,
+          district_id,
+          business_type_id,
+          affiliated_business_name,
+          phone,
+          email,
+          description,
+          manager_id
+      `)
+      .eq('manager_id', managerId)
+      .maybeSingle();
+
+  if (error) {
+      console.error('Error fetching business by manager ID:', error);
+      return { error: error.message, data: null };
+  }
+  
+  return { error: null, data: data as BusinessData };
 }
