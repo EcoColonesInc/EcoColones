@@ -532,7 +532,7 @@ export default function AuditoriaClient({
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle>Top recicladores mensuales</CardTitle>
+            <CardTitle>Top recicladores mensuales (Job)</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="max-h-64 overflow-y-auto pr-2">
